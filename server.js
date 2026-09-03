@@ -1,4 +1,4 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
 const express = require("express");
 const path = require("path");
@@ -593,22 +593,46 @@ app.post("/api/esp32/rfid", async (req, res) => {
         const equipamento = await buscarEquipamentoPorUID(uid);
 
         if (pessoa) {
+
+            const funcionario = {
+                id: pessoa.id,
+                nome: pessoa.nome,
+                matricula: pessoa.matricula,
+                uid_tag_pessoal: pessoa.uid_tag_pessoal
+            };
+
             const ativos = await listarEmprestimosAtivosDoFuncionario(pessoa.id);
 
+            // GUARDA O FUNCIONARIO NO FLUXO DA OPERACAO
+            fluxo = {
+                modo: ativos.length ? "selecionar_devolucao" : "selecionar_retirada",
+                funcionario,
+                acao: ativos.length ? "devolucao" : "retirada",
+                equipamentoSelecionado: null,
+                expiraEm: Date.now() + 120000
+            };
+
             if (ativos.length) {
+
                 const evento = publicarRFID({
                     uid,
                     tipo: "funcionario_identificado",
                     modo: "selecionar_devolucao",
-                    mensagem: "Funcionário identificado. Selecione qual equipamento deseja devolver.",
-                    funcionario: {
-                        id: pessoa.id,
-                        nome: pessoa.nome,
-                        matricula: pessoa.matricula
-                    }
+                    mensagem: "Funcionário identificado. Selecione o equipamento que deseja devolver.",
+                    funcionario
                 });
 
-                return res.json({ sucesso: true, ...evento, equipamentos: ativos.map(x => x.equipamento).filter(Boolean) });
+                return res.json({
+                    sucesso: true,
+                    ...evento,
+                    equipamentos: ativos
+                        .map(x => x.equipamento)
+                        .filter(Boolean),
+                    equipamentosDisponiveis: [],
+                    equipamentosEmprestados: ativos
+                        .map(x => x.equipamento)
+                        .filter(Boolean)
+                });
             }
 
             const disponiveis = await listarEquipamentosDisponiveis();
@@ -618,11 +642,7 @@ app.post("/api/esp32/rfid", async (req, res) => {
                 tipo: "funcionario_identificado",
                 modo: "selecionar_retirada",
                 mensagem: "Funcionário identificado. Selecione o equipamento que deseja retirar.",
-                funcionario: {
-                    id: pessoa.id,
-                    nome: pessoa.nome,
-                    matricula: pessoa.matricula
-                }
+                funcionario
             });
 
             return res.json({
@@ -633,7 +653,6 @@ app.post("/api/esp32/rfid", async (req, res) => {
                 equipamentosEmprestados: []
             });
         }
-
         if (equipamento) {
             const evento = publicarRFID({
                 uid,
@@ -1142,3 +1161,4 @@ app.listen(PORT, "0.0.0.0", () => {
     console.log("Banco: Supabase");
     console.log("Aguardando ESP32...");
 });
+
