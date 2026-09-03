@@ -1,31 +1,59 @@
-INVENTARIO RFID - VERSAO FINAL
+CORRECAO FINAL - PROJETO INVENTARIO RFID
 
-PASTA OFICIAL:
-PROJETO-INVENTARIO-RFID-LIMPO
+O que foi corrigido:
+1. Fluxo exato: tag funcionario -> escolher acao -> escolher 1 equipamento -> tag fisica do equipamento -> conclusao.
+2. A segunda leitura da tag do objeto agora e aceita pelo servidor mesmo se o processo do Render reiniciar entre as etapas.
+3. A retirada cria uma pendencia persistente no Supabase com status "Pendente RFID" e so vira "Ativo" depois da confirmacao da tag fisica.
+4. O funcionario nao pode ter dois equipamentos ativos.
+5. Uma Box nao pode ter dois objetos cadastrados.
+6. Tag errada nao altera estoque.
+7. Tag de equipamento sem funcionario nao altera estoque.
+8. A pagina de controle NAO chama resetar ao abrir.
+9. A leitura RFID NAO e mais apagada globalmente por /rfid/limpar. Cada aba acompanha o ID do evento.
+10. Dashboard, cadastro e controle nao roubam mais a leitura uns dos outros.
+11. O layout profissional da tela de controle foi preservado.
 
-FLUXO:
-1. Passe a tag do funcionario.
-2. Se nao houver emprestimo ativo, escolha retirar ou devolver.
-3. Escolha UM equipamento.
-4. Passe novamente a tag fisica do equipamento.
-5. Somente a tag correta conclui a operacao.
-6. Se o funcionario ja tiver um equipamento, o sistema bloqueia outro ate a devolucao.
+ARQUIVOS PARA SUBSTITUIR:
+- server.js -> substitua o server.js da raiz
+- SITE/controle.html -> substitua somente este arquivo
 
-REGRA DA BOX:
-Cada box comporta apenas um objeto. O cadastro e a edicao recusam box duplicada.
-Ao iniciar, o servidor tambem corrige automaticamente box_id duplicado existente, atribuindo a proxima box livre.
+NAO APAGUE:
+- .env
+- package.json
+- package-lock.json
+- SITE/index.html
+- SITE/cadastro.html
 
-ESP32:
-POST /api/esp32/rfid com JSON {"uid":"...","leitor":"entrada"}.
-O servidor aceita UID com espacos e tambem campos UID, uid_tag, tag e rfid.
+COMANDOS:
+cd "C:\Users\Leandro\OneDrive\Desktop\PROJETO-INVENTARIO-RFID-LIMPO"
 
-DEPLOY:
+# opcional: backup
+Copy-Item .\server.js .\server.backup-antes-correcao.js
+Copy-Item .\SITE\controle.html .\SITE\controle.backup-antes-correcao.html
+
+# depois de copiar os dois arquivos novos:
 npm install
-npm start
-
+node --check .\server.js
 git add .
-git commit -m "Versao final RFID"
+git commit -m "Correcao definitiva fluxo RFID"
 git push origin master
 
-O Render publica automaticamente.
-Nao altere o .env que ja funciona.
+NO RENDER:
+Aguarde o deploy terminar. Depois abra /controle e faca um Ctrl+F5.
+
+TESTE OBRIGATORIO:
+1. Passe a tag 93 05 35 14.
+2. Escolha Retirar equipamento.
+3. Escolha somente um equipamento.
+4. Clique Continuar.
+5. Passe a tag fisica do equipamento selecionado.
+6. Deve aparecer EMPRESTADO.
+7. Passe novamente a tag 93 05 35 14.
+8. Deve aparecer que o equipamento esta com o funcionario e que precisa devolver antes de retirar outro.
+9. Passe a tag do equipamento emprestado.
+10. Deve aparecer DEVOLVIDO.
+
+IMPORTANTE:
+O ESP32 precisa continuar enviando as leituras para:
+POST /api/esp32/rfid
+com um JSON contendo o UID. O servidor aceita uid, UID, uid_tag, tag ou rfid.
