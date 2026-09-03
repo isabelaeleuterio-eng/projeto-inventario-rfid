@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inventário RFID | Cadastro</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#182230;--muted:#667085;--primary:#2563eb;--ok:#059669;--danger:#dc2626;--border:#e6eaf0;--shadow:0 16px 40px rgba(15,23,42,.08)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}button,input,select{font:inherit}.top{background:#101828;color:#fff;padding:18px 5%;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;gap:12px;align-items:center}.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#06b6d4);display:grid;place-items:center;font-weight:900}.brand b{font-size:18px}.brand span{display:block;color:#98a2b3;font-size:12px}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{padding:10px 14px;border-radius:10px;color:#d0d5dd;font-size:14px;font-weight:700;text-decoration:none}.nav a:hover,.nav .active{background:#1d2939;color:#fff}.wrap{width:min(1100px,92%);margin:34px auto}.hero{margin-bottom:22px}.hero h1{margin:0 0 7px;font-size:31px}.hero p{margin:0;color:var(--muted)}.layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{background:#fff;border:1px solid var(--border);border-radius:18px;padding:24px;box-shadow:var(--shadow)}.panel h2{margin:0 0 5px;font-size:19px}.panel>p{color:var(--muted);font-size:13px;margin:0 0 20px}.field{margin-bottom:15px}.field label{display:block;font-size:13px;font-weight:800;margin-bottom:7px}.field input{width:100%;padding:13px 14px;border:1px solid #d0d5dd;border-radius:11px;outline:none;background:#fff}.field input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #dbeafe}.uid{font-family:ui-monospace,Consolas,monospace;letter-spacing:1px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.btn{border:0;border-radius:11px;padding:12px 16px;font-weight:800;cursor:pointer}.primary{background:var(--primary);color:#fff}.secondary{background:#eef2f7;color:#344054}.success{background:#ecfdf3;border:1px solid #abefc6;color:#067647}.error{background:#fef3f2;border:1px solid #fecdca;color:#b42318}.info{background:#eff8ff;border:1px solid #b2ddff;color:#175cd3}.msg{margin-top:15px;border-radius:12px;padding:13px;font-size:14px;font-weight:700;display:none}.msg.show{display:block}.rfidbox{background:#0f172a;color:#fff;border-radius:15px;padding:18px;margin-bottom:18px}.rfidtitle{font-size:12px;color:#98a2b3;text-transform:uppercase;letter-spacing:.08em;font-weight:800}.rfiduid{font-family:ui-monospace,Consolas,monospace;font-size:25px;margin:8px 0;letter-spacing:2px}.rfidmsg{color:#d0d5dd;font-size:13px;line-height:1.5}.tablewrap{margin-top:18px;overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;background:#f8fafc;padding:12px;border-bottom:1px solid var(--border)}td{padding:12px;border-bottom:1px solid var(--border)}.tagok{color:#067647;font-weight:800}.tagbad{color:#b42318;font-weight:800}.hidden{display:none!important}@media(max-width:800px){.layout{grid-template-columns:1fr}}@media(max-width:520px){.top{align-items:flex-start;flex-direction:column}.nav{width:100%}.nav a{flex:1;text-align:center}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top">
+<div class="brand"><div class="logo">RF</div><div><b>Inventário RFID</b><span>Cadastro seguro de tags</span></div></div>
+<nav class="nav"><a href="/">Dashboard</a><a class="active" href="/cadastro">Cadastro</a><a href="/controle">Controle</a></nav>
+</header>
+<main class="wrap">
+<section class="hero"><h1>Cadastro</h1><p>Cadastre funcionários e equipamentos. Cada tag RFID pode pertencer a apenas um cadastro.</p></section>
+<div class="layout">
+<section class="panel">
+<h2>Novo funcionário</h2><p>Nome, matrícula e tag pessoal.</p>
+<div class="rfidbox"><div class="rfidtitle">Leitura RFID</div><div id="uidF" class="rfiduid">Aguardando...</div><div id="msgF" class="rfidmsg">Clique em “Ler tag” e aproxime a tag.</div></div>
+<div class="field"><label>Nome completo</label><input id="nomeF" autocomplete="off"></div>
+<div class="field"><label>Matrícula</label><input id="matF" autocomplete="off"></div>
+<div class="field"><label>Tag RFID</label><input id="tagF" class="uid" readonly placeholder="Leia a tag"></div>
+<div class="row"><button class="btn secondary" onclick="ler('funcionario')">📡 Ler tag</button><button class="btn primary" onclick="salvarFuncionario()">Cadastrar funcionário</button></div>
+<div id="alertF" class="msg"></div>
+</section>
+<section class="panel">
+<h2>Novo equipamento</h2><p>Nome, Box e tag RFID.</p>
+<div class="rfidbox"><div class="rfidtitle">Leitura RFID</div><div id="uidE" class="rfiduid">Aguardando...</div><div id="msgE" class="rfidmsg">Clique em “Ler tag” e aproxime a tag.</div></div>
+<div class="field"><label>Nome do equipamento</label><input id="nomeE" autocomplete="off"></div>
+<div class="field"><label>Box</label><input id="boxE" type="number" min="1" step="1"></div>
+<div class="field"><label>Tag RFID</label><input id="tagE" class="uid" readonly placeholder="Leia a tag"></div>
+<div class="row"><button class="btn secondary" onclick="ler('equipamento')">📡 Ler tag</button><button class="btn primary" onclick="salvarEquipamento()">Cadastrar equipamento</button></div>
+<div id="alertE" class="msg"></div>
+</section>
+</div>
+<section class="panel" style="margin-top:18px">
+<h2>Cadastros atuais</h2><p>Confira rapidamente o que já está registrado.</p>
+<div class="tablewrap"><table><thead><tr><th>Tipo</th><th>Nome</th><th>Identificação</th><th>Tag</th><th>Box</th></tr></thead><tbody id="lista"></tbody></table></div>
+</section>
+</main>
+<script>
+const API="https://projeto-inventario-rfid.onrender.com";
+let ultima=0, aguardando=null, consultando=false;
+const $=id=>document.getElementById(id);
+function msg(el,text,tipo="info"){el.textContent=text;el.className="msg show "+tipo}
+async function json(url,opt={}){const r=await fetch(url,{cache:"no-store",...opt,headers:{"Content-Type":"application/json",...(opt.headers||{})}});const t=await r.text();let d={};try{d=t?JSON.parse(t):{}}catch{throw Error("Resposta inválida do servidor.")}if(!r.ok)throw Error(d.mensagem||d.erro||"Operação não concluída.");return d}
+async function ler(tipo){
+ aguardando=tipo;
+ const uid=tipo==="funcionario"?$("tagF"):$("tagE");
+ uid.value="";
+ const box=tipo==="funcionario"?$("msgF"):$("msgE");box.textContent="Aguardando uma tag disponível. Aproxime-a do RC522.";
+ try{await json(API+"/api/rfid/cadastro/iniciar",{method:"POST",body:JSON.stringify({tipo})});}catch(e){box.textContent=e.message;aguardando=null}
+}
+async function consultar(){
+ if(consultando)return;consultando=true;
+ try{
+  const d=await json(API+"/rfid/ultima"); if(!d.nova||!d.momento||d.momento===ultima)return; ultima=d.momento;
+  if(aguardando){
+   const campo=aguardando==="funcionario"?$("tagF"):$("tagE"); const box=aguardando==="funcionario"?$("msgF"):$("msgE"); const uid=d.uid||"";
+   campo.value=uid; box.textContent=d.mensagem||"Tag lida.";
+   if(d.tipo==="tag_ja_cadastrada"){msg(aguardando==="funcionario"?$("alertF"):$("alertE"),d.mensagem||"Esta tag já está cadastrada. Escolha outra.","error");campo.value="";aguardando=null}
+   else if(d.tipo==="cadastro_tag"){box.textContent="✓ Tag disponível e preenchida automaticamente.";aguardando=null}
+  }
+  await fetch(API+"/rfid/limpar",{method:"POST"});
+ }catch(e){console.warn(e)}finally{consultando=false}
+}
+async function salvarFuncionario(){
+ const nome=$("nomeF").value.trim(),mat=$("matF").value.trim(),uid=$("tagF").value.trim();
+ try{const d=await json(API+"/api/funcionarios",{method:"POST",body:JSON.stringify({nome,matricula:mat,uid_tag_pessoal:uid})});msg($("alertF"),d.mensagem||"Funcionário cadastrado.","success");$("nomeF").value="";$("matF").value="";$("tagF").value="";carregar()}
+ catch(e){msg($("alertF"),e.message,"error")}
+}
+async function salvarEquipamento(){
+ const nome=$("nomeE").value.trim(),box=Number($("boxE").value),uid=$("tagE").value.trim();
+ try{const d=await json(API+"/api/equipamentos",{method:"POST",body:JSON.stringify({nome,box_id:box,uid_tag:uid})});msg($("alertE"),d.mensagem||"Equipamento cadastrado.","success");$("nomeE").value="";$("boxE").value="";$("tagE").value="";carregar()}
+ catch(e){msg($("alertE"),e.message,"error")}
+}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+async function carregar(){
+ try{
+  const [f,e]=await Promise.all([json(API+"/api/funcionarios"),json(API+"/api/equipamentos")]);
+  const fs=f.funcionarios||[],es=e.equipamentos||[];
+  $("lista").innerHTML=[...fs.map(x=>`<tr><td>Funcionário</td><td>${esc(x.nome)}</td><td>${esc(x.matricula)}</td><td class="tagok">${esc(x.uid_tag_pessoal)}</td><td>—</td></tr>`),...es.map(x=>`<tr><td>Equipamento</td><td>${esc(x.nome)}</td><td>${esc(x.status)}</td><td class="tagok">${esc(x.uid_tag)}</td><td>${esc(x.box_id)}</td></tr>`)].join("")||`<tr><td colspan="5">Nenhum cadastro.</td></tr>`;
+ }catch(e){$("lista").innerHTML=`<tr><td colspan="5">${esc(e.message)}</td></tr>`}
+}
+setInterval(consultar,700);setInterval(carregar,5000);consultar();carregar();
+</script>
+</body></html>
