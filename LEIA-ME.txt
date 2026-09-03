@@ -1,0 +1,40 @@
+INVENTÁRIO RFID — VERSÃO FINAL PARA APRESENTAÇÃO
+
+Arquivos:
+- server.js
+- package.json
+- package-lock.json (gerado pelo npm install)
+- .gitignore
+- .env.example
+- SITE/index.html
+- SITE/cadastro.html
+- SITE/controle.html
+
+Fluxo:
+1. A tag do funcionário é lida.
+2. O sistema identifica a pessoa.
+3. Se houver equipamento emprestado, a tela permite escolher RETIRAR ou DEVOLVER.
+4. O usuário escolhe o equipamento.
+5. Somente então o sistema aceita a tag física daquele equipamento.
+6. Tag errada não conclui a operação.
+7. Tag não cadastrada não conclui a operação.
+8. UIDs já cadastrados não podem ser reutilizados entre funcionário/equipamento.
+9. Retirada altera o equipamento para emprestado.
+10. Devolução registra data e devolve o equipamento para disponível.
+11. Operações expiram para evitar fluxo preso.
+12. Leituras repetidas em sequência são ignoradas.
+
+Importante:
+- NÃO envie .env para o GitHub.
+- No Render, mantenha SUPABASE_URL e SUPABASE_SECRET_KEY nas Environment Variables.
+- O ESP32 deve enviar RFID para:
+  https://projeto-inventario-rfid.onrender.com/api/esp32/rfid
+- O ESP32 deve avisar presença em:
+  https://projeto-inventario-rfid.onrender.com/api/esp32/online
+
+Páginas:
+https://projeto-inventario-rfid.onrender.com/
+https://projeto-inventario-rfid.onrender.com/cadastro
+https://projeto-inventario-rfid.onrender.com/controle
+
+A interface usa a API da própria nuvem, portanto a tela não precisa estar na mesma rede Wi-Fi do ESP32.

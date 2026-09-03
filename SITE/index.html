@@ -1,55 +1,41 @@
 <!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Inventário RFID | Dashboard</title>
 <style>
-:root{--bg:#f5f7fb;--card:#fff;--text:#182230;--muted:#667085;--primary:#2563eb;--primary2:#1d4ed8;--ok:#059669;--danger:#dc2626;--border:#e6eaf0;--shadow:0 16px 40px rgba(15,23,42,.08)}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}a{text-decoration:none;color:inherit}.top{background:#101828;color:#fff;padding:18px 5%;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;gap:12px;align-items:center}.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#06b6d4);display:grid;place-items:center;font-size:21px}.brand b{font-size:18px}.brand span{display:block;color:#98a2b3;font-size:12px;margin-top:2px}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{padding:10px 14px;border-radius:10px;color:#d0d5dd;font-size:14px;font-weight:700}.nav a:hover,.nav .active{background:#1d2939;color:#fff}.wrap{width:min(1180px,92%);margin:34px auto}.hero{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:25px}.hero h1{margin:0 0 7px;font-size:32px}.hero p{margin:0;color:var(--muted)}.status{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border);padding:10px 14px;border-radius:12px;font-size:13px;font-weight:700}.dot{width:9px;height:9px;border-radius:50%;background:#98a2b3}.dot.ok{background:#12b76a;box-shadow:0 0 0 4px #d1fadf}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:var(--shadow)}.label{color:var(--muted);font-size:13px;font-weight:700}.num{font-size:34px;font-weight:800;margin-top:8px}.blue{color:var(--primary)}.green{color:var(--ok)}.red{color:var(--danger)}.panel{margin-top:18px;background:#fff;border:1px solid var(--border);border-radius:18px;padding:24px;box-shadow:var(--shadow)}.panel h2{margin:0 0 6px;font-size:19px}.panel p{color:var(--muted);margin:0 0 18px}.actions{display:flex;gap:12px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:11px;padding:12px 16px;font-weight:800;cursor:pointer}.primary{background:var(--primary);color:#fff}.primary:hover{background:var(--primary2)}.secondary{background:#eef2f7;color:#344054}.cards-links{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.linkcard{padding:18px;border:1px solid var(--border);border-radius:14px;background:#f8fafc}.linkcard b{display:block;margin-bottom:5px}.linkcard span{color:var(--muted);font-size:13px}@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.hero{align-items:flex-start;flex-direction:column}}@media(max-width:520px){.grid,.cards-links{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.nav{width:100%}.nav a{flex:1;text-align:center}.hero h1{font-size:26px}}
-</style>
-</head>
+:root{--navy:#0b1220;--blue:#2563eb;--green:#10b981;--red:#ef4444;--amber:#f59e0b;--bg:#f4f7fb;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--card:#fff}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,#0b1220,#172554);color:#fff;padding:20px 5%;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;gap:12px;align-items:center}.logo{width:44px;height:44px;border-radius:13px;background:#fff1;padding:8px;font-size:25px;text-align:center}.brand h1{margin:0;font-size:21px}.brand p{margin:3px 0 0;color:#cbd5e1;font-size:13px}
+nav{display:flex;gap:8px;flex-wrap:wrap}nav a{color:#e2e8f0;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:700}nav a:hover,nav a.active{background:#ffffff18;color:#fff}
+.wrap{width:92%;max-width:1250px;margin:30px auto}.hero{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:24px}.hero h2{margin:0;font-size:31px}.hero p{margin:7px 0 0;color:var(--muted)}.online{font-weight:800;font-size:13px;padding:9px 13px;border-radius:999px;background:#dcfce7;color:#15803d;white-space:nowrap}.offline{background:#fee2e2;color:#b91c1c}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.card,.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 30px #0f172a0a}.card{padding:20px}.label{color:var(--muted);font-weight:700;font-size:13px}.num{font-size:36px;font-weight:900;margin-top:8px}.blue{color:var(--blue)}.green{color:var(--green)}.red{color:var(--red)}
+.panel{padding:22px;margin-top:18px}.panel h3{margin:0 0 5px}.sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.quick a{padding:17px;border:1px solid var(--line);border-radius:14px;text-decoration:none;color:var(--text);font-weight:800;background:#fff}.quick a:hover{border-color:#93c5fd;background:#f8fbff}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:13px;border-bottom:1px solid var(--line);font-size:14px}th{color:var(--muted);font-size:12px;text-transform:uppercase;background:#f8fafc}tbody tr:hover{background:#fafcff}.pill{display:inline-block;padding:5px 9px;border-radius:999px;font-weight:800;font-size:12px}.pill.ok{background:#dcfce7;color:#15803d}.pill.wait{background:#fef3c7;color:#92400e}
+.empty{color:var(--muted);padding:20px;text-align:center}@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.quick{grid-template-columns:1fr}.hero{align-items:start;flex-direction:column}}@media(max-width:500px){.grid{grid-template-columns:1fr}.wrap{width:94%}}
+</style></head>
 <body>
-<header class="top">
-<div class="brand"><div class="logo">RF</div><div><b>Inventário RFID</b><span>Gestão inteligente de equipamentos</span></div></div>
-<nav class="nav"><a class="active" href="/">Dashboard</a><a href="/cadastro">Cadastro</a><a href="/controle">Controle</a></nav>
-</header>
+<header><div class="brand"><div class="logo">🏷️</div><div><h1>Inventário RFID</h1><p>Gestão inteligente de equipamentos</p></div></div>
+<nav><a class="active" href="/">Dashboard</a><a href="/cadastro">Cadastro</a><a href="/controle">Controle</a></nav></header>
 <main class="wrap">
-<section class="hero"><div><h1>Dashboard</h1><p>Visão geral do inventário e do sistema RFID.</p></div><div class="status"><i id="dot" class="dot"></i><span id="status">Verificando sistema...</span></div></section>
+<section class="hero"><div><h2>Visão geral</h2><p>Acompanhe o inventário e as movimentações em tempo real.</p></div><span id="online" class="online">● Sistema online</span></section>
 <section class="grid">
-<div class="card"><div class="label">Funcionários</div><div id="funcionarios" class="num blue">—</div></div>
-<div class="card"><div class="label">Equipamentos</div><div id="equipamentos" class="num blue">—</div></div>
-<div class="card"><div class="label">Disponíveis</div><div id="disponiveis" class="num green">—</div></div>
-<div class="card"><div class="label">Emprestados</div><div id="emprestados" class="num red">—</div></div>
+<div class="card"><div class="label">👥 FUNCIONÁRIOS</div><div id="funcionarios" class="num blue">—</div></div>
+<div class="card"><div class="label">🧰 EQUIPAMENTOS</div><div id="equipamentos" class="num blue">—</div></div>
+<div class="card"><div class="label">✓ DISPONÍVEIS</div><div id="disponiveis" class="num green">—</div></div>
+<div class="card"><div class="label">↗ EMPRESTADOS</div><div id="emprestados" class="num red">—</div></div>
 </section>
-<section class="panel">
-<h2>Acesso rápido</h2><p>Use os módulos abaixo para operar o sistema.</p>
-<div class="cards-links">
-<a class="linkcard" href="/cadastro"><b>👤 Cadastro</b><span>Cadastre funcionários e equipamentos com leitura automática da tag.</span></a>
-<a class="linkcard" href="/controle"><b>📡 Controle RFID</b><span>Faça retiradas e devoluções com seleção e conferência da tag.</span></a>
-</div>
-</section>
-<section class="panel">
-<h2>Sistema</h2><p id="esp32">Verificando conexão do ESP32...</p>
-<div class="actions"><a class="btn primary" href="/controle">Abrir controle</a><a class="btn secondary" href="/cadastro">Abrir cadastro</a></div>
-</section>
+<section class="panel"><h3>Acesso rápido</h3><div class="sub">Escolha uma área para continuar.</div><div class="quick"><a href="/controle">📡 Iniciar operação RFID</a><a href="/cadastro">➕ Cadastrar funcionário ou equipamento</a><a href="/controle#historico">📋 Consultar histórico</a></div></section>
+<section class="panel"><h3>Últimas movimentações</h3><div class="sub">Registros mais recentes do sistema.</div><div style="overflow:auto"><table><thead><tr><th>Funcionário</th><th>Equipamento</th><th>Retirada</th><th>Devolução</th><th>Status</th></tr></thead><tbody id="historico"></tbody></table></div></section>
 </main>
 <script>
-const API="https://projeto-inventario-rfid.onrender.com";
+const API="";
+const esc=v=>String(v??"-").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+async function get(url){const r=await fetch(API+url,{cache:"no-store"});const d=await r.json();if(!r.ok)throw Error(d.erro||"Erro");return d}
+function data(v){return v?new Date(v).toLocaleString("pt-BR"):"—"}
 async function carregar(){
- try{
-  const r=await fetch(API+"/api/dashboard",{cache:"no-store"}); const d=await r.json();
-  if(!r.ok)throw Error(d.erro||"Erro");
-  document.getElementById("funcionarios").textContent=d.funcionarios??0;
-  document.getElementById("equipamentos").textContent=d.equipamentos??0;
-  document.getElementById("disponiveis").textContent=d.disponiveis??0;
-  document.getElementById("emprestados").textContent=d.emprestados??0;
-  document.getElementById("status").textContent="Sistema online";
-  document.getElementById("dot").className="dot ok";
-  const s=await fetch(API+"/api/status",{cache:"no-store"}); const sd=await s.json();
-  document.getElementById("esp32").textContent=sd.esp32?.conectado?"📡 ESP32 conectado e comunicando com a nuvem.":"⚠️ ESP32 não está conectado no momento.";
- }catch(e){document.getElementById("status").textContent="Servidor indisponível";document.getElementById("dot").className="dot";document.getElementById("esp32").textContent="Não foi possível consultar o servidor."}
+ try{const d=await get("/api/dashboard");["funcionarios","equipamentos","disponiveis","emprestados"].forEach(k=>document.getElementById(k).textContent=d[k]??0);document.getElementById("online").textContent="● Sistema online";document.getElementById("online").className="online"}catch(e){document.getElementById("online").textContent="● Sem conexão";document.getElementById("online").className="online offline"}
+ try{const d=await get("/api/ultimos-emprestimos");const lista=d.emprestimos||[];document.getElementById("historico").innerHTML=lista.length?lista.map(x=>`<tr><td>${esc(x.funcionario?.nome)}</td><td>${esc(x.equipamento?.nome)}</td><td>${esc(data(x.data_retirada))}</td><td>${esc(data(x.data_devolucao))}</td><td><span class="pill ${x.data_devolucao?"ok":"wait"}">${x.data_devolucao?"Devolvido":"Emprestado"}</span></td></tr>`).join(""):'<tr><td colspan="5" class="empty">Nenhuma movimentação registrada.</td></tr>'}catch(e){document.getElementById("historico").innerHTML='<tr><td colspan="5" class="empty">Não foi possível carregar o histórico.</td></tr>'}
 }
-carregar();setInterval(carregar,5000);
-</script>
-</body></html>
+carregar();setInterval(carregar,10000);
+</script></body></html>
