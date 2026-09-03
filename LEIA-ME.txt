@@ -1,41 +1,41 @@
-INVENTÁRIO RFID — VERSÃO FINAL PARA APRESENTAÇÃO
+INVENTÁRIO RFID — VERSÃO FINAL LIMPA PARA APRESENTAÇÃO
 
-Use somente esta pasta.
+USE SOMENTE A PASTA:
+PROJETO-INVENTARIO-RFID-LIMPO
 
-Estrutura:
+Arquivos principais:
 - server.js
 - package.json
-- package-lock.json
-- .gitignore
-- .env.example
 - SITE/index.html
 - SITE/cadastro.html
 - SITE/controle.html
 
-Fluxo da operação:
-1. Passe a tag da pessoa.
-2. O sistema identifica o funcionário.
+Fluxo:
+1. Passe a tag do funcionário.
+2. O sistema identifica a pessoa.
 3. Escolha RETIRAR ou DEVOLVER.
 4. Escolha o equipamento.
-5. Só então passe a tag física do equipamento.
-6. A tag precisa ser exatamente a do equipamento selecionado.
-7. Tag errada ou não cadastrada é recusada.
-8. Uma tag não pode ser cadastrada como funcionário e equipamento.
-9. Retirada muda o equipamento para emprestado.
-10. Devolução registra a data e libera o equipamento.
-11. O fluxo expira automaticamente para não ficar preso.
+5. O servidor registra a seleção.
+6. Passe a tag física do equipamento.
+7. A tag precisa corresponder exatamente ao equipamento selecionado.
+8. Tag errada é recusada.
+9. Retirada muda status para emprestado.
+10. Devolução registra data_devolucao e libera o equipamento.
+11. Tag de equipamento sozinha nunca altera estoque.
 12. Leituras repetidas são ignoradas.
+13. O fluxo expira após 120 segundos.
 
-Nuvem:
+NUVEM:
 https://projeto-inventario-rfid.onrender.com
-Controle:
 https://projeto-inventario-rfid.onrender.com/controle
-Cadastro:
 https://projeto-inventario-rfid.onrender.com/cadastro
 
 ESP32:
 POST /api/esp32/online
 POST /api/esp32/rfid
 
-A tela não precisa estar na mesma rede do ESP32. O ESP32 precisa conseguir acessar a internet e o Render.
-NÃO coloque .env no GitHub.
+IMPORTANTE:
+- O ESP32 não precisa estar na mesma rede do computador que abre o site.
+- O ESP32 precisa ter acesso à internet para alcançar o Render.
+- Não coloque o .env no GitHub.
+- O código usa SUPABASE_SECRET_KEY no servidor.
