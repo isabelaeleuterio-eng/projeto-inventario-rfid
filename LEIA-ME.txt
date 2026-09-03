@@ -1,41 +1,35 @@
-INVENTÁRIO RFID — VERSÃO FINAL LIMPA PARA APRESENTAÇÃO
+INVENTÁRIO RFID — VERSÃO FINAL DE APRESENTAÇÃO
 
-USE SOMENTE A PASTA:
+Pasta oficial:
 PROJETO-INVENTARIO-RFID-LIMPO
 
-Arquivos principais:
-- server.js
-- package.json
-- SITE/index.html
-- SITE/cadastro.html
-- SITE/controle.html
-
 Fluxo:
-1. Passe a tag do funcionário.
-2. O sistema identifica a pessoa.
-3. Escolha RETIRAR ou DEVOLVER.
-4. Escolha o equipamento.
-5. O servidor registra a seleção.
-6. Passe a tag física do equipamento.
-7. A tag precisa corresponder exatamente ao equipamento selecionado.
-8. Tag errada é recusada.
-9. Retirada muda status para emprestado.
-10. Devolução registra data_devolucao e libera o equipamento.
-11. Tag de equipamento sozinha nunca altera estoque.
-12. Leituras repetidas são ignoradas.
-13. O fluxo expira após 120 segundos.
+1. Passe a tag da pessoa.
+2. Se ela não tiver empréstimo ativo, selecione Retirar.
+3. Selecione um equipamento disponível.
+4. Passe a tag física do equipamento.
+5. O sistema registra EMPRESTADO.
+6. Ao tentar pegar outro equipamento com empréstimo ativo, o sistema bloqueia e informa que é necessário devolver o anterior.
+7. Para devolver, passe a tag da pessoa. O sistema mostra o equipamento que deve ser devolvido.
+8. Passe a tag física desse equipamento.
+9. O sistema registra DEVOLVIDO e libera a Box.
 
-NUVEM:
+Regra de Box:
+- Uma Box comporta apenas um objeto.
+- Cadastro de um segundo equipamento na mesma Box é recusado.
+- Retirada é recusada se a Box estiver ocupada por outro equipamento emprestado.
+- O servidor verifica a Box novamente no momento da retirada.
+
+Nuvem:
 https://projeto-inventario-rfid.onrender.com
-https://projeto-inventario-rfid.onrender.com/controle
-https://projeto-inventario-rfid.onrender.com/cadastro
+
+Variáveis necessárias no Render/.env:
+SUPABASE_URL
+SUPABASE_SECRET_KEY
 
 ESP32:
 POST /api/esp32/online
 POST /api/esp32/rfid
+Payload RFID: {"uid":"...","leitor":"entrada"}
 
-IMPORTANTE:
-- O ESP32 não precisa estar na mesma rede do computador que abre o site.
-- O ESP32 precisa ter acesso à internet para alcançar o Render.
-- Não coloque o .env no GitHub.
-- O código usa SUPABASE_SECRET_KEY no servidor.
+Não publique .env.

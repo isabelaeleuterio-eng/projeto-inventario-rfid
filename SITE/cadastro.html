@@ -1,52 +1,6 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Cadastro | Inventário RFID</title>
-<style>
-*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:linear-gradient(135deg,#eef4ff,#f8fafc);color:#10203b}
-header{background:#0b1328;color:#fff;padding:18px 5%;display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}.brand{display:flex;align-items:center;gap:12px}.brand i{font-size:30px}.brand h1{margin:0}.brand p{margin:3px 0;color:#cbd5e1}nav{display:flex;gap:8px;flex-wrap:wrap}nav a{color:#fff;text-decoration:none;background:#1e2a44;padding:10px 14px;border-radius:10px;font-weight:700}nav a.active{background:#10b981}
-main{max-width:1200px;margin:28px auto;padding:0 18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:22px;box-shadow:0 8px 25px #10203b0b;margin-bottom:18px}.panel h2,.panel h3{margin-top:0}label{display:block;font-weight:800;margin:14px 0 6px}input{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:12px;font-size:15px}button{border:0;border-radius:12px;padding:12px 16px;font-weight:900;cursor:pointer;margin-top:12px}.blue{background:#2563eb;color:#fff}.green{background:#10b981;color:#fff}.dark{background:#334155;color:#fff}.red{background:#ef4444;color:#fff}.notice{padding:13px 15px;border-radius:12px;background:#eff6ff;color:#1e40af;font-weight:700;margin-top:12px}.ok{background:#d1fae5;color:#047857}.err{background:#fee2e2;color:#b91c1c}.uid{font:22px Consolas,monospace;color:#2563eb}.table{overflow:auto}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px;border-bottom:1px solid #e2e8f0}th{background:#f8fafc}.muted{color:#64748b}.tagbox{background:#f8fafc;border-radius:14px;padding:15px;margin-top:12px}.status{font-weight:900}.badge{padding:5px 9px;border-radius:999px;font-size:12px;font-weight:900;background:#d1fae5;color:#047857}@media(max-width:800px){.grid{grid-template-columns:1fr}}
-</style>
-</head>
-<body>
-<header><div class="brand"><i>🏷️</i><div><h1>Inventário RFID</h1><p>Cadastro de funcionários e equipamentos</p></div></div><nav><a href="/">Dashboard</a><a class="active" href="/cadastro">Cadastro</a><a href="/controle">Controle</a></nav></header>
-<main>
-<section class="panel"><h2>📝 Cadastro</h2><p class="muted">Leia a tag pelo RC522 e depois salve o cadastro. A aplicação usa o Supabase na nuvem.</p></section>
-<div class="grid">
-<section class="panel">
-<h3>👤 Funcionário</h3>
-<form id="ff">
-<label>Nome</label><input id="fn" required>
-<label>Matrícula</label><input id="fm" required>
-<label>UID da tag pessoal</label><input id="fu" placeholder="Ex.: 93053514" required>
-<div class="row"><button type="button" class="dark" onclick="ler('funcionario')">📡 Ler tag</button><button class="blue">Cadastrar funcionário</button></div>
-<div id="fmmsg" class="notice">Aguardando cadastro.</div>
-</form>
-</section>
-<section class="panel">
-<h3>🔧 Equipamento</h3>
-<form id="fe">
-<label>Nome do equipamento</label><input id="en" required>
-<label>UID da tag</label><input id="eu" placeholder="Ex.: 5308E8B1B50001" required>
-<label>Box</label><input id="eb" type="number" min="1" value="1" required>
-<div class="row"><button type="button" class="dark" onclick="ler('equipamento')">📡 Ler tag</button><button class="green">Cadastrar equipamento</button></div>
-<div id="emsg" class="notice">Aguardando cadastro.</div>
-</form>
-</section>
-</div>
-<section class="panel"><h3>📋 Cadastros atuais</h3><div class="table"><table><thead><tr><th>ID</th><th>Nome</th><th>Tipo</th><th>Tag</th><th>Box</th><th>Status</th><th>Ação</th></tr></thead><tbody id="lista"></tbody></table></div></section>
-</main>
-<script>
-async function req(u,o={}){const r=await fetch(u,{cache:"no-store",...o,headers:{"Content-Type":"application/json",...(o.headers||{})}});const t=await r.text();let d={};try{d=t?JSON.parse(t):{}}catch{throw Error("Resposta inválida.")}if(!r.ok)throw Error(d.erro||d.mensagem||"Erro");return d}
-function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-let lendo=null,last=0;
-async function ler(tipo){lendo=tipo;const msg=tipo==="funcionario"?fmmsg:emsg;msg.className="notice";msg.textContent="🟡 Aproxime a tag do RC522...";try{await req("/api/rfid/cadastro/iniciar",{method:"POST",body:JSON.stringify({tipo})})}catch(e){msg.className="notice err";msg.textContent=e.message}}
-async function poll(){try{const d=await req("/rfid/ultima");if(!d.nova||d.id===last)return;last=d.id;if(lendo){if(d.tipo==="cadastro_tag"){if(lendo==="funcionario")fu.value=d.uid;else eu.value=d.uid;const m=lendo==="funcionario"?fmmsg:emsg;m.className="notice ok";m.textContent="✓ Tag lida e UID preenchido.";lendo=null}else if(d.tipo==="tag_ja_cadastrada"){const m=lendo==="funcionario"?fmmsg:emsg;m.className="notice err";m.textContent=d.mensagem;lendo=null}}await req("/rfid/limpar",{method:"POST"})}catch{}}
-ff.onsubmit=async e=>{e.preventDefault();try{const d=await req("/api/funcionarios",{method:"POST",body:JSON.stringify({nome:fn.value,matricula:fm.value,uid_tag_pessoal:fu.value})});fmmsg.className="notice ok";fmmsg.textContent=d.mensagem;ff.reset();carregar()}catch(x){fmmsg.className="notice err";fmmsg.textContent=x.message}}
-fe.onsubmit=async e=>{e.preventDefault();try{const d=await req("/api/equipamentos",{method:"POST",body:JSON.stringify({nome:en.value,uid_tag:eu.value,box_id:eb.value})});emsg.className="notice ok";emsg.textContent=d.mensagem;fe.reset();eb.value=1;carregar()}catch(x){emsg.className="notice err";emsg.textContent=x.message}}
-async function excluir(url,nome){if(!confirm("Excluir "+nome+"?"))return;try{await req(url,{method:"DELETE"});carregar()}catch(e){alert(e.message)}}
-async function carregar(){try{const [f,e]=await Promise.all([req("/api/funcionarios"),req("/api/equipamentos")]);lista.innerHTML="";(f.funcionarios||[]).forEach(x=>lista.innerHTML+=`<tr><td>${esc(x.id)}</td><td>${esc(x.nome)}</td><td>Funcionário</td><td>${esc(x.uid_tag_pessoal)}</td><td>-</td><td><span class="badge">cadastrado</span></td><td><button class="red" onclick="excluir('/api/funcionarios/${Number(x.id)}','${esc(x.nome).replace(/'/g,"\\'")}')">Excluir</button></td></tr>`);(e.equipamentos||[]).forEach(x=>lista.innerHTML+=`<tr><td>${esc(x.id)}</td><td>${esc(x.nome)}</td><td>Equipamento</td><td>${esc(x.uid_tag)}</td><td>${esc(x.box_id)}</td><td>${esc(x.status)}</td><td><button class="red" onclick="excluir('/api/equipamentos/${Number(x.id)}','${esc(x.nome).replace(/'/g,"\\'")}')">Excluir</button></td></tr>`);if(!lista.innerHTML)lista.innerHTML="<tr><td colspan='7' class='muted'>Nenhum cadastro.</td></tr>"}catch{lista.innerHTML="<tr><td colspan='7'>Erro ao carregar.</td></tr>"}}
-carregar();setInterval(poll,700);setInterval(carregar,5000);
-</script>
-</body></html>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cadastro | Inventário RFID</title><style>
+body{font-family:Segoe UI,Arial;margin:0;background:#f4f7fb;color:#10213a}header{background:#0f172a;color:#fff;padding:22px 6%}main{max-width:900px;margin:25px auto;width:92%}.card{background:#fff;padding:24px;border-radius:18px;margin:15px 0}input,select{width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ccd6e3;border-radius:10px;box-sizing:border-box}button{background:#2563eb;color:#fff;border:0;padding:12px 18px;border-radius:10px;font-weight:700}.nav{color:white;text-decoration:none;margin-right:15px}</style></head><body><header><h1>🛠️ Cadastro RFID</h1><a class="nav" href="/">Dashboard</a><a class="nav" href="/controle">Controle</a></header><main><div class="card"><h2>Cadastrar funcionário</h2><form id="f"><input id="fn" placeholder="Nome" required><input id="fm" placeholder="Matrícula" required><input id="fu" placeholder="UID da tag pessoal" required><button>Salvar funcionário</button></form><p id="fmmsg"></p></div><div class="card"><h2>Cadastrar equipamento</h2><p>Regra: cada Box pode ter somente um objeto cadastrado.</p><form id="e"><input id="en" placeholder="Nome do equipamento" required><input id="eu" placeholder="UID da tag do equipamento" required><input id="eb" type="number" min="1" placeholder="Box" value="1" required><input id="ed" placeholder="Descrição"><button>Salvar equipamento</button></form><p id="emsg"></p></div></main><script>
+async function post(url,data,msg){try{let r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}),d=await r.json();msg.textContent=d.mensagem||d.erro||"Concluído";}catch(e){msg.textContent=e.message}}
+f.onsubmit=e=>{e.preventDefault();post("/api/funcionarios",{nome:fn.value,matricula:fm.value,uid_rfid:fu.value},fmmsg)}
+document.getElementById("e").onsubmit=e=>{e.preventDefault();post("/api/equipamentos",{nome:en.value,uid_rfid:eu.value,box:Number(eb.value),descricao:ed.value},emsg)}
+</script></body></html>
