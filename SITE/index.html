@@ -1,7 +1,206 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard RFID</title><style>
-body{font-family:Arial;margin:0;background:#f1f5f9;color:#0f172a}header{background:#0f172a;color:#fff;padding:20px;display:flex;justify-content:space-between}a{color:#fff;margin:8px;text-decoration:none}.wrap{max-width:1200px;width:94%;margin:25px auto}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.card{background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 10px #0001}.num{font-size:32px;font-weight:bold;margin-top:8px}table{width:100%;border-collapse:collapse}td,th{padding:9px;border-bottom:1px solid #ddd;text-align:left}.scroll{overflow:auto}@media(max-width:800px){.cards{grid-template-columns:1fr 1fr}header{flex-direction:column}}
-</style></head><body><header><b>🏷️ Inventário RFID — Dashboard</b><nav><a href="/">Dashboard</a><a href="/cadastro">Cadastro</a><a href="/controle">Empréstimos</a></nav></header><div class="wrap"><div class="cards"><div class="card">👥 Funcionários<div id="f" class="num">-</div></div><div class="card">🔧 Equipamentos<div id="e" class="num">-</div></div><div class="card">🟢 Disponíveis<div id="d" class="num">-</div></div><div class="card">📦 Emprestados<div id="p" class="num">-</div></div></div><div class="card" style="margin-top:20px"><h2>Equipamentos</h2><div class="scroll"><table><thead><tr><th>Nome</th><th>UID</th><th>Box</th><th>Status</th></tr></thead><tbody id="eq"></tbody></table></div></div><div class="card" style="margin-top:20px"><h2>Últimos empréstimos</h2><div class="scroll"><table><thead><tr><th>Funcionário</th><th>Equipamento</th><th>Box</th><th>Retirada</th><th>Devolução</th><th>Status</th></tr></thead><tbody id="h"></tbody></table></div></div></div><script>
-const $=x=>document.getElementById(x),esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-async function a(u){let r=await fetch(u,{cache:"no-store"}),d=await r.json();if(!r.ok)throw Error(d.erro||"Erro");return d}
-async function load(){try{let d=await a("/api/dashboard");$("f").textContent=d.funcionarios;$("e").textContent=d.equipamentos;$("d").textContent=d.disponiveis;$("p").textContent=d.emprestados;let e=await a("/api/equipamentos");$("eq").innerHTML=(e.equipamentos||[]).map(x=>`<tr><td>${esc(x.nome)}</td><td>${esc(x.uid_tag)}</td><td>${esc(x.box_id)}</td><td>${esc(x.status)}</td></tr>`).join("");let h=await a("/api/ultimos-emprestimos");$("h").innerHTML=(h.emprestimos||[]).filter(x=>x.status!=="Pendente RFID").map(x=>`<tr><td>${esc(x.funcionario?.nome||"-")}</td><td>${esc(x.equipamento?.nome||"-")}</td><td>${esc(x.box??x.equipamento?.box_id??"-")}</td><td>${x.data_retirada?new Date(x.data_retirada).toLocaleString("pt-BR"):"-"}</td><td>${x.data_devolucao?new Date(x.data_devolucao).toLocaleString("pt-BR"):"-"}</td><td>${x.data_devolucao?"Devolvido":"Emprestado"}</td></tr>`).join("")}catch(e){}}load();setInterval(load,5000);
-</script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard · Inventário RFID</title>
+<link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">RF</div>
+      <div class="brand-text">
+        <div class="display">Inventário RFID</div>
+        <div class="sub">Controle de equipamentos</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="/" class="active"><span class="nav-icon">▣</span> Dashboard</a>
+      <a href="#funcionarios"><span class="nav-icon">◔</span> Funcionários</a>
+      <a href="#equipamentos"><span class="nav-icon">◈</span> Equipamentos</a>
+      <a href="#emprestimos"><span class="nav-icon">▤</span> Empréstimos</a>
+      <div style="height:1px;background:#31383E;margin:8px 6px;"></div>
+      <a href="/cadastro"><span class="nav-icon">＋</span> Cadastro</a>
+      <a href="/controle"><span class="nav-icon">➤</span> Operação RFID</a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <span class="esp-dot"><span class="dot" id="dotEsp"></span> <span id="espTxt">verificando leitor…</span></span>
+      <span id="relogio">—</span>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topline">
+      <div>
+        <h1>Painel geral</h1>
+        <p>Visão consolidada de funcionários, equipamentos e movimentações do sistema RFID.</p>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <span class="status-pill"><span class="dot on" id="dotServ"></span> <span id="servTxt">conectando…</span></span>
+        <button class="btn" id="btnAtualizar">↻ Atualizar</button>
+      </div>
+    </div>
+
+    <div id="alertBox"></div>
+
+    <div class="grid-stats">
+      <div class="stat"><div class="label">Funcionários cadastrados</div><div class="num" id="stFunc">—</div></div>
+      <div class="stat"><div class="label">Equipamentos cadastrados</div><div class="num steel" id="stEquip">—</div></div>
+      <div class="stat"><div class="label">Disponíveis agora</div><div class="num good" id="stDisp">—</div></div>
+      <div class="stat"><div class="label">Empréstimos ativos</div><div class="num amber" id="stAtivos">—</div></div>
+    </div>
+
+    <div class="panel" id="funcionarios">
+      <div class="panel-head">
+        <h2>Funcionários</h2>
+        <a href="/cadastro" class="btn btn-ghost">Cadastrar novo →</a>
+      </div>
+      <div class="panel-body flush">
+        <table>
+          <thead><tr><th>Nome</th><th>Matrícula</th><th>Setor</th><th>Tag</th></tr></thead>
+          <tbody id="tbFuncionarios"><tr class="empty-row"><td colspan="4">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" id="equipamentos">
+      <div class="panel-head">
+        <h2>Equipamentos</h2>
+        <a href="/cadastro" class="btn btn-ghost">Cadastrar novo →</a>
+      </div>
+      <div class="panel-body flush">
+        <table>
+          <thead><tr><th>Equipamento</th><th>Tag</th><th>Box</th><th>Status</th></tr></thead>
+          <tbody id="tbEquipamentos"><tr class="empty-row"><td colspan="4">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" id="emprestimos">
+      <div class="panel-head">
+        <h2>Últimos empréstimos</h2>
+        <a href="/controle" class="btn btn-ghost">Abrir operação RFID →</a>
+      </div>
+      <div class="panel-body flush">
+        <table>
+          <thead><tr><th>Funcionário</th><th>Equipamento</th><th>Box</th><th>Retirada</th><th>Devolução</th></tr></thead>
+          <tbody id="tbEmprestimos"><tr class="empty-row"><td colspan="5">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtData = (iso) => { if(!iso) return '—'; const d = new Date(iso); return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); };
+
+function relogio(){
+  $('#relogio').textContent = new Date().toLocaleTimeString('pt-BR');
+}
+setInterval(relogio, 1000); relogio();
+
+function alerta(msg){
+  $('#alertBox').innerHTML = `<div class="alert alert-bad">⚠ ${escapeHtml(msg)}</div>`;
+}
+function limparAlerta(){ $('#alertBox').innerHTML = ''; }
+
+async function carregarDashboard(){
+  try{
+    const r = await fetch('/api/dashboard');
+    const d = await r.json();
+    if(!d.sucesso) throw new Error(d.erro || 'Falha ao carregar dashboard.');
+    $('#stFunc').textContent = d.funcionarios ?? 0;
+    $('#stEquip').textContent = d.equipamentos ?? 0;
+    $('#stDisp').textContent = d.disponiveis ?? 0;
+    $('#stAtivos').textContent = d.emprestimos ?? 0;
+    limparAlerta();
+  }catch(e){
+    alerta('Erro HTTP no dashboard: ' + e.message);
+  }
+}
+
+async function carregarFuncionarios(){
+  try{
+    const r = await fetch('/api/funcionarios');
+    const d = await r.json();
+    const lista = d.funcionarios || [];
+    $('#tbFuncionarios').innerHTML = lista.length ? lista.map(f => `
+      <tr>
+        <td>${escapeHtml(f.nome)}</td>
+        <td class="mono">${escapeHtml(f.matricula)}</td>
+        <td>${escapeHtml(f.setor || '—')}</td>
+        <td class="mono tag-code">${escapeHtml(f.uid_tag_pessoal)}</td>
+      </tr>`).join('') : `<tr class="empty-row"><td colspan="4">Nenhum funcionário cadastrado ainda.</td></tr>`;
+  }catch(e){
+    $('#tbFuncionarios').innerHTML = `<tr class="empty-row"><td colspan="4">Não foi possível carregar.</td></tr>`;
+  }
+}
+
+async function carregarEquipamentos(){
+  try{
+    const r = await fetch('/api/equipamentos');
+    const d = await r.json();
+    const lista = d.equipamentos || [];
+    $('#tbEquipamentos').innerHTML = lista.length ? lista.map(e => {
+      const disp = String(e.status).toLowerCase() === 'disponivel';
+      return `<tr>
+        <td>${escapeHtml(e.nome)}</td>
+        <td class="mono tag-code">${escapeHtml(e.uid_tag)}</td>
+        <td class="mono">${escapeHtml(e.box_id)}</td>
+        <td><span class="badge ${disp ? 'badge-good' : 'badge-amber'}">${disp ? 'Disponível' : 'Emprestado'}</span></td>
+      </tr>`;
+    }).join('') : `<tr class="empty-row"><td colspan="4">Nenhum equipamento cadastrado ainda.</td></tr>`;
+  }catch(e){
+    $('#tbEquipamentos').innerHTML = `<tr class="empty-row"><td colspan="4">Não foi possível carregar.</td></tr>`;
+  }
+}
+
+async function carregarEmprestimos(){
+  try{
+    const r = await fetch('/api/ultimos-emprestimos');
+    const d = await r.json();
+    const lista = d.emprestimos || [];
+    $('#tbEmprestimos').innerHTML = lista.length ? lista.map(e => `
+      <tr>
+        <td>${escapeHtml(e.funcionario?.nome || '—')}</td>
+        <td>${escapeHtml(e.equipamento?.nome || '—')}</td>
+        <td class="mono">${escapeHtml(e.box ?? e.equipamento?.box_id ?? '—')}</td>
+        <td class="mono">${fmtData(e.data_retirada)}</td>
+        <td class="mono">${e.data_devolucao ? fmtData(e.data_devolucao) : '<span class="badge badge-amber">em aberto</span>'}</td>
+      </tr>`).join('') : `<tr class="empty-row"><td colspan="5">Nenhuma movimentação registrada ainda.</td></tr>`;
+  }catch(e){
+    $('#tbEmprestimos').innerHTML = `<tr class="empty-row"><td colspan="5">Não foi possível carregar.</td></tr>`;
+  }
+}
+
+async function verificarLeitor(){
+  try{
+    const r = await fetch('/api/esp32/status');
+    const d = await r.json();
+    $('#dotEsp').className = 'dot ' + (d.conectado ? 'on' : 'off');
+    $('#espTxt').textContent = d.conectado ? 'leitor RFID conectado' : 'leitor RFID offline';
+    $('#dotServ').className = 'dot on';
+    $('#servTxt').textContent = 'servidor online';
+  }catch(e){
+    $('#dotServ').className = 'dot off';
+    $('#servTxt').textContent = 'sem conexão com o servidor';
+  }
+}
+
+async function carregarTudo(){
+  await Promise.all([carregarDashboard(), carregarFuncionarios(), carregarEquipamentos(), carregarEmprestimos(), verificarLeitor()]);
+}
+
+$('#btnAtualizar').addEventListener('click', carregarTudo);
+carregarTudo();
+setInterval(carregarTudo, 8000);
+</script>
+</body>
+</html>

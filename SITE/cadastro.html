@@ -1,22 +1,343 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cadastro RFID</title><style>
-body{font-family:Arial;margin:0;background:#f1f5f9;color:#0f172a}header{background:#0f172a;color:#fff;padding:20px;display:flex;justify-content:space-between}a{color:#fff;margin:8px;text-decoration:none}.wrap{max-width:1200px;margin:25px auto;width:94%}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{background:#fff;padding:22px;border-radius:12px;box-shadow:0 2px 10px #0001;margin-bottom:20px}label{display:block;font-weight:bold;margin-top:12px}input{width:100%;padding:11px;margin-top:5px;box-sizing:border-box}button{padding:11px 15px;border:0;border-radius:7px;margin-top:12px;font-weight:bold;cursor:pointer}.green{background:#10b981;color:#fff}.blue{background:#2563eb;color:#fff}.red{background:#dc2626;color:#fff}.uid{font:22px monospace;color:#2563eb}.msg{font-weight:bold;margin-top:10px}.ok{color:#15803d}.bad{color:#b91c1c}table{width:100%;border-collapse:collapse}td,th{padding:9px;border-bottom:1px solid #ddd;text-align:left}.scroll{overflow:auto}@media(max-width:800px){.grid{grid-template-columns:1fr}header{flex-direction:column}}
-</style></head><body><header><b>🏷️ Inventário RFID — Cadastro</b><nav><a href="/">Dashboard</a><a href="/cadastro">Cadastro</a><a href="/controle">Empréstimos</a></nav></header><div class="wrap"><h1>Cadastro</h1><div id="alert"></div><div class="grid">
-<div class="card"><h2>👤 Funcionário</h2><form id="f"><label>Nome</label><input id="fn" required><label>Matrícula</label><input id="fm" required><label>Setor</label><input id="fs"><label>Tag RFID</label><input id="fu" readonly required><button type="button" class="green" onclick="ler('funcionario')">📡 LER TAG</button><button class="blue">CADASTRAR FUNCIONÁRIO</button></form><div id="mf" class="msg"></div></div>
-<div class="card"><h2>🔧 Equipamento</h2><form id="e"><label>Nome</label><input id="en" required><label>Descrição</label><input id="ed"><label>Box</label><input id="eb" type="number" min="1" required><label>Tag RFID</label><input id="eu" readonly required><button type="button" class="green" onclick="ler('equipamento')">📡 LER TAG</button><button class="blue">CADASTRAR EQUIPAMENTO</button></form><div id="me" class="msg"></div></div></div>
-<div class="card"><h2>📡 Última leitura</h2><div id="uid" class="uid">---</div><div id="rm" class="msg">Aguardando...</div></div>
-<div class="card"><h2>Funcionários</h2><div class="scroll"><table><thead><tr><th>ID</th><th>Nome</th><th>Matrícula</th><th>Setor</th><th>UID</th><th></th></tr></thead><tbody id="ft"></tbody></table></div></div>
-<div class="card"><h2>Equipamentos</h2><div class="scroll"><table><thead><tr><th>ID</th><th>Nome</th><th>UID</th><th>Box</th><th>Status</th><th></th></tr></thead><tbody id="et"></tbody></table></div></div></div>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadastro · Inventário RFID</title>
+<link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">RF</div>
+      <div class="brand-text">
+        <div class="display">Inventário RFID</div>
+        <div class="sub">Cadastro (uso interno)</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="/"><span class="nav-icon">▣</span> Dashboard</a>
+      <a href="/cadastro" class="active"><span class="nav-icon">＋</span> Cadastro</a>
+      <a href="/controle"><span class="nav-icon">➤</span> Operação RFID</a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <span class="esp-dot"><span class="dot" id="dotEsp"></span> <span id="espTxt">verificando leitor…</span></span>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topline">
+      <div>
+        <h1>Cadastro de tags</h1>
+        <p>Área de uso interno da equipe. Cadastre funcionários e equipamentos aproximando a tag física do leitor RFID.</p>
+      </div>
+      <span class="status-pill"><span class="dot on" id="dotServ"></span> <span id="servTxt">conectando…</span></span>
+    </div>
+
+    <div class="reader-chip" id="chipGlobal" style="margin-bottom:22px;">
+      <span class="ico">📶</span>
+      <span>Último sinal do leitor: <span class="code" id="ultimoSinal">nenhuma leitura ainda</span></span>
+    </div>
+
+    <div class="form-grid">
+
+      <!-- FUNCIONÁRIO -->
+      <div class="panel">
+        <div class="panel-head"><h2>Cadastrar funcionário</h2></div>
+        <div class="panel-body">
+          <div id="alertFunc"></div>
+          <div class="field">
+            <label>Nome completo</label>
+            <input id="fNome" placeholder="Ex: Isabela Eleutério">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Matrícula</label>
+              <input id="fMatricula" placeholder="Ex: SP3217485">
+            </div>
+            <div class="field">
+              <label>Setor <span style="font-weight:400;color:var(--ink-faint);">(opcional)</span></label>
+              <input id="fSetor" placeholder="Ex: Manutenção">
+            </div>
+          </div>
+          <div class="field">
+            <label>Tag RFID</label>
+            <input id="fTag" class="mono" placeholder="Aproxime a tag do leitor">
+            <div class="hint" id="fTagHint">Clique em "Ler tag" e aproxime o crachá do funcionário do leitor.</div>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn" style="flex:1" id="btnLerFunc">📡 Ler tag</button>
+            <button class="btn btn-primary" style="flex:1" id="btnSalvarFunc">Cadastrar funcionário</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EQUIPAMENTO -->
+      <div class="panel">
+        <div class="panel-head"><h2>Cadastrar equipamento</h2></div>
+        <div class="panel-body">
+          <div id="alertEquip"></div>
+          <div class="field">
+            <label>Nome do equipamento</label>
+            <input id="eNome" placeholder="Ex: Martelo">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Número da box</label>
+              <input id="eBox" type="number" min="1" placeholder="Ex: 1">
+            </div>
+            <div class="field">
+              <label>Descrição <span style="font-weight:400;color:var(--ink-faint);">(opcional)</span></label>
+              <input id="eDescricao" placeholder="Ex: Martelo de borracha 500g">
+            </div>
+          </div>
+          <div class="field">
+            <label>Tag RFID</label>
+            <input id="eTag" class="mono" placeholder="Aproxime a tag do leitor">
+            <div class="hint" id="eTagHint">Clique em "Ler tag" e aproxime a tag do equipamento do leitor.</div>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn" style="flex:1" id="btnLerEquip">📡 Ler tag</button>
+            <button class="btn btn-primary" style="flex:1" id="btnSalvarEquip">Cadastrar equipamento</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="form-grid" style="margin-top:6px;">
+      <div class="panel">
+        <div class="panel-head"><h2>Funcionários cadastrados</h2></div>
+        <div class="panel-body flush">
+          <table>
+            <thead><tr><th>Nome</th><th>Tag</th><th></th></tr></thead>
+            <tbody id="tbFunc"><tr class="empty-row"><td colspan="3">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Equipamentos cadastrados</h2></div>
+        <div class="panel-body flush">
+          <table>
+            <thead><tr><th>Equipamento</th><th>Box</th><th></th></tr></thead>
+            <tbody id="tbEquip"><tr class="empty-row"><td colspan="3">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
 <script>
-const $=x=>document.getElementById(x),esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-let modo=null,last=0;
-async function api(u,o={}){let r=await fetch(u,{cache:"no-store",...o,headers:{"Content-Type":"application/json",...(o.headers||{})}}),d=await r.json();if(!r.ok)throw Error(d.erro||d.mensagem||"Erro");return d}
-function alertx(t,ok=false){$("alert").innerHTML='<p class="'+(ok?"ok":"bad")+'">'+esc(t)+"</p>"}
-async function ler(t){modo=t;try{await api("/api/rfid/cadastro/iniciar",{method:"POST",body:JSON.stringify({tipo:t})});$("rm").textContent="🟡 Aguardando tag..."}catch(e){alertx(e.message)}}
-async function poll(){try{let d=await api("/rfid/ultima");if(d.nova&&Number(d.id)>last){last=Number(d.id);$("uid").textContent=d.uid||"---";$("rm").textContent=d.mensagem||d.tipo;if(modo==="funcionario"&&d.tipo==="cadastro_funcionario_tag"){$("fu").value=d.uid;$("mf").textContent="Tag lida. Pode cadastrar.";modo=null}if(modo==="equipamento"&&d.tipo==="cadastro_equipamento_tag"){$("eu").value=d.uid;$("me").textContent="Tag lida. Pode cadastrar.";modo=null}if(d.tipo==="tag_ja_cadastrada"){alertx(d.mensagem||d.erro);modo=null}}}catch(e){}}
-async function load(){try{let f=await api("/api/funcionarios");$("ft").innerHTML=(f.funcionarios||[]).map(x=>`<tr><td>${esc(x.id)}</td><td>${esc(x.nome)}</td><td>${esc(x.matricula)}</td><td>${esc(x.setor||"-")}</td><td>${esc(x.uid_tag_pessoal)}</td><td><button class="red" onclick="delF(${x.id})">Excluir</button></td></tr>`).join("");let e=await api("/api/equipamentos");$("et").innerHTML=(e.equipamentos||[]).map(x=>`<tr><td>${esc(x.id)}</td><td>${esc(x.nome)}</td><td>${esc(x.uid_tag)}</td><td>${esc(x.box_id)}</td><td>${esc(x.status)}</td><td><button class="red" onclick="delE(${x.id})">Excluir</button></td></tr>`).join("")}catch(e){alertx(e.message)}}
-$("f").onsubmit=async ev=>{ev.preventDefault();try{let d=await api("/api/funcionarios",{method:"POST",body:JSON.stringify({nome:$("fn").value,matricula:$("fm").value,setor:$("fs").value,uid_tag_pessoal:$("fu").value})});alertx(d.mensagem,true);ev.target.reset();load()}catch(e){alertx(e.message)}};
-$("e").onsubmit=async ev=>{ev.preventDefault();try{let d=await api("/api/equipamentos",{method:"POST",body:JSON.stringify({nome:$("en").value,descricao:$("ed").value,box_id:$("eb").value,uid_tag:$("eu").value})});alertx(d.mensagem,true);ev.target.reset();load()}catch(e){alertx(e.message)}};
-async function delF(id){if(confirm("Excluir funcionário?"))try{let d=await api("/api/funcionarios/"+id,{method:"DELETE"});alertx(d.mensagem,true);load()}catch(e){alertx(e.message)}}
-async function delE(id){if(confirm("Excluir equipamento?"))try{let d=await api("/api/equipamentos/"+id,{method:"DELETE"});alertx(d.mensagem,true);load()}catch(e){alertx(e.message)}}
-load();setInterval(load,5000);setInterval(poll,500);
-</script></body></html>
+const $ = (s) => document.querySelector(s);
+const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function alertar(elId, tipo, msg){
+  $(elId).innerHTML = `<div class="alert alert-${tipo}">${escapeHtml(msg)}</div>`;
+}
+function limpar(elId){ $(elId).innerHTML = ''; }
+
+/* ---------------- leitura de tag (cadastro) ---------------- */
+let alvoLeitura = null;      // 'funcionario' | 'equipamento' | null
+let ultimoEventoId = 0;
+let leituraTimeout = null;
+
+async function iniciarLeitura(tipo){
+  alvoLeitura = tipo;
+  const hintId = tipo === 'funcionario' ? '#fTagHint' : '#eTagHint';
+  const chipId = tipo === 'funcionario' ? '#btnLerFunc' : '#btnLerEquip';
+  $(hintId).textContent = 'Aguardando leitura… aproxime a tag do leitor RFID agora.';
+  $(chipId).textContent = '📡 Aguardando tag…';
+  $(chipId).disabled = true;
+
+  try{
+    await fetch('/api/rfid/cadastro/iniciar', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ tipo: tipo === 'funcionario' ? 'funcionario' : 'equipamento' })
+    });
+  }catch(e){
+    $(hintId).textContent = 'Não foi possível falar com o servidor. Tente novamente.';
+  }
+
+  clearTimeout(leituraTimeout);
+  leituraTimeout = setTimeout(() => {
+    if(alvoLeitura === tipo){
+      alvoLeitura = null;
+      $(hintId).textContent = 'Tempo esgotado. Clique em "Ler tag" e tente de novo.';
+      $(chipId).disabled = false;
+      $(chipId).textContent = '📡 Ler tag';
+    }
+  }, 30000);
+}
+
+function pararLeitura(tipo, mensagem){
+  alvoLeitura = null;
+  clearTimeout(leituraTimeout);
+  const hintId = tipo === 'funcionario' ? '#fTagHint' : '#eTagHint';
+  const chipId = tipo === 'funcionario' ? '#btnLerFunc' : '#btnLerEquip';
+  $(chipId).disabled = false;
+  $(chipId).textContent = '📡 Ler tag';
+  if(mensagem) $(hintId).textContent = mensagem;
+}
+
+async function pollLeitura(){
+  try{
+    const r = await fetch('/rfid/ultima');
+    const ev = await r.json();
+
+    if(ev.uid){
+      $('#ultimoSinal').textContent = `${ev.uid} — ${ev.mensagem || ev.tipo}`;
+    }
+
+    if(!ev.id || ev.id === ultimoEventoId) return;
+    ultimoEventoId = ev.id;
+
+    if(!alvoLeitura) return;
+
+    if(ev.tipo === 'cadastro_tag' && ev.uid){
+      if(alvoLeitura === 'funcionario'){
+        $('#fTag').value = ev.uid;
+        pararLeitura('funcionario', 'Tag lida com sucesso.');
+      }else{
+        $('#eTag').value = ev.uid;
+        pararLeitura('equipamento', 'Tag lida com sucesso.');
+      }
+    }else if(ev.tipo === 'tag_ja_cadastrada'){
+      pararLeitura(alvoLeitura, ev.mensagem || 'Esta tag já está cadastrada.');
+    }
+  }catch(e){ /* silencioso: tenta de novo no próximo ciclo */ }
+}
+setInterval(pollLeitura, 1000);
+
+$('#btnLerFunc').addEventListener('click', () => iniciarLeitura('funcionario'));
+$('#btnLerEquip').addEventListener('click', () => iniciarLeitura('equipamento'));
+
+/* ---------------- salvar funcionário ---------------- */
+$('#btnSalvarFunc').addEventListener('click', async () => {
+  limpar('#alertFunc');
+  const nome = $('#fNome').value.trim();
+  const matricula = $('#fMatricula').value.trim();
+  const setor = $('#fSetor').value.trim();
+  const uid = $('#fTag').value.trim();
+
+  if(!nome || !matricula || !uid){
+    alertar('#alertFunc', 'bad', 'Preencha nome, matrícula e a tag RFID.');
+    return;
+  }
+
+  try{
+    const r = await fetch('/api/funcionarios', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ nome, matricula, setor, uid_tag_pessoal: uid })
+    });
+    const d = await r.json();
+    if(!d.sucesso){ alertar('#alertFunc', 'bad', d.erro || 'Não foi possível cadastrar.'); return; }
+
+    alertar('#alertFunc', 'good', `${nome} cadastrado com sucesso.`);
+    $('#fNome').value = ''; $('#fMatricula').value = ''; $('#fSetor').value = ''; $('#fTag').value = '';
+    carregarListas();
+  }catch(e){
+    alertar('#alertFunc', 'bad', 'Erro de conexão com o servidor.');
+  }
+});
+
+/* ---------------- salvar equipamento ---------------- */
+$('#btnSalvarEquip').addEventListener('click', async () => {
+  limpar('#alertEquip');
+  const nome = $('#eNome').value.trim();
+  const box = $('#eBox').value.trim();
+  const descricao = $('#eDescricao').value.trim();
+  const uid = $('#eTag').value.trim();
+
+  if(!nome || !box || !uid){
+    alertar('#alertEquip', 'bad', 'Preencha nome, box e a tag RFID.');
+    return;
+  }
+
+  try{
+    const r = await fetch('/api/equipamentos', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ nome, descricao, box: Number(box), uid_tag: uid })
+    });
+    const d = await r.json();
+    if(!d.sucesso){ alertar('#alertEquip', 'bad', d.erro || 'Não foi possível cadastrar.'); return; }
+
+    alertar('#alertEquip', 'good', `${nome} cadastrado na box ${box}.`);
+    $('#eNome').value = ''; $('#eBox').value = ''; $('#eDescricao').value = ''; $('#eTag').value = '';
+    carregarListas();
+  }catch(e){
+    alertar('#alertEquip', 'bad', 'Erro de conexão com o servidor.');
+  }
+});
+
+/* ---------------- listas ---------------- */
+async function carregarListas(){
+  try{
+    const r = await fetch('/api/funcionarios');
+    const d = await r.json();
+    const lista = d.funcionarios || [];
+    $('#tbFunc').innerHTML = lista.length ? lista.map(f => `
+      <tr>
+        <td>${escapeHtml(f.nome)}</td>
+        <td class="mono tag-code">${escapeHtml(f.uid_tag_pessoal)}</td>
+        <td style="text-align:right;"><button class="btn btn-ghost" data-del-func="${f.id}">excluir</button></td>
+      </tr>`).join('') : `<tr class="empty-row"><td colspan="3">Nenhum funcionário ainda.</td></tr>`;
+  }catch(e){}
+
+  try{
+    const r = await fetch('/api/equipamentos');
+    const d = await r.json();
+    const lista = d.equipamentos || [];
+    $('#tbEquip').innerHTML = lista.length ? lista.map(e => `
+      <tr>
+        <td>${escapeHtml(e.nome)}</td>
+        <td class="mono">${escapeHtml(e.box_id)}</td>
+        <td style="text-align:right;"><button class="btn btn-ghost" data-del-equip="${e.id}">excluir</button></td>
+      </tr>`).join('') : `<tr class="empty-row"><td colspan="3">Nenhum equipamento ainda.</td></tr>`;
+  }catch(e){}
+}
+
+document.addEventListener('click', async (ev) => {
+  const btnF = ev.target.closest('[data-del-func]');
+  const btnE = ev.target.closest('[data-del-equip]');
+  if(btnF){
+    if(!confirm('Excluir este funcionário?')) return;
+    const r = await fetch('/api/funcionarios/' + btnF.dataset.delFunc, { method:'DELETE' });
+    const d = await r.json();
+    if(!d.sucesso) alert(d.erro || 'Não foi possível excluir.');
+    carregarListas();
+  }
+  if(btnE){
+    if(!confirm('Excluir este equipamento?')) return;
+    const r = await fetch('/api/equipamentos/' + btnE.dataset.delEquip, { method:'DELETE' });
+    const d = await r.json();
+    if(!d.sucesso) alert(d.erro || 'Não foi possível excluir.');
+    carregarListas();
+  }
+});
+
+async function verificarLeitor(){
+  try{
+    const r = await fetch('/api/esp32/status');
+    const d = await r.json();
+    $('#dotEsp').className = 'dot ' + (d.conectado ? 'on' : 'off');
+    $('#espTxt').textContent = d.conectado ? 'leitor RFID conectado' : 'leitor RFID offline';
+    $('#dotServ').className = 'dot on';
+    $('#servTxt').textContent = 'servidor online';
+  }catch(e){
+    $('#dotServ').className = 'dot off';
+    $('#servTxt').textContent = 'sem conexão com o servidor';
+  }
+}
+setInterval(verificarLeitor, 6000);
+verificarLeitor();
+carregarListas();
+</script>
+</body>
+</html>

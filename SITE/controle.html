@@ -1,31 +1,304 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Empréstimos RFID</title><style>
-body{font-family:Arial;margin:0;background:#f1f5f9;color:#0f172a}.side{position:fixed;width:220px;height:100%;background:#0f172a;color:#fff;padding:20px}.side a{display:block;color:#fff;text-decoration:none;padding:12px}.main{margin-left:260px;padding:25px;max-width:1100px}.card{background:#fff;padding:22px;border-radius:12px;box-shadow:0 2px 10px #0001;margin-bottom:20px}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.step{padding:10px;background:#e2e8f0;text-align:center;border-radius:8px;font-weight:bold}.active{background:#dbeafe;color:#1d4ed8}.done{background:#dcfce7;color:#166534}.rfid{border-left:6px solid #2563eb}.uid{font:24px monospace;color:#2563eb;margin:12px 0}.status{padding:12px;background:#fff7ed;border-radius:8px;font-weight:bold}.actions,.equip{display:grid;grid-template-columns:1fr 1fr;gap:12px}.action,.item{padding:16px;border:2px solid #e2e8f0;background:#f8fafc;border-radius:10px;text-align:left;cursor:pointer}.selected{border-color:#2563eb;background:#eff6ff}.primary{background:#2563eb;color:#fff;border:0;padding:12px;border-radius:8px;font-weight:bold;width:100%;margin-top:12px}.hidden{display:none}.ok{background:#dcfce7;color:#166534;padding:12px;border-radius:8px}.bad{background:#fee2e2;color:#991b1b;padding:12px;border-radius:8px}table{width:100%;border-collapse:collapse}td,th{padding:9px;border-bottom:1px solid #ddd;text-align:left}.scroll{overflow:auto}@media(max-width:800px){.side{position:static;width:auto}.main{margin-left:0}.steps,.actions,.equip{grid-template-columns:1fr}}
-</style></head><body><aside class="side"><h2>🏷️ Inventário RFID</h2><a href="/">📊 Dashboard</a><a href="/cadastro">👤 Cadastro</a><a href="/controle">📦 Empréstimos</a></aside><main class="main">
-<div class="card"><h1>Operação RFID</h1><div id="conn">Verificando conexão...</div><button class="primary" style="width:auto" onclick="nova()">↻ Nova operação</button></div><div id="alert"></div>
-<div class="card rfid"><div id="rs" class="status">Aguardando funcionário...</div><div id="uid" class="uid">---</div><div id="rm">Passe a tag do funcionário.</div><div id="det"></div></div>
-<div class="card"><div class="steps"><div id="s1" class="step active">1 · Pessoa</div><div id="s2" class="step">2 · Objeto</div><div id="s3" class="step">3 · Confirmar</div><div id="s4" class="step">4 · Concluído</div></div>
-<div id="ap" class="hidden"><h3>O que deseja fazer?</h3><div class="actions"><button id="ret" class="action" onclick="acao='retirada';lista()">📤 Retirar equipamento</button><button id="dev" class="action" onclick="acao='devolucao';lista()">📥 Devolver equipamento</button></div></div>
-<div id="ep" class="hidden"><h3>Escolha um equipamento</h3><div id="eg" class="equip"></div><button id="go" class="primary" disabled onclick="confirmar()">Continuar →</button></div>
-<div id="cp" class="hidden"><div class="status">📡 <b>Aguardando tag física</b><br><span id="ct"></span></div></div></div>
-<div class="card"><h3>Equipamentos</h3><div class="scroll"><table><thead><tr><th>Nome</th><th>UID</th><th>Box</th><th>Status</th></tr></thead><tbody id="eq"></tbody></table></div></div>
-<div class="card"><h3>Histórico</h3><div class="scroll"><table><thead><tr><th>Funcionário</th><th>Equipamento</th><th>Box</th><th>Retirada</th><th>Devolução</th><th>Status</th></tr></thead><tbody id="hi"></tbody></table></div></div>
-</main><script>
-const $=x=>document.getElementById(x),esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));let pessoa=null,acao=null,sel=null,last=0,init=false,busy=false;
-async function api(u,o={}){let r=await fetch(u,{cache:"no-store",...o,headers:{"Content-Type":"application/json",...(o.headers||{})}}),d=await r.json();if(!r.ok)throw Error(d.erro||d.mensagem||"Erro");return d}
-function steps(n){for(let i=1;i<=4;i++)$("s"+i).className="step "+(i<n?"done":i===n?"active":"")}
-function alertx(t,ok=false){$("alert").innerHTML='<div class="'+(ok?"ok":"bad")+'">'+esc(t)+"</div>";setTimeout(()=>$("alert").innerHTML="",5000)}
-function resetTela(){pessoa=null;acao=null;sel=null;$("ap").classList.add("hidden");$("ep").classList.add("hidden");$("cp").classList.add("hidden");$("det").innerHTML="";$("uid").textContent="---";$("rm").textContent="Passe a tag do funcionário.";steps(1)}
-async function lista(){if(!pessoa)return;try{let d=await api("/api/equipamentos"),a= d.equipamentos||[];if(acao==="retirada")a=a.filter(x=>String(x.status).toLowerCase()==="disponivel");else{let h=await api("/api/emprestimos");let ids=(h.emprestimos||[]).filter(x=>Number(x.funcionario_id)===Number(pessoa.id)&&x.status==="Ativo"&&!x.data_devolucao).map(x=>Number(x.equipamento_id));a=a.filter(x=>ids.includes(Number(x.id)))}$("ep").classList.remove("hidden");$("eg").innerHTML=a.map(x=>`<div class="item" onclick="selecionar(${x.id},this)"><b>${esc(x.nome)}</b><br>${esc(x.uid_tag)}<br>📦 Box ${esc(x.box_id)}</div>`).join("")||"Nenhum equipamento.";sel=null;$("go").disabled=true;steps(2)}catch(e){alertx(e.message)}}
-function selecionar(id,el){sel=(window.__e||[]).find(x=>Number(x.id)===Number(id));if(!sel){let t=el.innerText;sel={id,nome:t}}document.querySelectorAll(".item").forEach(x=>x.classList.remove("selected"));el.classList.add("selected");$("go").disabled=false}
-async function confirmar(){try{let d=await api("/api/rfid/selecionar",{method:"POST",body:JSON.stringify({funcionario_id:pessoa.id,equipamento_id:sel.id,acao})});$("ep").classList.add("hidden");$("ap").classList.add("hidden");$("cp").classList.remove("hidden");$("ct").textContent=d.mensagem;steps(3);process(d)}catch(e){alertx(e.message)}}
-function process(d){if(!d)return;$("uid").textContent=d.uid||"---";$("rm").textContent=d.mensagem||d.tipo;if(d.tipo==="funcionario_identificado"){pessoa=d.funcionario;$("det").innerHTML=`Funcionário: <b>${esc(pessoa.nome)}</b> · Matrícula: <b>${esc(pessoa.matricula)}</b>`;$("ap").classList.remove("hidden");steps(2)}
-else if(d.tipo==="funcionario_com_emprestimo"){pessoa=d.funcionario;$("det").textContent=d.mensagem;$("ap").classList.remove("hidden")}
-else if(d.tipo==="equipamento_selecionado"){$("cp").classList.remove("hidden");steps(3)}
-else if(d.tipo==="retirada_concluida"){$("rs").textContent="✅ RETIRADA CONCLUÍDA";$("rs").className="status ok";$("det").textContent=`${d.equipamento?.nome||"Equipamento"} está com ${d.funcionario?.nome||"funcionário"}.`;$("cp").classList.add("hidden");steps(4);carregar()}
-else if(d.tipo==="devolucao_concluida"){$("rs").textContent="✅ DEVOLUÇÃO CONCLUÍDA";$("rs").className="status ok";$("det").textContent=`${d.equipamento?.nome||"Equipamento"} voltou para a Box ${d.box??"-"}.`;$("cp").classList.add("hidden");steps(4);carregar()}
-else if(d.tipo!=="idle")alertx(d.mensagem||d.erro||"Não foi possível concluir.")}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operação RFID · Inventário</title>
+<link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+<div class="shell">
 
-async function poll(){if(busy)return;busy=true;try{let d=await api("/rfid/ultima");if(!init){last=Number(d.id)||0;init=true;return}if(d.nova&&Number(d.id)>last){last=Number(d.id);process(d)}}catch(e){}finally{busy=false}}
-async function carregar(){try{let d=await api("/api/status");$("conn").textContent=d.banco_status==="conectado"?"🟢 Sistema online":"🔴 Verifique a conexão";let e=await api("/api/equipamentos");window.__e=e.equipamentos||[];$("eq").innerHTML=window.__e.map(x=>`<tr><td>${esc(x.nome)}</td><td>${esc(x.uid_tag)}</td><td>${esc(x.box_id)}</td><td>${esc(x.status)}</td></tr>`).join("");let h=await api("/api/emprestimos");$("hi").innerHTML=(h.emprestimos||[]).filter(x=>x.status!=="Pendente RFID").map(x=>`<tr><td>${esc(x.funcionario?.nome||"-")}</td><td>${esc(x.equipamento?.nome||"-")}</td><td>${esc(x.box??x.equipamento?.box_id??"-")}</td><td>${x.data_retirada?new Date(x.data_retirada).toLocaleString("pt-BR"):"-"}</td><td>${x.data_devolucao?new Date(x.data_devolucao).toLocaleString("pt-BR"):"-"}</td><td>${x.data_devolucao?"Devolvido":"Emprestado"}</td></tr>`).join("")}catch(e){}}
-async function nova(){try{await api("/api/rfid/resetar",{method:"POST"});resetTela()}catch(e){alertx(e.message)}}carregar();setInterval(poll,500);setInterval(carregar,5000);
-</script></body></html>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">RF</div>
+      <div class="brand-text">
+        <div class="display">Inventário RFID</div>
+        <div class="sub">Retirada e devolução</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="/"><span class="nav-icon">▣</span> Dashboard</a>
+      <a href="/cadastro"><span class="nav-icon">＋</span> Cadastro</a>
+      <a href="/controle" class="active"><span class="nav-icon">➤</span> Operação RFID</a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <span class="esp-dot"><span class="dot" id="dotEsp"></span> <span id="espTxt">verificando leitor…</span></span>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topline">
+      <div>
+        <h1>Operação RFID</h1>
+        <p>Passe sua tag no leitor para retirar ou devolver um equipamento.</p>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <span class="status-pill"><span class="dot on" id="dotServ"></span> <span id="servTxt">conectando…</span></span>
+        <button class="btn btn-dark" id="btnNova">↺ Nova operação</button>
+      </div>
+    </div>
+
+    <div id="alertBox"></div>
+
+    <div class="steps">
+      <div class="step" id="s1"><span class="n">1</span> Identificar pessoa</div>
+      <div class="step" id="s2"><span class="n">2</span> Escolher objeto</div>
+      <div class="step" id="s3"><span class="n">3</span> Confirmar objeto</div>
+      <div class="step" id="s4"><span class="n">4</span> Concluído</div>
+    </div>
+
+    <!-- ETAPA 1 -->
+    <div id="painel1" class="kiosk">
+      <div class="pulse">📡</div>
+      <h2>Aguardando funcionário…</h2>
+      <div class="sub">Passe a tag do funcionário no leitor RFID.</div>
+    </div>
+
+    <!-- ETAPA 2: escolher objeto -->
+    <div id="painel2" class="panel" style="display:none;">
+      <div class="panel-head">
+        <h2>Escolha o equipamento</h2>
+      </div>
+      <div class="panel-body">
+        <div class="summary-card" id="resumoFuncionario" style="margin-bottom:16px;"></div>
+        <div id="equipGrid" class="equip-grid"></div>
+        <div class="center-actions">
+          <button class="btn btn-primary btn-lg" id="btnContinuar" disabled>Continuar →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ETAPA 3: confirmar com tag física -->
+    <div id="painel3" class="kiosk" style="display:none;">
+      <div class="pulse">📡</div>
+      <h2 id="tituloEtapa3">Passe a tag física do equipamento</h2>
+      <div class="sub" id="subEtapa3"></div>
+    </div>
+
+    <!-- ETAPA 4: concluído -->
+    <div id="painel4" class="panel" style="display:none;">
+      <div class="panel-body" style="text-align:center; padding:34px 20px;">
+        <div style="font-size:42px; margin-bottom:6px;" id="iconeFinal">✅</div>
+        <h2 id="tituloFinal">Operação concluída</h2>
+        <div class="summary-card" id="resumoFinal" style="margin:18px auto 0; max-width:420px; text-align:left;"></div>
+        <div class="center-actions">
+          <button class="btn btn-primary btn-lg" id="btnOutraOperacao">Nova operação</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let etapaAtual = 1;
+let ultimoEventoId = 0;
+let equipamentoEscolhidoId = null;
+let funcionarioAtual = null;
+
+function irPara(etapa){
+  etapaAtual = etapa;
+  for(let i=1;i<=4;i++){
+    const el = $('#s'+i);
+    el.classList.remove('active','done');
+    if(i < etapa) el.classList.add('done');
+    if(i === etapa) el.classList.add('active');
+  }
+  $('#painel1').style.display = etapa === 1 ? 'flex' : 'none';
+  $('#painel2').style.display = etapa === 2 ? 'block' : 'none';
+  $('#painel3').style.display = etapa === 3 ? 'flex' : 'none';
+  $('#painel4').style.display = etapa === 4 ? 'block' : 'none';
+}
+
+function alertar(tipo, msg){
+  $('#alertBox').innerHTML = `<div class="alert alert-${tipo}">${escapeHtml(msg)}</div>`;
+  clearTimeout(alertar._t);
+  alertar._t = setTimeout(() => { $('#alertBox').innerHTML = ''; }, 6000);
+}
+
+async function resetarFluxo(){
+  try{ await fetch('/api/rfid/resetar', { method:'POST' }); }catch(e){}
+  equipamentoEscolhidoId = null;
+  funcionarioAtual = null;
+  irPara(1);
+}
+
+$('#btnNova').addEventListener('click', resetarFluxo);
+$('#btnOutraOperacao').addEventListener('click', resetarFluxo);
+
+function montarEquipamentos(lista){
+  funcionarioAtual = funcionarioAtual;
+  $('#equipGrid').innerHTML = lista.map(eq => `
+    <div class="equip-card" data-id="${eq.id}">
+      <div class="nome">${escapeHtml(eq.nome)}</div>
+      <div class="meta">Box ${escapeHtml(eq.box_id)} · <span class="mono">${escapeHtml(eq.uid_tag)}</span></div>
+    </div>`).join('') || `<div class="sub">Nenhum equipamento disponível no momento.</div>`;
+
+  document.querySelectorAll('.equip-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.equip-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      equipamentoEscolhidoId = card.dataset.id;
+      $('#btnContinuar').disabled = false;
+    });
+  });
+}
+
+$('#btnContinuar').addEventListener('click', async () => {
+  if(!equipamentoEscolhidoId || !funcionarioAtual) return;
+  $('#btnContinuar').disabled = true;
+  try{
+    const r = await fetch('/api/rfid/selecionar', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        funcionario_id: funcionarioAtual.id,
+        equipamento_id: equipamentoEscolhidoId,
+        acao: 'retirada'
+      })
+    });
+    const d = await r.json();
+    if(!d.sucesso){
+      alertar('bad', d.erro || 'Não foi possível continuar.');
+      $('#btnContinuar').disabled = false;
+    }
+    // sucesso: o painel 3 assume via polling, quando o evento "equipamento_selecionado" chegar
+  }catch(e){
+    alertar('bad', 'Erro de conexão com o servidor.');
+    $('#btnContinuar').disabled = false;
+  }
+});
+
+function mostrarEtapa3(titulo, sub){
+  $('#tituloEtapa3').textContent = titulo;
+  $('#subEtapa3').textContent = sub || '';
+  irPara(3);
+}
+
+function mostrarConclusao(sucesso, titulo, dados){
+  $('#iconeFinal').textContent = sucesso ? '✅' : '⚠️';
+  $('#tituloFinal').textContent = titulo;
+  $('#resumoFinal').innerHTML = `
+    <div class="row"><span class="k">Funcionário</span><span class="v">${escapeHtml(dados.funcionario || '—')}</span></div>
+    <div class="row"><span class="k">Equipamento</span><span class="v">${escapeHtml(dados.equipamento || '—')}</span></div>
+    <div class="row"><span class="k">Box</span><span class="v">${escapeHtml(dados.box ?? '—')}</span></div>
+  `;
+  irPara(4);
+}
+
+async function pollFluxo(){
+  try{
+    const r = await fetch('/rfid/ultima');
+    const ev = await r.json();
+    if(!ev.id || ev.id === ultimoEventoId){
+      // sem evento novo: só garante estado inicial coerente
+      if(ev.modo === 'idle' && etapaAtual !== 1 && etapaAtual !== 4) irPara(1);
+      return;
+    }
+    ultimoEventoId = ev.id;
+
+    switch(ev.tipo){
+
+      case 'funcionario_identificado':
+        funcionarioAtual = ev.funcionario;
+        $('#resumoFuncionario').innerHTML = `
+          <div class="row"><span class="k">Funcionário</span><span class="v">${escapeHtml(ev.funcionario?.nome)}</span></div>
+          <div class="row"><span class="k">Matrícula</span><span class="v">${escapeHtml(ev.funcionario?.matricula)}</span></div>`;
+        equipamentoEscolhidoId = null;
+        $('#btnContinuar').disabled = true;
+        montarEquipamentos(ev.equipamentos || []);
+        irPara(2);
+        break;
+
+      case 'funcionario_com_emprestimo':
+        funcionarioAtual = ev.funcionario;
+        mostrarEtapa3(
+          'Passe a tag física do equipamento para devolver',
+          `${ev.funcionario?.nome} está com "${ev.equipamento?.nome}" (box ${ev.equipamento?.box_id}).`
+        );
+        break;
+
+      case 'equipamento_selecionado':
+        mostrarEtapa3(
+          'Passe a tag física do equipamento',
+          ev.mensagem || `Confirme aproximando a tag de "${ev.equipamento?.nome}" do leitor.`
+        );
+        break;
+
+      case 'retirada_concluida':
+        mostrarConclusao(true, 'Retirada concluída — EMPRESTADO', {
+          funcionario: ev.funcionario?.nome, equipamento: ev.equipamento?.nome, box: ev.box ?? ev.equipamento?.box_id
+        });
+        break;
+
+      case 'devolucao_concluida':
+        mostrarConclusao(true, 'Devolução concluída — DEVOLVIDO', {
+          funcionario: ev.funcionario?.nome, equipamento: ev.equipamento?.nome, box: ev.box ?? ev.equipamento?.box_id
+        });
+        break;
+
+      case 'objeto_incorreto':
+        alertar('amber', ev.mensagem || 'Essa não é a tag do equipamento esperado. Tente novamente.');
+        break;
+
+      case 'box_ocupada':
+        alertar('bad', ev.mensagem || 'Essa box já está ocupada por outro equipamento.');
+        break;
+
+      case 'equipamento_emprestado':
+        alertar('bad', ev.mensagem || 'Este equipamento já está emprestado.');
+        break;
+
+      case 'tag_nao_cadastrada':
+        alertar('bad', ev.mensagem || 'Tag não cadastrada no sistema.');
+        break;
+
+      case 'equipamento_sem_funcionario':
+        alertar('amber', ev.mensagem || 'Passe primeiro a tag do funcionário.');
+        break;
+
+      case 'sem_emprestimo':
+        alertar('amber', ev.mensagem || 'Não há empréstimo em aberto para esse equipamento.');
+        break;
+
+      case 'operacao_conflito':
+        alertar('amber', ev.mensagem || 'Já existe uma operação em andamento.');
+        break;
+
+      case 'fluxo_expirado':
+        alertar('amber', 'A operação expirou por inatividade. Comece de novo.');
+        resetarFluxo();
+        break;
+
+      default:
+        break;
+    }
+  }catch(e){ /* tenta de novo no próximo ciclo */ }
+}
+setInterval(pollFluxo, 1000);
+
+async function verificarLeitor(){
+  try{
+    const r = await fetch('/api/esp32/status');
+    const d = await r.json();
+    $('#dotEsp').className = 'dot ' + (d.conectado ? 'on' : 'off');
+    $('#espTxt').textContent = d.conectado ? 'leitor RFID conectado' : 'leitor RFID offline';
+    $('#dotServ').className = 'dot on';
+    $('#servTxt').textContent = 'servidor online';
+  }catch(e){
+    $('#dotServ').className = 'dot off';
+    $('#servTxt').textContent = 'sem conexão com o servidor';
+  }
+}
+setInterval(verificarLeitor, 6000);
+verificarLeitor();
+
+irPara(1);
+</script>
+</body>
+</html>
