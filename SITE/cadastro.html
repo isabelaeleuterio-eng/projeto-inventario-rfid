@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cadastro · Inventário RFID</title>
+<title>Área da empresa · Inventário RFID</title>
 <link rel="stylesheet" href="/estilo.css">
 </head>
-<body>
+<body class="admin">
 <div class="shell">
 
   <aside class="sidebar">
@@ -14,14 +14,15 @@
       <div class="brand-mark">RF</div>
       <div class="brand-text">
         <div class="display">Inventário RFID</div>
-        <div class="sub">Cadastro (uso interno)</div>
+        <div class="sub">Área da empresa</div>
       </div>
     </div>
 
     <nav class="nav">
-      <a href="/"><span class="nav-icon">▣</span> Dashboard</a>
-      <a href="/cadastro" class="active"><span class="nav-icon">＋</span> Cadastro</a>
-      <a href="/controle"><span class="nav-icon">➤</span> Operação RFID</a>
+      <a href="#" class="admin-tab-link active" data-view="visao"><span class="nav-icon">▣</span> Visão geral</a>
+      <a href="#" class="admin-tab-link" data-view="cadastro"><span class="nav-icon">＋</span> Cadastro</a>
+      <div style="height:1px;background:#31383E;margin:8px 6px;"></div>
+      <a href="/"><span class="nav-icon">➤</span> Ver tela de operação ↗</a>
     </nav>
 
     <div class="sidebar-foot">
@@ -32,103 +33,134 @@
   <main>
     <div class="topline">
       <div>
-        <h1>Cadastro de tags</h1>
-        <p>Área de uso interno da equipe. Cadastre funcionários e equipamentos aproximando a tag física do leitor RFID.</p>
+        <span class="mode-banner">🔒 uso interno</span>
+        <h1 id="tituloView">Visão geral</h1>
+        <p id="subView">Quem está com o quê, e o histórico de movimentações.</p>
       </div>
       <span class="status-pill"><span class="dot on" id="dotServ"></span> <span id="servTxt">conectando…</span></span>
     </div>
 
-    <div class="reader-chip" id="chipGlobal" style="margin-bottom:22px;">
-      <span class="ico">📶</span>
-      <span>Último sinal do leitor: <span class="code" id="ultimoSinal">nenhuma leitura ainda</span></span>
-    </div>
+    <!-- ===================== VISÃO GERAL ===================== -->
+    <section class="admin-view active" id="view-visao">
+      <div id="alertBox"></div>
 
-    <div class="form-grid">
-
-      <!-- FUNCIONÁRIO -->
-      <div class="panel">
-        <div class="panel-head"><h2>Cadastrar funcionário</h2></div>
-        <div class="panel-body">
-          <div id="alertFunc"></div>
-          <div class="field">
-            <label>Nome completo</label>
-            <input id="fNome" placeholder="Ex: Isabela Eleutério">
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Matrícula</label>
-              <input id="fMatricula" placeholder="Ex: SP3217485">
-            </div>
-            <div class="field">
-              <label>Setor <span style="font-weight:400;color:var(--ink-faint);">(opcional)</span></label>
-              <input id="fSetor" placeholder="Ex: Manutenção">
-            </div>
-          </div>
-          <div class="field">
-            <label>Tag RFID</label>
-            <input id="fTag" class="mono" placeholder="Aproxime a tag do leitor">
-            <div class="hint" id="fTagHint">Clique em "Ler tag" e aproxime o crachá do funcionário do leitor.</div>
-          </div>
-          <div style="display:flex; gap:10px;">
-            <button class="btn" style="flex:1" id="btnLerFunc">📡 Ler tag</button>
-            <button class="btn btn-primary" style="flex:1" id="btnSalvarFunc">Cadastrar funcionário</button>
-          </div>
-        </div>
+      <div class="grid-stats">
+        <div class="stat"><div class="label">Funcionários cadastrados</div><div class="num" id="stFunc">—</div></div>
+        <div class="stat"><div class="label">Equipamentos cadastrados</div><div class="num steel" id="stEquip">—</div></div>
+        <div class="stat"><div class="label">Disponíveis agora</div><div class="num good" id="stDisp">—</div></div>
+        <div class="stat"><div class="label">Com funcionários agora</div><div class="num steel" id="stAtivos">—</div></div>
       </div>
 
-      <!-- EQUIPAMENTO -->
       <div class="panel">
-        <div class="panel-head"><h2>Cadastrar equipamento</h2></div>
-        <div class="panel-body">
-          <div id="alertEquip"></div>
-          <div class="field">
-            <label>Nome do equipamento</label>
-            <input id="eNome" placeholder="Ex: Martelo">
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Número da box</label>
-              <input id="eBox" type="number" min="1" placeholder="Ex: 1">
-            </div>
-            <div class="field">
-              <label>Descrição <span style="font-weight:400;color:var(--ink-faint);">(opcional)</span></label>
-              <input id="eDescricao" placeholder="Ex: Martelo de borracha 500g">
-            </div>
-          </div>
-          <div class="field">
-            <label>Tag RFID</label>
-            <input id="eTag" class="mono" placeholder="Aproxime a tag do leitor">
-            <div class="hint" id="eTagHint">Clique em "Ler tag" e aproxime a tag do equipamento do leitor.</div>
-          </div>
-          <div style="display:flex; gap:10px;">
-            <button class="btn" style="flex:1" id="btnLerEquip">📡 Ler tag</button>
-            <button class="btn btn-primary" style="flex:1" id="btnSalvarEquip">Cadastrar equipamento</button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="form-grid" style="margin-top:6px;">
-      <div class="panel">
-        <div class="panel-head"><h2>Funcionários cadastrados</h2></div>
+        <div class="panel-head"><h2>Equipamentos</h2></div>
         <div class="panel-body flush">
           <table>
-            <thead><tr><th>Nome</th><th>Tag</th><th></th></tr></thead>
-            <tbody id="tbFunc"><tr class="empty-row"><td colspan="3">Carregando…</td></tr></tbody>
+            <thead><tr><th>Equipamento</th><th>Tag</th><th>Box</th><th>Status</th></tr></thead>
+            <tbody id="tbEquipamentos"><tr class="empty-row"><td colspan="4">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
+
       <div class="panel">
-        <div class="panel-head"><h2>Equipamentos cadastrados</h2></div>
+        <div class="panel-head"><h2>Funcionários</h2></div>
         <div class="panel-body flush">
           <table>
-            <thead><tr><th>Equipamento</th><th>Box</th><th></th></tr></thead>
-            <tbody id="tbEquip"><tr class="empty-row"><td colspan="3">Carregando…</td></tr></tbody>
+            <thead><tr><th>Nome</th><th>Matrícula</th><th>Setor</th><th>Tag</th></tr></thead>
+            <tbody id="tbFuncionarios"><tr class="empty-row"><td colspan="4">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
-    </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Histórico de movimentações</h2></div>
+        <div class="panel-body flush">
+          <table>
+            <thead><tr><th>Funcionário</th><th>Equipamento</th><th>Box</th><th>Retirada</th><th>Devolução</th></tr></thead>
+            <tbody id="tbEmprestimos"><tr class="empty-row"><td colspan="5">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CADASTRO ===================== -->
+    <section class="admin-view" id="view-cadastro">
+
+      <div class="reader-chip" style="margin-bottom:22px;">
+        <span class="ico">📶</span>
+        <span>Último sinal do leitor: <span class="code" id="ultimoSinal">nenhuma leitura ainda</span></span>
+      </div>
+
+      <div class="form-grid">
+        <div class="panel">
+          <div class="panel-head"><h2>Cadastrar funcionário</h2></div>
+          <div class="panel-body">
+            <div id="alertFunc"></div>
+            <div class="field">
+              <label>Nome completo</label>
+              <input id="fNome" placeholder="Ex: Isabela Eleutério">
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Matrícula</label><input id="fMatricula" placeholder="Ex: SP3217485"></div>
+              <div class="field"><label>Setor <span style="font-weight:400;color:var(--ink-faint);">(opcional)</span></label><input id="fSetor" placeholder="Ex: Manutenção"></div>
+            </div>
+            <div class="field">
+              <label>Tag RFID</label>
+              <input id="fTag" class="mono" placeholder="Aproxime a tag do leitor">
+              <div class="hint" id="fTagHint">Clique em "Ler tag" e aproxime o crachá do funcionário do leitor.</div>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn" style="flex:1" id="btnLerFunc">📡 Ler tag</button>
+              <button class="btn btn-primary" style="flex:1" id="btnSalvarFunc">Cadastrar funcionário</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Cadastrar equipamento</h2></div>
+          <div class="panel-body">
+            <div id="alertEquip"></div>
+            <div class="field">
+              <label>Nome do equipamento</label>
+              <input id="eNome" placeholder="Ex: Martelo">
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Número da box</label><input id="eBox" type="number" min="1" placeholder="Ex: 1"></div>
+              <div class="field"><label>Descrição <span style="font-weight:400;color:var(--ink-faint);">(opcional)</span></label><input id="eDescricao" placeholder="Ex: Martelo de borracha 500g"></div>
+            </div>
+            <div class="field">
+              <label>Tag RFID</label>
+              <input id="eTag" class="mono" placeholder="Aproxime a tag do leitor">
+              <div class="hint" id="eTagHint">Clique em "Ler tag" e aproxime a tag do equipamento do leitor.</div>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn" style="flex:1" id="btnLerEquip">📡 Ler tag</button>
+              <button class="btn btn-primary" style="flex:1" id="btnSalvarEquip">Cadastrar equipamento</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid" style="margin-top:6px;">
+        <div class="panel">
+          <div class="panel-head"><h2>Funcionários cadastrados</h2></div>
+          <div class="panel-body flush">
+            <table>
+              <thead><tr><th>Nome</th><th>Tag</th><th></th></tr></thead>
+              <tbody id="tbFunc"><tr class="empty-row"><td colspan="3">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Equipamentos cadastrados</h2></div>
+          <div class="panel-body flush">
+            <table>
+              <thead><tr><th>Equipamento</th><th>Box</th><th></th></tr></thead>
+              <tbody id="tbEquip"><tr class="empty-row"><td colspan="3">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
 
   </main>
 </div>
@@ -136,42 +168,119 @@
 <script>
 const $ = (s) => document.querySelector(s);
 const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtData = (iso) => { if(!iso) return '—'; const d = new Date(iso); return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); };
 
-function alertar(elId, tipo, msg){
-  $(elId).innerHTML = `<div class="alert alert-${tipo}">${escapeHtml(msg)}</div>`;
-}
+/* ---------------- troca de abas ---------------- */
+document.querySelectorAll('.admin-tab-link').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.querySelectorAll('.admin-tab-link').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    const view = link.dataset.view;
+    document.querySelectorAll('.admin-view').forEach(v => v.classList.remove('active'));
+    $('#view-' + view).classList.add('active');
+    if(view === 'visao'){
+      $('#tituloView').textContent = 'Visão geral';
+      $('#subView').textContent = 'Quem está com o quê, e o histórico de movimentações.';
+    }else{
+      $('#tituloView').textContent = 'Cadastro';
+      $('#subView').textContent = 'Cadastre funcionários e equipamentos aproximando a tag do leitor RFID.';
+    }
+  });
+});
+
+/* ---------------- alertas ---------------- */
+function alertar(elId, tipo, msg){ $(elId).innerHTML = `<div class="alert alert-${tipo}">${escapeHtml(msg)}</div>`; }
 function limpar(elId){ $(elId).innerHTML = ''; }
 
-/* ---------------- leitura de tag (cadastro) ---------------- */
-let alvoLeitura = null;      // 'funcionario' | 'equipamento' | null
+/* ---------------- visão geral: dados ---------------- */
+async function carregarDashboard(){
+  try{
+    const r = await fetch('/api/dashboard');
+    const d = await r.json();
+    if(!d.sucesso) throw new Error(d.erro || 'Falha ao carregar dashboard.');
+    $('#stFunc').textContent = d.funcionarios ?? 0;
+    $('#stEquip').textContent = d.equipamentos ?? 0;
+    $('#stDisp').textContent = d.disponiveis ?? 0;
+    $('#stAtivos').textContent = d.emprestimos ?? 0;
+    limpar('#alertBox');
+  }catch(e){ alertar('#alertBox', 'bad', 'Erro ao carregar visão geral: ' + e.message); }
+}
+
+async function carregarEquipamentosView(){
+  try{
+    const r = await fetch('/api/equipamentos');
+    const d = await r.json();
+    const lista = d.equipamentos || [];
+    $('#tbEquipamentos').innerHTML = lista.length ? lista.map(e => {
+      const disp = String(e.status).toLowerCase() === 'disponivel';
+      return `<tr>
+        <td>${escapeHtml(e.nome)}</td>
+        <td class="mono tag-code">${escapeHtml(e.uid_tag)}</td>
+        <td class="mono">${escapeHtml(e.box_id)}</td>
+        <td><span class="badge ${disp ? 'badge-good' : 'badge-amber'}">${disp ? 'Disponível' : 'Emprestado'}</span></td>
+      </tr>`;
+    }).join('') : `<tr class="empty-row"><td colspan="4">Nenhum equipamento cadastrado ainda.</td></tr>`;
+  }catch(e){}
+}
+
+async function carregarFuncionariosView(){
+  try{
+    const r = await fetch('/api/funcionarios');
+    const d = await r.json();
+    const lista = d.funcionarios || [];
+    $('#tbFuncionarios').innerHTML = lista.length ? lista.map(f => `
+      <tr>
+        <td>${escapeHtml(f.nome)}</td>
+        <td class="mono">${escapeHtml(f.matricula)}</td>
+        <td>${escapeHtml(f.setor || '—')}</td>
+        <td class="mono tag-code">${escapeHtml(f.uid_tag_pessoal)}</td>
+      </tr>`).join('') : `<tr class="empty-row"><td colspan="4">Nenhum funcionário cadastrado ainda.</td></tr>`;
+  }catch(e){}
+}
+
+async function carregarHistorico(){
+  try{
+    const r = await fetch('/api/ultimos-emprestimos');
+    const d = await r.json();
+    const lista = d.emprestimos || [];
+    $('#tbEmprestimos').innerHTML = lista.length ? lista.map(e => `
+      <tr>
+        <td>${escapeHtml(e.funcionario?.nome || '—')}</td>
+        <td>${escapeHtml(e.equipamento?.nome || '—')}</td>
+        <td class="mono">${escapeHtml(e.box ?? e.equipamento?.box_id ?? '—')}</td>
+        <td class="mono">${fmtData(e.data_retirada)}</td>
+        <td class="mono">${e.data_devolucao ? fmtData(e.data_devolucao) : '<span class="badge badge-amber">em aberto</span>'}</td>
+      </tr>`).join('') : `<tr class="empty-row"><td colspan="5">Nenhuma movimentação registrada ainda.</td></tr>`;
+  }catch(e){}
+}
+
+/* ---------------- cadastro: leitura de tag ---------------- */
+let alvoLeitura = null;
 let ultimoEventoId = 0;
 let leituraTimeout = null;
 
 async function iniciarLeitura(tipo){
   alvoLeitura = tipo;
   const hintId = tipo === 'funcionario' ? '#fTagHint' : '#eTagHint';
-  const chipId = tipo === 'funcionario' ? '#btnLerFunc' : '#btnLerEquip';
+  const btnId = tipo === 'funcionario' ? '#btnLerFunc' : '#btnLerEquip';
   $(hintId).textContent = 'Aguardando leitura… aproxime a tag do leitor RFID agora.';
-  $(chipId).textContent = '📡 Aguardando tag…';
-  $(chipId).disabled = true;
+  $(btnId).textContent = '📡 Aguardando tag…';
+  $(btnId).disabled = true;
 
   try{
     await fetch('/api/rfid/cadastro/iniciar', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ tipo: tipo === 'funcionario' ? 'funcionario' : 'equipamento' })
     });
-  }catch(e){
-    $(hintId).textContent = 'Não foi possível falar com o servidor. Tente novamente.';
-  }
+  }catch(e){ $(hintId).textContent = 'Não foi possível falar com o servidor. Tente novamente.'; }
 
   clearTimeout(leituraTimeout);
   leituraTimeout = setTimeout(() => {
     if(alvoLeitura === tipo){
       alvoLeitura = null;
       $(hintId).textContent = 'Tempo esgotado. Clique em "Ler tag" e tente de novo.';
-      $(chipId).disabled = false;
-      $(chipId).textContent = '📡 Ler tag';
+      $(btnId).disabled = false; $(btnId).textContent = '📡 Ler tag';
     }
   }, 30000);
 }
@@ -180,9 +289,8 @@ function pararLeitura(tipo, mensagem){
   alvoLeitura = null;
   clearTimeout(leituraTimeout);
   const hintId = tipo === 'funcionario' ? '#fTagHint' : '#eTagHint';
-  const chipId = tipo === 'funcionario' ? '#btnLerFunc' : '#btnLerEquip';
-  $(chipId).disabled = false;
-  $(chipId).textContent = '📡 Ler tag';
+  const btnId = tipo === 'funcionario' ? '#btnLerFunc' : '#btnLerEquip';
+  $(btnId).disabled = false; $(btnId).textContent = '📡 Ler tag';
   if(mensagem) $(hintId).textContent = mensagem;
 }
 
@@ -190,47 +298,32 @@ async function pollLeitura(){
   try{
     const r = await fetch('/rfid/ultima');
     const ev = await r.json();
-
-    if(ev.uid){
-      $('#ultimoSinal').textContent = `${ev.uid} — ${ev.mensagem || ev.tipo}`;
-    }
-
+    if(ev.uid) $('#ultimoSinal').textContent = `${ev.uid} — ${ev.mensagem || ev.tipo}`;
     if(!ev.id || ev.id === ultimoEventoId) return;
     ultimoEventoId = ev.id;
-
     if(!alvoLeitura) return;
 
     if(ev.tipo === 'cadastro_tag' && ev.uid){
-      if(alvoLeitura === 'funcionario'){
-        $('#fTag').value = ev.uid;
-        pararLeitura('funcionario', 'Tag lida com sucesso.');
-      }else{
-        $('#eTag').value = ev.uid;
-        pararLeitura('equipamento', 'Tag lida com sucesso.');
-      }
+      if(alvoLeitura === 'funcionario'){ $('#fTag').value = ev.uid; pararLeitura('funcionario', 'Tag lida com sucesso.'); }
+      else{ $('#eTag').value = ev.uid; pararLeitura('equipamento', 'Tag lida com sucesso.'); }
     }else if(ev.tipo === 'tag_ja_cadastrada'){
       pararLeitura(alvoLeitura, ev.mensagem || 'Esta tag já está cadastrada.');
     }
-  }catch(e){ /* silencioso: tenta de novo no próximo ciclo */ }
+  }catch(e){}
 }
 setInterval(pollLeitura, 1000);
 
 $('#btnLerFunc').addEventListener('click', () => iniciarLeitura('funcionario'));
 $('#btnLerEquip').addEventListener('click', () => iniciarLeitura('equipamento'));
 
-/* ---------------- salvar funcionário ---------------- */
+/* ---------------- salvar ---------------- */
 $('#btnSalvarFunc').addEventListener('click', async () => {
   limpar('#alertFunc');
   const nome = $('#fNome').value.trim();
   const matricula = $('#fMatricula').value.trim();
   const setor = $('#fSetor').value.trim();
   const uid = $('#fTag').value.trim();
-
-  if(!nome || !matricula || !uid){
-    alertar('#alertFunc', 'bad', 'Preencha nome, matrícula e a tag RFID.');
-    return;
-  }
-
+  if(!nome || !matricula || !uid){ alertar('#alertFunc', 'bad', 'Preencha nome, matrícula e a tag RFID.'); return; }
   try{
     const r = await fetch('/api/funcionarios', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -238,28 +331,19 @@ $('#btnSalvarFunc').addEventListener('click', async () => {
     });
     const d = await r.json();
     if(!d.sucesso){ alertar('#alertFunc', 'bad', d.erro || 'Não foi possível cadastrar.'); return; }
-
     alertar('#alertFunc', 'good', `${nome} cadastrado com sucesso.`);
-    $('#fNome').value = ''; $('#fMatricula').value = ''; $('#fSetor').value = ''; $('#fTag').value = '';
-    carregarListas();
-  }catch(e){
-    alertar('#alertFunc', 'bad', 'Erro de conexão com o servidor.');
-  }
+    $('#fNome').value=''; $('#fMatricula').value=''; $('#fSetor').value=''; $('#fTag').value='';
+    atualizarTudo();
+  }catch(e){ alertar('#alertFunc', 'bad', 'Erro de conexão com o servidor.'); }
 });
 
-/* ---------------- salvar equipamento ---------------- */
 $('#btnSalvarEquip').addEventListener('click', async () => {
   limpar('#alertEquip');
   const nome = $('#eNome').value.trim();
   const box = $('#eBox').value.trim();
   const descricao = $('#eDescricao').value.trim();
   const uid = $('#eTag').value.trim();
-
-  if(!nome || !box || !uid){
-    alertar('#alertEquip', 'bad', 'Preencha nome, box e a tag RFID.');
-    return;
-  }
-
+  if(!nome || !box || !uid){ alertar('#alertEquip', 'bad', 'Preencha nome, box e a tag RFID.'); return; }
   try{
     const r = await fetch('/api/equipamentos', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -267,39 +351,29 @@ $('#btnSalvarEquip').addEventListener('click', async () => {
     });
     const d = await r.json();
     if(!d.sucesso){ alertar('#alertEquip', 'bad', d.erro || 'Não foi possível cadastrar.'); return; }
-
     alertar('#alertEquip', 'good', `${nome} cadastrado na box ${box}.`);
-    $('#eNome').value = ''; $('#eBox').value = ''; $('#eDescricao').value = ''; $('#eTag').value = '';
-    carregarListas();
-  }catch(e){
-    alertar('#alertEquip', 'bad', 'Erro de conexão com o servidor.');
-  }
+    $('#eNome').value=''; $('#eBox').value=''; $('#eDescricao').value=''; $('#eTag').value='';
+    atualizarTudo();
+  }catch(e){ alertar('#alertEquip', 'bad', 'Erro de conexão com o servidor.'); }
 });
 
-/* ---------------- listas ---------------- */
-async function carregarListas(){
+/* ---------------- listas com excluir ---------------- */
+async function carregarListasCadastro(){
   try{
-    const r = await fetch('/api/funcionarios');
-    const d = await r.json();
+    const r = await fetch('/api/funcionarios'); const d = await r.json();
     const lista = d.funcionarios || [];
     $('#tbFunc').innerHTML = lista.length ? lista.map(f => `
-      <tr>
-        <td>${escapeHtml(f.nome)}</td>
-        <td class="mono tag-code">${escapeHtml(f.uid_tag_pessoal)}</td>
-        <td style="text-align:right;"><button class="btn btn-ghost" data-del-func="${f.id}">excluir</button></td>
-      </tr>`).join('') : `<tr class="empty-row"><td colspan="3">Nenhum funcionário ainda.</td></tr>`;
+      <tr><td>${escapeHtml(f.nome)}</td><td class="mono tag-code">${escapeHtml(f.uid_tag_pessoal)}</td>
+      <td style="text-align:right;"><button class="btn btn-ghost" data-del-func="${f.id}">excluir</button></td></tr>`).join('')
+      : `<tr class="empty-row"><td colspan="3">Nenhum funcionário ainda.</td></tr>`;
   }catch(e){}
-
   try{
-    const r = await fetch('/api/equipamentos');
-    const d = await r.json();
+    const r = await fetch('/api/equipamentos'); const d = await r.json();
     const lista = d.equipamentos || [];
     $('#tbEquip').innerHTML = lista.length ? lista.map(e => `
-      <tr>
-        <td>${escapeHtml(e.nome)}</td>
-        <td class="mono">${escapeHtml(e.box_id)}</td>
-        <td style="text-align:right;"><button class="btn btn-ghost" data-del-equip="${e.id}">excluir</button></td>
-      </tr>`).join('') : `<tr class="empty-row"><td colspan="3">Nenhum equipamento ainda.</td></tr>`;
+      <tr><td>${escapeHtml(e.nome)}</td><td class="mono">${escapeHtml(e.box_id)}</td>
+      <td style="text-align:right;"><button class="btn btn-ghost" data-del-equip="${e.id}">excluir</button></td></tr>`).join('')
+      : `<tr class="empty-row"><td colspan="3">Nenhum equipamento ainda.</td></tr>`;
   }catch(e){}
 }
 
@@ -311,17 +385,18 @@ document.addEventListener('click', async (ev) => {
     const r = await fetch('/api/funcionarios/' + btnF.dataset.delFunc, { method:'DELETE' });
     const d = await r.json();
     if(!d.sucesso) alert(d.erro || 'Não foi possível excluir.');
-    carregarListas();
+    atualizarTudo();
   }
   if(btnE){
     if(!confirm('Excluir este equipamento?')) return;
     const r = await fetch('/api/equipamentos/' + btnE.dataset.delEquip, { method:'DELETE' });
     const d = await r.json();
     if(!d.sucesso) alert(d.erro || 'Não foi possível excluir.');
-    carregarListas();
+    atualizarTudo();
   }
 });
 
+/* ---------------- status do leitor ---------------- */
 async function verificarLeitor(){
   try{
     const r = await fetch('/api/esp32/status');
@@ -335,9 +410,13 @@ async function verificarLeitor(){
     $('#servTxt').textContent = 'sem conexão com o servidor';
   }
 }
-setInterval(verificarLeitor, 6000);
-verificarLeitor();
-carregarListas();
+
+function atualizarTudo(){
+  carregarDashboard(); carregarEquipamentosView(); carregarFuncionariosView();
+  carregarHistorico(); carregarListasCadastro(); verificarLeitor();
+}
+atualizarTudo();
+setInterval(atualizarTudo, 8000);
 </script>
 </body>
 </html>

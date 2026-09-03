@@ -3,204 +3,258 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard · Inventário RFID</title>
+<title>Inventário RFID</title>
 <link rel="stylesheet" href="/estilo.css">
 </head>
-<body>
-<div class="shell">
+<body class="quiosque">
 
-  <aside class="sidebar">
-    <div class="brand">
+  <div class="k-topbar">
+    <div class="k-brand">
       <div class="brand-mark">RF</div>
-      <div class="brand-text">
-        <div class="display">Inventário RFID</div>
-        <div class="sub">Controle de equipamentos</div>
-      </div>
-    </div>
-
-    <nav class="nav">
-      <a href="/" class="active"><span class="nav-icon">▣</span> Dashboard</a>
-      <a href="#funcionarios"><span class="nav-icon">◔</span> Funcionários</a>
-      <a href="#equipamentos"><span class="nav-icon">◈</span> Equipamentos</a>
-      <a href="#emprestimos"><span class="nav-icon">▤</span> Empréstimos</a>
-      <div style="height:1px;background:#31383E;margin:8px 6px;"></div>
-      <a href="/cadastro"><span class="nav-icon">＋</span> Cadastro</a>
-      <a href="/controle"><span class="nav-icon">➤</span> Operação RFID</a>
-    </nav>
-
-    <div class="sidebar-foot">
-      <span class="esp-dot"><span class="dot" id="dotEsp"></span> <span id="espTxt">verificando leitor…</span></span>
-      <span id="relogio">—</span>
-    </div>
-  </aside>
-
-  <main>
-    <div class="topline">
       <div>
-        <h1>Painel geral</h1>
-        <p>Visão consolidada de funcionários, equipamentos e movimentações do sistema RFID.</p>
-      </div>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <span class="status-pill"><span class="dot on" id="dotServ"></span> <span id="servTxt">conectando…</span></span>
-        <button class="btn" id="btnAtualizar">↻ Atualizar</button>
+        <div class="display">Inventário RFID</div>
+        <div class="sub">Retirada e devolução de equipamentos</div>
       </div>
     </div>
+    <span class="status-pill"><span class="dot on" id="dotServ"></span> <span id="servTxt">conectando…</span></span>
+  </div>
+
+  <div class="k-wrap">
 
     <div id="alertBox"></div>
 
-    <div class="grid-stats">
-      <div class="stat"><div class="label">Funcionários cadastrados</div><div class="num" id="stFunc">—</div></div>
-      <div class="stat"><div class="label">Equipamentos cadastrados</div><div class="num steel" id="stEquip">—</div></div>
-      <div class="stat"><div class="label">Disponíveis agora</div><div class="num good" id="stDisp">—</div></div>
-      <div class="stat"><div class="label">Empréstimos ativos</div><div class="num amber" id="stAtivos">—</div></div>
+    <div class="steps">
+      <div class="step" id="s1"><span class="n">1</span> Identificar pessoa</div>
+      <div class="step" id="s2"><span class="n">2</span> Escolher objeto</div>
+      <div class="step" id="s3"><span class="n">3</span> Confirmar objeto</div>
+      <div class="step" id="s4"><span class="n">4</span> Concluído</div>
     </div>
 
-    <div class="panel" id="funcionarios">
-      <div class="panel-head">
-        <h2>Funcionários</h2>
-        <a href="/cadastro" class="btn btn-ghost">Cadastrar novo →</a>
-      </div>
-      <div class="panel-body flush">
-        <table>
-          <thead><tr><th>Nome</th><th>Matrícula</th><th>Setor</th><th>Tag</th></tr></thead>
-          <tbody id="tbFuncionarios"><tr class="empty-row"><td colspan="4">Carregando…</td></tr></tbody>
-        </table>
-      </div>
+    <!-- ETAPA 1 -->
+    <div id="painel1" class="kiosk">
+      <div class="pulse">📡</div>
+      <h2>Aproxime sua tag do leitor</h2>
+      <div class="sub">O sistema identifica você automaticamente.</div>
     </div>
 
-    <div class="panel" id="equipamentos">
-      <div class="panel-head">
-        <h2>Equipamentos</h2>
-        <a href="/cadastro" class="btn btn-ghost">Cadastrar novo →</a>
-      </div>
-      <div class="panel-body flush">
-        <table>
-          <thead><tr><th>Equipamento</th><th>Tag</th><th>Box</th><th>Status</th></tr></thead>
-          <tbody id="tbEquipamentos"><tr class="empty-row"><td colspan="4">Carregando…</td></tr></tbody>
-        </table>
+    <!-- ETAPA 2: escolher objeto -->
+    <div id="painel2" class="panel" style="display:none;">
+      <div class="panel-head"><h2>Escolha o equipamento</h2></div>
+      <div class="panel-body">
+        <div class="summary-card" id="resumoFuncionario" style="margin-bottom:16px;"></div>
+        <div id="equipGrid" class="equip-grid"></div>
+        <div class="center-actions">
+          <button class="btn btn-primary btn-lg" id="btnContinuar" disabled>Continuar →</button>
+        </div>
       </div>
     </div>
 
-    <div class="panel" id="emprestimos">
-      <div class="panel-head">
-        <h2>Últimos empréstimos</h2>
-        <a href="/controle" class="btn btn-ghost">Abrir operação RFID →</a>
-      </div>
-      <div class="panel-body flush">
-        <table>
-          <thead><tr><th>Funcionário</th><th>Equipamento</th><th>Box</th><th>Retirada</th><th>Devolução</th></tr></thead>
-          <tbody id="tbEmprestimos"><tr class="empty-row"><td colspan="5">Carregando…</td></tr></tbody>
-        </table>
+    <!-- ETAPA 3: confirmar com tag física -->
+    <div id="painel3" class="kiosk" style="display:none;">
+      <div class="pulse">📡</div>
+      <h2 id="tituloEtapa3">Passe a tag física do equipamento</h2>
+      <div class="sub" id="subEtapa3"></div>
+    </div>
+
+    <!-- ETAPA 4: concluído -->
+    <div id="painel4" class="panel" style="display:none;">
+      <div class="panel-body" style="text-align:center; padding:34px 20px;">
+        <div style="font-size:42px; margin-bottom:6px;" id="iconeFinal">✅</div>
+        <h2 id="tituloFinal">Operação concluída</h2>
+        <div class="summary-card" id="resumoFinal" style="margin:18px auto 0; max-width:420px; text-align:left;"></div>
+        <div class="center-actions">
+          <button class="btn btn-primary btn-lg" id="btnOutraOperacao">Nova operação</button>
+        </div>
       </div>
     </div>
-  </main>
-</div>
+
+  </div>
+
+  <div class="k-foot">
+    <span><span class="dot" id="dotEsp" style="display:inline-block; margin-right:6px;"></span><span id="espTxt">verificando leitor…</span></span>
+    <a href="/cadastro">Acesso da empresa →</a>
+  </div>
 
 <script>
 const $ = (s) => document.querySelector(s);
 const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmtData = (iso) => { if(!iso) return '—'; const d = new Date(iso); return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); };
 
-function relogio(){
-  $('#relogio').textContent = new Date().toLocaleTimeString('pt-BR');
-}
-setInterval(relogio, 1000); relogio();
+let etapaAtual = 1;
+let ultimoEventoId = 0;
+let equipamentoEscolhidoId = null;
+let funcionarioAtual = null;
 
-function alerta(msg){
-  $('#alertBox').innerHTML = `<div class="alert alert-bad">⚠ ${escapeHtml(msg)}</div>`;
-}
-function limparAlerta(){ $('#alertBox').innerHTML = ''; }
-
-async function carregarDashboard(){
-  try{
-    const r = await fetch('/api/dashboard');
-    const d = await r.json();
-    if(!d.sucesso) throw new Error(d.erro || 'Falha ao carregar dashboard.');
-    $('#stFunc').textContent = d.funcionarios ?? 0;
-    $('#stEquip').textContent = d.equipamentos ?? 0;
-    $('#stDisp').textContent = d.disponiveis ?? 0;
-    $('#stAtivos').textContent = d.emprestimos ?? 0;
-    limparAlerta();
-  }catch(e){
-    alerta('Erro HTTP no dashboard: ' + e.message);
+function irPara(etapa){
+  etapaAtual = etapa;
+  for(let i=1;i<=4;i++){
+    const el = $('#s'+i);
+    el.classList.remove('active','done');
+    if(i < etapa) el.classList.add('done');
+    if(i === etapa) el.classList.add('active');
   }
+  $('#painel1').style.display = etapa === 1 ? 'flex' : 'none';
+  $('#painel2').style.display = etapa === 2 ? 'block' : 'none';
+  $('#painel3').style.display = etapa === 3 ? 'flex' : 'none';
+  $('#painel4').style.display = etapa === 4 ? 'block' : 'none';
 }
 
-async function carregarFuncionarios(){
-  try{
-    const r = await fetch('/api/funcionarios');
-    const d = await r.json();
-    const lista = d.funcionarios || [];
-    $('#tbFuncionarios').innerHTML = lista.length ? lista.map(f => `
-      <tr>
-        <td>${escapeHtml(f.nome)}</td>
-        <td class="mono">${escapeHtml(f.matricula)}</td>
-        <td>${escapeHtml(f.setor || '—')}</td>
-        <td class="mono tag-code">${escapeHtml(f.uid_tag_pessoal)}</td>
-      </tr>`).join('') : `<tr class="empty-row"><td colspan="4">Nenhum funcionário cadastrado ainda.</td></tr>`;
-  }catch(e){
-    $('#tbFuncionarios').innerHTML = `<tr class="empty-row"><td colspan="4">Não foi possível carregar.</td></tr>`;
-  }
+function alertar(tipo, msg){
+  $('#alertBox').innerHTML = `<div class="alert alert-${tipo}">${escapeHtml(msg)}</div>`;
+  clearTimeout(alertar._t);
+  alertar._t = setTimeout(() => { $('#alertBox').innerHTML = ''; }, 6000);
 }
 
-async function carregarEquipamentos(){
-  try{
-    const r = await fetch('/api/equipamentos');
-    const d = await r.json();
-    const lista = d.equipamentos || [];
-    $('#tbEquipamentos').innerHTML = lista.length ? lista.map(e => {
-      const disp = String(e.status).toLowerCase() === 'disponivel';
-      return `<tr>
-        <td>${escapeHtml(e.nome)}</td>
-        <td class="mono tag-code">${escapeHtml(e.uid_tag)}</td>
-        <td class="mono">${escapeHtml(e.box_id)}</td>
-        <td><span class="badge ${disp ? 'badge-good' : 'badge-amber'}">${disp ? 'Disponível' : 'Emprestado'}</span></td>
-      </tr>`;
-    }).join('') : `<tr class="empty-row"><td colspan="4">Nenhum equipamento cadastrado ainda.</td></tr>`;
-  }catch(e){
-    $('#tbEquipamentos').innerHTML = `<tr class="empty-row"><td colspan="4">Não foi possível carregar.</td></tr>`;
-  }
+async function resetarFluxo(){
+  try{ await fetch('/api/rfid/resetar', { method:'POST' }); }catch(e){}
+  equipamentoEscolhidoId = null;
+  funcionarioAtual = null;
+  irPara(1);
+}
+$('#btnOutraOperacao').addEventListener('click', resetarFluxo);
+
+function montarEquipamentos(lista){
+  $('#equipGrid').innerHTML = lista.map(eq => `
+    <div class="equip-card" data-id="${eq.id}">
+      <div class="nome">${escapeHtml(eq.nome)}</div>
+      <div class="meta">Box ${escapeHtml(eq.box_id)} · <span class="mono">${escapeHtml(eq.uid_tag)}</span></div>
+    </div>`).join('') || `<div class="sub">Nenhum equipamento disponível no momento.</div>`;
+
+  document.querySelectorAll('.equip-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.equip-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      equipamentoEscolhidoId = card.dataset.id;
+      $('#btnContinuar').disabled = false;
+    });
+  });
 }
 
-async function carregarEmprestimos(){
+$('#btnContinuar').addEventListener('click', async () => {
+  if(!equipamentoEscolhidoId || !funcionarioAtual) return;
+  $('#btnContinuar').disabled = true;
   try{
-    const r = await fetch('/api/ultimos-emprestimos');
+    const r = await fetch('/api/rfid/selecionar', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        funcionario_id: funcionarioAtual.id,
+        equipamento_id: equipamentoEscolhidoId,
+        acao: 'retirada'
+      })
+    });
     const d = await r.json();
-    const lista = d.emprestimos || [];
-    $('#tbEmprestimos').innerHTML = lista.length ? lista.map(e => `
-      <tr>
-        <td>${escapeHtml(e.funcionario?.nome || '—')}</td>
-        <td>${escapeHtml(e.equipamento?.nome || '—')}</td>
-        <td class="mono">${escapeHtml(e.box ?? e.equipamento?.box_id ?? '—')}</td>
-        <td class="mono">${fmtData(e.data_retirada)}</td>
-        <td class="mono">${e.data_devolucao ? fmtData(e.data_devolucao) : '<span class="badge badge-amber">em aberto</span>'}</td>
-      </tr>`).join('') : `<tr class="empty-row"><td colspan="5">Nenhuma movimentação registrada ainda.</td></tr>`;
+    if(!d.sucesso){
+      alertar('bad', d.erro || 'Não foi possível continuar.');
+      $('#btnContinuar').disabled = false;
+    }
   }catch(e){
-    $('#tbEmprestimos').innerHTML = `<tr class="empty-row"><td colspan="5">Não foi possível carregar.</td></tr>`;
+    alertar('bad', 'Erro de conexão com o servidor.');
+    $('#btnContinuar').disabled = false;
   }
+});
+
+function mostrarEtapa3(titulo, sub){
+  $('#tituloEtapa3').textContent = titulo;
+  $('#subEtapa3').textContent = sub || '';
+  irPara(3);
 }
+
+function mostrarConclusao(titulo, dados){
+  $('#tituloFinal').textContent = titulo;
+  $('#resumoFinal').innerHTML = `
+    <div class="row"><span class="k">Funcionário</span><span class="v">${escapeHtml(dados.funcionario || '—')}</span></div>
+    <div class="row"><span class="k">Equipamento</span><span class="v">${escapeHtml(dados.equipamento || '—')}</span></div>
+    <div class="row"><span class="k">Box</span><span class="v">${escapeHtml(dados.box ?? '—')}</span></div>
+  `;
+  irPara(4);
+  setTimeout(resetarFluxo, 6000);
+}
+
+async function pollFluxo(){
+  try{
+    const r = await fetch('/rfid/ultima');
+    const ev = await r.json();
+    if(!ev.id || ev.id === ultimoEventoId){
+      if(ev.modo === 'idle' && etapaAtual !== 1 && etapaAtual !== 4) irPara(1);
+      return;
+    }
+    ultimoEventoId = ev.id;
+
+    switch(ev.tipo){
+      case 'funcionario_identificado':
+        funcionarioAtual = ev.funcionario;
+        $('#resumoFuncionario').innerHTML = `
+          <div class="row"><span class="k">Funcionário</span><span class="v">${escapeHtml(ev.funcionario?.nome)}</span></div>
+          <div class="row"><span class="k">Matrícula</span><span class="v">${escapeHtml(ev.funcionario?.matricula)}</span></div>`;
+        equipamentoEscolhidoId = null;
+        $('#btnContinuar').disabled = true;
+        montarEquipamentos(ev.equipamentos || []);
+        irPara(2);
+        break;
+
+      case 'funcionario_com_emprestimo':
+        funcionarioAtual = ev.funcionario;
+        mostrarEtapa3(
+          'Passe a tag física do equipamento para devolver',
+          `${ev.funcionario?.nome} está com "${ev.equipamento?.nome}" (box ${ev.equipamento?.box_id}).`
+        );
+        break;
+
+      case 'equipamento_selecionado':
+        mostrarEtapa3('Passe a tag física do equipamento',
+          ev.mensagem || `Confirme aproximando a tag de "${ev.equipamento?.nome}" do leitor.`);
+        break;
+
+      case 'retirada_concluida':
+        mostrarConclusao('Retirada concluída — EMPRESTADO', {
+          funcionario: ev.funcionario?.nome, equipamento: ev.equipamento?.nome, box: ev.box ?? ev.equipamento?.box_id
+        });
+        break;
+
+      case 'devolucao_concluida':
+        mostrarConclusao('Devolução concluída — DEVOLVIDO', {
+          funcionario: ev.funcionario?.nome, equipamento: ev.equipamento?.nome, box: ev.box ?? ev.equipamento?.box_id
+        });
+        break;
+
+      case 'objeto_incorreto':
+        alertar('amber', ev.mensagem || 'Essa não é a tag do equipamento esperado. Tente novamente.'); break;
+      case 'box_ocupada':
+        alertar('bad', ev.mensagem || 'Essa box já está ocupada por outro equipamento.'); break;
+      case 'equipamento_emprestado':
+        alertar('bad', ev.mensagem || 'Este equipamento já está emprestado.'); break;
+      case 'tag_nao_cadastrada':
+        alertar('bad', ev.mensagem || 'Tag não cadastrada no sistema.'); break;
+      case 'equipamento_sem_funcionario':
+        alertar('amber', ev.mensagem || 'Passe primeiro a tag do funcionário.'); break;
+      case 'sem_emprestimo':
+        alertar('amber', ev.mensagem || 'Não há empréstimo em aberto para esse equipamento.'); break;
+      case 'operacao_conflito':
+        alertar('amber', ev.mensagem || 'Já existe uma operação em andamento.'); break;
+      case 'fluxo_expirado':
+        alertar('amber', 'A operação expirou por inatividade. Comece de novo.');
+        resetarFluxo(); break;
+      default: break;
+    }
+  }catch(e){ /* tenta de novo no próximo ciclo */ }
+}
+setInterval(pollFluxo, 1000);
 
 async function verificarLeitor(){
   try{
     const r = await fetch('/api/esp32/status');
     const d = await r.json();
     $('#dotEsp').className = 'dot ' + (d.conectado ? 'on' : 'off');
-    $('#espTxt').textContent = d.conectado ? 'leitor RFID conectado' : 'leitor RFID offline';
+    $('#espTxt').textContent = d.conectado ? 'leitor conectado' : 'leitor RFID offline';
     $('#dotServ').className = 'dot on';
     $('#servTxt').textContent = 'servidor online';
   }catch(e){
     $('#dotServ').className = 'dot off';
-    $('#servTxt').textContent = 'sem conexão com o servidor';
+    $('#servTxt').textContent = 'sem conexão';
   }
 }
-
-async function carregarTudo(){
-  await Promise.all([carregarDashboard(), carregarFuncionarios(), carregarEquipamentos(), carregarEmprestimos(), verificarLeitor()]);
-}
-
-$('#btnAtualizar').addEventListener('click', carregarTudo);
-carregarTudo();
-setInterval(carregarTudo, 8000);
+setInterval(verificarLeitor, 6000);
+verificarLeitor();
+irPara(1);
 </script>
 </body>
 </html>
