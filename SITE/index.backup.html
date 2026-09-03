@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Inventário RFID</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 210px;
+            background: #111827;
+            color: white;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            padding: 20px 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            padding: 0 20px 25px;
+        }
+
+        .logo-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: #10b981;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .logo h2 {
+            margin: 0;
+            font-size: 19px;
+        }
+
+        .logo p {
+            margin: 4px 0 0 52px;
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .menu {
+            margin-top: 20px;
+        }
+
+        .menu a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 14px 18px;
+            margin: 3px 0;
+            font-size: 14px;
+            border-radius: 0 10px 10px 0;
+            transition: .2s;
+        }
+
+        .menu a:hover,
+        .menu a.ativo {
+            background: #10b981;
+        }
+
+        .versao {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .conteudo {
+            margin-left: 210px;
+            width: calc(100% - 210px);
+            min-height: 100vh;
+        }
+
+        .topo {
+            min-height: 65px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 28px;
+            gap: 20px;
+        }
+
+        .titulo-topo {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .topo-direita {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .status-sistema {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+        }
+
+        .bolinha {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+            flex-shrink: 0;
+        }
+
+        .bolinha.online {
+            background: #22c55e;
+        }
+
+        .btn-atualizar {
+            border: none;
+            background: #f1f5f9;
+            padding: 9px 13px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-atualizar:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-atualizar:disabled {
+            opacity: .6;
+            cursor: wait;
+        }
+
+        .container {
+            padding: 28px;
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        .cabecalho {
+            margin-bottom: 25px;
+        }
+
+        .cabecalho h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .cabecalho p {
+            margin: 8px 0 0;
+            color: #64748b;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+
+            gap: 18px;
+            margin-bottom: 26px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow:
+                0 2px 5px rgba(15, 23, 42, .05);
+        }
+
+        .card-label {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .card-numero {
+            font-size: 31px;
+            font-weight: bold;
+        }
+
+        .card-icone {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: #ecfdf5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .painel {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            box-shadow:
+                0 2px 5px rgba(15, 23, 42, .05);
+        }
+
+        .painel-titulo {
+            padding: 18px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .tabela-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+            text-align: left;
+            padding: 13px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 14px 13px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        code {
+            font-family: Consolas, monospace;
+            font-size: 12px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 11px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .badge-disponivel {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-emprestado {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .badge-ativo {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .badge-devolvido {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-desconhecido {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .vazio {
+            text-align: center;
+            color: #64748b;
+            padding: 30px;
+        }
+
+        .erro-api {
+            background: #fef2f2;
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #fecaca;
+        }
+
+        .sucesso-api {
+            background: #ecfdf5;
+            color: #047857;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #a7f3d0;
+        }
+
+        @media (max-width: 1100px) {
+
+            .cards {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+        }
+
+        @media (max-width: 650px) {
+
+            .sidebar {
+                width: 70px;
+            }
+
+            .logo h2,
+            .logo p,
+            .menu span,
+            .versao {
+                display: none;
+            }
+
+            .logo {
+                padding: 10px;
+            }
+
+            .logo-top {
+                justify-content: center;
+            }
+
+            .menu a {
+                text-align: center;
+                padding: 15px 5px;
+                border-radius: 0;
+            }
+
+            .conteudo {
+                margin-left: 70px;
+                width: calc(100% - 70px);
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 18px;
+            }
+
+            .topo {
+                padding: 12px 15px;
+            }
+
+            .titulo-topo {
+                font-size: 16px;
+            }
+
+            .status-sistema {
+                font-size: 11px;
+            }
+
+            .btn-atualizar {
+                font-size: 11px;
+                padding: 8px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="layout">
+
+    <!-- =====================================================
+         MENU
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+
+            <div class="logo-top">
+
+                <div class="logo-icon">
+                    🏷️
+                </div>
+
+                <h2>
+                    Inventário RFID
+                </h2>
+
+            </div>
+
+            <p>
+                Controle de equipamentos
+            </p>
+
+        </div>
+
+        <nav class="menu">
+
+            <a
+                href="/"
+                class="ativo"
+            >
+                📊 <span>Dashboard</span>
+            </a>
+
+            <a href="/cadastro">
+                👤 <span>Funcionários</span>
+            </a>
+
+            <a href="/cadastro">
+                🔧 <span>Equipamentos</span>
+            </a>
+
+            <a href="/controle">
+                📦 <span>Empréstimos</span>
+            </a>
+
+        </nav>
+
+        <div class="versao">
+            Sistema RFID<br>
+            v3.1
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         CONTEÚDO
+    ====================================================== -->
+
+    <main class="conteudo">
+
+
+        <!-- =================================================
+             TOPO
+        ================================================== -->
+
+        <header class="topo">
+
+            <div class="titulo-topo">
+                Sistema de Inventário
+            </div>
+
+            <div class="topo-direita">
+
+                <div
+                    id="statusSistema"
+                    class="status-sistema"
+                >
+
+                    <span
+                        id="bolinhaStatus"
+                        class="bolinha"
+                    ></span>
+
+                    <span id="textoStatus">
+                        Verificando...
+                    </span>
+
+                </div>
+
+                <button
+                    id="btnAtualizar"
+                    class="btn-atualizar"
+                    onclick="carregarDashboard(true)"
+                >
+                    🔄 Atualizar
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             DASHBOARD
+        ================================================== -->
+
+        <section class="container">
+
+
+            <div class="cabecalho">
+
+                <h1>
+                    Dashboard
+                </h1>
+
+                <p>
+                    Visão geral do sistema de inventário RFID.
+                </p>
+
+            </div>
+
+
+            <div
+                id="erroAPI"
+                class="erro-api"
+            ></div>
+
+
+            <div
+                id="sucessoAPI"
+                class="sucesso-api"
+            ></div>
+
+
+            <!-- =============================================
+                 CARDS
+            ============================================== -->
+
+            <div class="cards">
+
+
+                <div class="card">
+
+                    <div>
+
+                        <div class="card-label">
+                            Funcionários
+                        </div>
+
+                        <div
+                            id="totalFuncionarios"
+                            class="card-numero"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+                    <div class="card-icone">
+                        👤
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div>
+
+                        <div class="card-label">
+                            Equipamentos
+                        </div>
+
+                        <div
+                            id="totalEquipamentos"
+                            class="card-numero"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+                    <div class="card-icone">
+                        🔧
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div>
+
+                        <div class="card-label">
+                            Disponíveis
+                        </div>
+
+                        <div
+                            id="totalDisponiveis"
+                            class="card-numero"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+                    <div class="card-icone">
+                        ✅
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div>
+
+                        <div class="card-label">
+                            Empréstimos ativos
+                        </div>
+
+                        <div
+                            id="totalEmprestimos"
+                            class="card-numero"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+                    <div class="card-icone">
+                        📦
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =============================================
+                 EQUIPAMENTOS
+            ============================================== -->
+
+            <div class="painel">
+
+                <div class="painel-titulo">
+                    Equipamentos
+                </div>
+
+                <div class="tabela-container">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    ID
+                                </th>
+
+                                <th>
+                                    Equipamento
+                                </th>
+
+                                <th>
+                                    UID
+                                </th>
+
+                                <th>
+                                    Box
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody
+                            id="listaEquipamentos"
+                        >
+
+                            <tr>
+
+                                <td
+                                    colspan="5"
+                                    class="vazio"
+                                >
+                                    Carregando...
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <!-- =============================================
+                 ÚLTIMOS EMPRÉSTIMOS
+            ============================================== -->
+
+            <div class="painel">
+
+                <div class="painel-titulo">
+                    Últimos empréstimos
+                </div>
+
+                <div class="tabela-container">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    ID
+                                </th>
+
+                                <th>
+                                    Funcionário
+                                </th>
+
+                                <th>
+                                    Equipamento
+                                </th>
+
+                                <th>
+                                    Data de retirada
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody
+                            id="listaEmprestimos"
+                        >
+
+                            <tr>
+
+                                <td
+                                    colspan="5"
+                                    class="vazio"
+                                >
+                                    Carregando...
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script>
+
+    // =====================================================
+    // CONFIGURAÇÃO
+    // =====================================================
+
+    const API_URL = "";
+
+    let carregando = false;
+
+
+    // =====================================================
+    // ELEMENTOS
+    // =====================================================
+
+    const elementos = {
+
+        erroAPI:
+            document.getElementById("erroAPI"),
+
+        sucessoAPI:
+            document.getElementById("sucessoAPI"),
+
+        bolinhaStatus:
+            document.getElementById("bolinhaStatus"),
+
+        textoStatus:
+            document.getElementById("textoStatus"),
+
+        btnAtualizar:
+            document.getElementById("btnAtualizar"),
+
+        totalFuncionarios:
+            document.getElementById("totalFuncionarios"),
+
+        totalEquipamentos:
+            document.getElementById("totalEquipamentos"),
+
+        totalDisponiveis:
+            document.getElementById("totalDisponiveis"),
+
+        totalEmprestimos:
+            document.getElementById("totalEmprestimos"),
+
+        listaEquipamentos:
+            document.getElementById("listaEquipamentos"),
+
+        listaEmprestimos:
+            document.getElementById("listaEmprestimos")
+
+    };
+
+
+    // =====================================================
+    // ESCAPAR HTML
+    // =====================================================
+
+    function escaparHTML(valor) {
+
+        if (
+            valor === null ||
+            valor === undefined
+        ) {
+
+            return "";
+
+        }
+
+        return String(valor)
+
+            .replace(/&/g, "&amp;")
+
+            .replace(/</g, "&lt;")
+
+            .replace(/>/g, "&gt;")
+
+            .replace(/"/g, "&quot;")
+
+            .replace(/'/g, "&#039;");
+
+    }
+
+
+    // =====================================================
+    // CONVERTER PARA NÚMERO SEGURO
+    // =====================================================
+
+    function numeroSeguro(valor) {
+
+        const numero =
+            Number(valor);
+
+        if (
+            Number.isFinite(numero)
+        ) {
+
+            return numero;
+
+        }
+
+        return 0;
+
+    }
+
+
+    // =====================================================
+    // NOME DO FUNCIONÁRIO
+    // =====================================================
+
+    function nomeFuncionario(funcionario) {
+
+        if (
+            funcionario === null ||
+            funcionario === undefined
+        ) {
+
+            return "—";
+
+        }
+
+        if (
+            typeof funcionario === "object"
+        ) {
+
+            return funcionario.nome
+                ? String(funcionario.nome)
+                : "—";
+
+        }
+
+        return String(funcionario);
+
+    }
+
+
+    // =====================================================
+    // NOME DO EQUIPAMENTO
+    // =====================================================
+
+    function nomeEquipamento(equipamento) {
+
+        if (
+            equipamento === null ||
+            equipamento === undefined
+        ) {
+
+            return "—";
+
+        }
+
+        if (
+            typeof equipamento === "object"
+        ) {
+
+            return equipamento.nome
+                ? String(equipamento.nome)
+                : "—";
+
+        }
+
+        return String(equipamento);
+
+    }
+
+
+    // =====================================================
+    // FORMATAR DATA
+    // =====================================================
+
+    function formatarData(data) {
+
+        if (!data) {
+
+            return "—";
+
+        }
+
+        const dataObj =
+            new Date(data);
+
+        if (
+            Number.isNaN(
+                dataObj.getTime()
+            )
+        ) {
+
+            return "—";
+
+        }
+
+        return dataObj.toLocaleString(
+            "pt-BR",
+            {
+                dateStyle: "short",
+                timeStyle: "medium"
+            }
+        );
+
+    }
+
+
+    // =====================================================
+    // NORMALIZAR STATUS
+    // =====================================================
+
+    function normalizarStatus(status) {
+
+        return String(
+            status || ""
+        )
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(
+                /[\u0300-\u036f]/g,
+                ""
+            );
+
+    }
+
+
+    // =====================================================
+    // MOSTRAR STATUS EQUIPAMENTO
+    // =====================================================
+
+    function mostrarStatusEquipamento(status) {
+
+        const normalizado =
+            normalizarStatus(status);
+
+
+        if (
+            normalizado === "disponivel"
+        ) {
+
+            return `
+                <span class="badge badge-disponivel">
+                    Disponível
+                </span>
+            `;
+
+        }
+
+
+        if (
+            normalizado === "emprestado"
+        ) {
+
+            return `
+                <span class="badge badge-emprestado">
+                    Emprestado
+                </span>
+            `;
+
+        }
+
+
+        return `
+            <span class="badge badge-desconhecido">
+                ${escaparHTML(status || "Desconhecido")}
+            </span>
+        `;
+
+    }
+
+
+    // =====================================================
+    // MOSTRAR STATUS EMPRÉSTIMO
+    // =====================================================
+
+    function mostrarStatusEmprestimo(emp) {
+
+        if (!emp) {
+
+            return `
+                <span class="badge badge-desconhecido">
+                    Desconhecido
+                </span>
+            `;
+
+        }
+
+
+        const status =
+            normalizarStatus(
+                emp.status
+            );
+
+
+        /*
+         * O banco atual usa data_devolucao.
+         *
+         * Se existir data de devolução:
+         *      DEVOLVIDO
+         *
+         * Caso contrário:
+         *      ATIVO
+         */
+
+        if (
+            emp.data_devolucao
+        ) {
+
+            return `
+                <span class="badge badge-devolvido">
+                    Devolvido
+                </span>
+            `;
+
+        }
+
+
+        if (
+            status === "devolvido"
+        ) {
+
+            return `
+                <span class="badge badge-devolvido">
+                    Devolvido
+                </span>
+            `;
+
+        }
+
+
+        return `
+            <span class="badge badge-ativo">
+                Ativo
+            </span>
+        `;
+
+    }
+
+
+    // =====================================================
+    // MOSTRAR ERRO
+    // =====================================================
+
+    function mostrarErro(mensagem) {
+
+        elementos.erroAPI.textContent =
+            mensagem ||
+            "Erro ao carregar os dados.";
+
+        elementos.erroAPI.style.display =
+            "block";
+
+    }
+
+
+    // =====================================================
+    // ESCONDER ERRO
+    // =====================================================
+
+    function esconderErro() {
+
+        elementos.erroAPI.style.display =
+            "none";
+
+    }
+
+
+    // =====================================================
+    // MOSTRAR SUCESSO
+    // =====================================================
+
+    function mostrarSucesso(mensagem) {
+
+        elementos.sucessoAPI.textContent =
+            mensagem;
+
+        elementos.sucessoAPI.style.display =
+            "block";
+
+        setTimeout(
+            function() {
+
+                elementos.sucessoAPI.style.display =
+                    "none";
+
+            },
+            2500
+        );
+
+    }
+
+
+    // =====================================================
+    // VERIFICAR SERVIDOR
+    // =====================================================
+
+    async function verificarServidor() {
+
+        try {
+
+            const resposta =
+                await fetch(
+                    API_URL + "/teste",
+                    {
+                        method: "GET",
+                        cache: "no-store"
+                    }
+                );
+
+
+            if (!resposta.ok) {
+
+                throw new Error(
+                    "Servidor retornou HTTP " +
+                    resposta.status
+                );
+
+            }
+
+
+            const dados =
+                await resposta.json();
+
+
+            if (
+                dados &&
+                dados.sucesso === true
+            ) {
+
+                elementos.bolinhaStatus
+                    .classList
+                    .add("online");
+
+                elementos.textoStatus.textContent =
+                    "Sistema online";
+
+                return true;
+
+            }
+
+
+            throw new Error(
+                "Servidor respondeu de forma inválida."
+            );
+
+        }
+
+        catch (erro) {
+
+            console.error(
+                "Erro ao verificar servidor:",
+                erro
+            );
+
+
+            elementos.bolinhaStatus
+                .classList
+                .remove("online");
+
+            elementos.textoStatus.textContent =
+                "Sistema offline";
+
+
+            return false;
+
+        }
+
+    }
+
+
+    // =====================================================
+    // CARREGAR DASHBOARD
+    // =====================================================
+
+    async function carregarDashboard(mostrarMensagem = false) {
+
+        /*
+         * Evita duas atualizações simultâneas.
+         */
+
+        if (carregando) {
+
+            return;
+
+        }
+
+
+        carregando = true;
+
+        elementos.btnAtualizar.disabled =
+            true;
+
+
+        try {
+
+            esconderErro();
+
+
+            const servidorOnline =
+                await verificarServidor();
+
+
+            if (!servidorOnline) {
+
+                throw new Error(
+                    "Não foi possível conectar ao servidor."
+                );
+
+            }
+
+
+            // =================================================
+            // DASHBOARD
+            // =================================================
+
+            const respostaDashboard =
+                await fetch(
+                    API_URL +
+                    "/api/dashboard",
+                    {
+                        method: "GET",
+                        cache: "no-store"
+                    }
+                );
+
+
+            if (
+                !respostaDashboard.ok
+            ) {
+
+                throw new Error(
+                    "Erro HTTP no dashboard: " +
+                    respostaDashboard.status
+                );
+
+            }
+
+
+            const dashboard =
+                await respostaDashboard.json();
+
+
+            if (
+                !dashboard ||
+                dashboard.sucesso !== true
+            ) {
+
+                throw new Error(
+                    "Resposta inválida da API do dashboard."
+                );
+
+            }
+
+
+            // =================================================
+            // CARDS
+            // =================================================
+
+            elementos.totalFuncionarios.textContent =
+                numeroSeguro(
+                    dashboard.funcionarios
+                );
+
+
+            elementos.totalEquipamentos.textContent =
+                numeroSeguro(
+                    dashboard.equipamentos
+                );
+
+
+            elementos.totalDisponiveis.textContent =
+                numeroSeguro(
+                    dashboard.disponiveis
+                );
+
+
+            /*
+             * IMPORTANTE:
+             *
+             * dashboard.emprestimos já representa
+             * os empréstimos ativos.
+             */
+
+            elementos.totalEmprestimos.textContent =
+                numeroSeguro(
+                    dashboard.emprestimos
+                );
+
+
+            // =================================================
+            // TABELAS
+            // =================================================
+
+            await carregarEquipamentos();
+
+            await carregarUltimosEmprestimos();
+
+
+            if (mostrarMensagem) {
+
+                mostrarSucesso(
+                    "Dashboard atualizado com sucesso."
+                );
+
+            }
+
+        }
+
+        catch (erro) {
+
+            console.error(
+                "Erro no dashboard:",
+                erro
+            );
+
+
+            mostrarErro(
+                erro.message ||
+                "Erro ao carregar os dados do sistema."
+            );
+
+        }
+
+        finally {
+
+            carregando = false;
+
+            elementos.btnAtualizar.disabled =
+                false;
+
+        }
+
+    }
+
+
+    // =====================================================
+    // CARREGAR EQUIPAMENTOS
+    // =====================================================
+
+    async function carregarEquipamentos() {
+
+        const tabela =
+            elementos.listaEquipamentos;
+
+
+        try {
+
+            tabela.innerHTML = `
+                <tr>
+                    <td
+                        colspan="5"
+                        class="vazio"
+                    >
+                        Carregando...
+                    </td>
+                </tr>
+            `;
+
+
+            const resposta =
+                await fetch(
+                    API_URL +
+                    "/api/equipamentos",
+                    {
+                        method: "GET",
+                        cache: "no-store"
+                    }
+                );
+
+
+            if (
+                !resposta.ok
+            ) {
+
+                throw new Error(
+                    "Erro HTTP nos equipamentos: " +
+                    resposta.status
+                );
+
+            }
+
+
+            const dados =
+                await resposta.json();
+
+
+            /*
+             * CORREÇÃO PRINCIPAL
+             *
+             * A API retorna:
+             *
+             * {
+             *   sucesso: true,
+             *   equipamentos: [...]
+             * }
+             *
+             * Portanto precisamos usar:
+             *
+             * dados.equipamentos
+             */
+
+            const equipamentos =
+                Array.isArray(
+                    dados.equipamentos
+                )
+                    ? dados.equipamentos
+                    : [];
+
+
+            tabela.innerHTML =
+                "";
+
+
+            if (
+                equipamentos.length === 0
+            ) {
+
+                tabela.innerHTML = `
+                    <tr>
+                        <td
+                            colspan="5"
+                            class="vazio"
+                        >
+                            Nenhum equipamento cadastrado.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+
+            }
+
+
+            equipamentos.forEach(
+                function(eq) {
+
+                    const id =
+                        eq.id ?? "—";
+
+                    const nome =
+                        eq.nome ?? "Sem nome";
+
+                    const uid =
+                        eq.uid_tag ?? "—";
+
+                    const box =
+                        eq.box_id ??
+                        eq.box ??
+                        "—";
+
+                    tabela.innerHTML += `
+
+                        <tr>
+
+                            <td>
+                                ${escaparHTML(id)}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    ${escaparHTML(nome)}
+                                </strong>
+                            </td>
+
+                            <td>
+                                <code>
+                                    ${escaparHTML(uid)}
+                                </code>
+                            </td>
+
+                            <td>
+                                ${escaparHTML(box)}
+                            </td>
+
+                            <td>
+                                ${mostrarStatusEquipamento(
+                                    eq.status
+                                )}
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                }
+            );
+
+        }
+
+        catch (erro) {
+
+            console.error(
+                "Erro equipamentos:",
+                erro
+            );
+
+
+            tabela.innerHTML = `
+
+                <tr>
+
+                    <td
+                        colspan="5"
+                        class="vazio"
+                    >
+                        Erro ao carregar equipamentos.
+                    </td>
+
+                </tr>
+
+            `;
+
+
+            throw erro;
+
+        }
+
+    }
+
+
+    // =====================================================
+    // CARREGAR ÚLTIMOS EMPRÉSTIMOS
+    // =====================================================
+
+    async function carregarUltimosEmprestimos() {
+
+        const tabela =
+            elementos.listaEmprestimos;
+
+
+        try {
+
+            tabela.innerHTML = `
+
+                <tr>
+
+                    <td
+                        colspan="5"
+                        class="vazio"
+                    >
+                        Carregando...
+                    </td>
+
+                </tr>
+
+            `;
+
+
+            const resposta =
+                await fetch(
+                    API_URL +
+                    "/api/ultimos-emprestimos",
+                    {
+                        method: "GET",
+                        cache: "no-store"
+                    }
+                );
+
+
+            if (
+                !resposta.ok
+            ) {
+
+                throw new Error(
+                    "Erro HTTP nos empréstimos: " +
+                    resposta.status
+                );
+
+            }
+
+
+            const dados =
+                await resposta.json();
+
+
+            /*
+             * A API retorna:
+             *
+             * {
+             *   sucesso: true,
+             *   emprestimos: [...]
+             * }
+             */
+
+            const emprestimos =
+                Array.isArray(
+                    dados.emprestimos
+                )
+                    ? dados.emprestimos
+                    : [];
+
+
+            tabela.innerHTML =
+                "";
+
+
+            if (
+                emprestimos.length === 0
+            ) {
+
+                tabela.innerHTML = `
+
+                    <tr>
+
+                        <td
+                            colspan="5"
+                            class="vazio"
+                        >
+                            Nenhum empréstimo registrado.
+                        </td>
+
+                    </tr>
+
+                `;
+
+                return;
+
+            }
+
+
+            emprestimos.forEach(
+                function(emp) {
+
+                    /*
+                     * FUNCIONÁRIO
+                     */
+
+                    const funcionario =
+                        nomeFuncionario(
+                            emp.funcionario
+                        );
+
+
+                    /*
+                     * EQUIPAMENTO
+                     */
+
+                    const equipamento =
+                        nomeEquipamento(
+                            emp.equipamento
+                        );
+
+
+                    /*
+                     * DATA
+                     *
+                     * Banco atual:
+                     *
+                     * data_retirada
+                     */
+
+                    const data =
+                        emp.data_retirada ||
+                        emp.data_emprestimo ||
+                        emp.criado_em;
+
+
+                    tabela.innerHTML += `
+
+                        <tr>
+
+                            <td>
+                                ${escaparHTML(
+                                    emp.id ?? "—"
+                                )}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    ${escaparHTML(
+                                        funcionario
+                                    )}
+                                </strong>
+                            </td>
+
+                            <td>
+                                ${escaparHTML(
+                                    equipamento
+                                )}
+                            </td>
+
+                            <td>
+                                ${escaparHTML(
+                                    formatarData(data)
+                                )}
+                            </td>
+
+                            <td>
+                                ${mostrarStatusEmprestimo(
+                                    emp
+                                )}
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                }
+            );
+
+        }
+
+        catch (erro) {
+
+            console.error(
+                "Erro empréstimos:",
+                erro
+            );
+
+
+            tabela.innerHTML = `
+
+                <tr>
+
+                    <td
+                        colspan="5"
+                        class="vazio"
+                    >
+                        Erro ao carregar empréstimos.
+                    </td>
+
+                </tr>
+
+            `;
+
+
+            throw erro;
+
+        }
+
+    }
+
+
+    // =====================================================
+    // INICIALIZAÇÃO
+    // =====================================================
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function() {
+
+            carregarDashboard();
+
+        }
+    );
+
+
+    // =====================================================
+    // ATUALIZAÇÃO AUTOMÁTICA
+    // =====================================================
+
+    setInterval(
+        function() {
+
+            carregarDashboard(false);
+
+        },
+        10000
+    );
+
+</script>
+
+</body>
+
+</html>

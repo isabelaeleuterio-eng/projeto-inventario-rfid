@@ -45,6 +45,7 @@
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <SPI.h>
 #include <MFRC522.h>
 
@@ -205,9 +206,15 @@ bool avisarOnline() {
   Serial.print("URL: ");
   Serial.println(url);
 
+  WiFiClientSecure client;
+  client.setInsecure();
+
   HTTPClient http;
 
-  http.begin(url);
+  if (!http.begin(client, url)) {
+    Serial.println("ERRO: nao foi possivel iniciar HTTPS.");
+    return false;
+  }
 
   http.setTimeout(HTTP_TIMEOUT_MS);
 
@@ -228,6 +235,11 @@ bool avisarOnline() {
 
   Serial.print("HTTP: ");
   Serial.println(codigo);
+
+  if (codigo <= 0) {
+    Serial.print("Erro HTTP detalhado: ");
+    Serial.println(http.errorToString(codigo));
+  }
 
   bool sucesso = false;
 
@@ -296,6 +308,11 @@ bool tentarEnviarRFID(String uid) {
 
   Serial.print("Codigo HTTP: ");
   Serial.println(codigo);
+
+  if (codigo <= 0) {
+    Serial.print("Erro HTTP detalhado: ");
+    Serial.println(http.errorToString(codigo));
+  }
 
   bool sucesso = false;
 
@@ -405,6 +422,9 @@ void setup() {
   rfid.PCD_Init();
 
   delay(100);
+
+  // Ganho máximo para facilitar a leitura das tags, inclusive UIDs de 7 bytes.
+  rfid.PCD_SetAntennaGain(MFRC522::RxGain_max);
 
   byte versao =
     rfid.PCD_ReadRegister(
@@ -575,8 +595,17 @@ void loop() {
   Serial.print("UID: ");
   Serial.println(uid);
 
-  Serial.print("Tamanho: ");
-  Serial.println(rfid.uid.size);
+  Serial.print("Tamanho UID: ");
+  Serial.print(rfid.uid.size);
+  Serial.println(" bytes");
+
+  if (rfid.uid.size == 7) {
+    Serial.println("Tipo: UID de 7 bytes (tag de equipamento).");
+  } else if (rfid.uid.size == 4) {
+    Serial.println("Tipo: UID de 4 bytes (tag/cartao de funcionario).");
+  } else {
+    Serial.println("Tipo: UID de tamanho diferente.");
+  }
 
   // ----------------------------------------------------------
   // ENVIAR PARA NUVEM
@@ -599,5 +628,5 @@ void loop() {
 
   Serial.println();
 
-  delay(300);
+  delay(150);
 }
