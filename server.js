@@ -701,7 +701,7 @@ app.post("/api/rfid/cadastro/iniciar", (req, res) => {
 /* Seleção obrigatória de equipamento */
 app.post("/api/rfid/selecionar", async (req, res) => {
   try {
-    expirarEstados();
+    expirarFluxoSeNecessario();
 
     const funcionarioId = Number(req.body?.funcionario_id);
     const equipamentoId = Number(req.body?.equipamento_id);
