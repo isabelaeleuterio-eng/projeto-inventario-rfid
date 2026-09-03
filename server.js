@@ -107,13 +107,13 @@ function expirar() {
 }
 
 async function buscarFuncionarioPorUID(u) {
-    const r = await supabase.from("funcionarios").select("*").eq("uid_tag_pessoal", u).maybeSingle();
+    const r = await supabase.from("funcionarios").select("*").eq("uid_tag_pessoal", u).eq("ativo", true).maybeSingle();
     if (r.error) throw r.error;
     return r.data || null;
 }
 
 async function buscarEquipamentoPorUID(u) {
-    const r = await supabase.from("equipamentos").select("*").eq("uid_tag", u).maybeSingle();
+    const r = await supabase.from("equipamentos").select("*").eq("uid_tag", u).eq("ativo", true).maybeSingle();
     if (r.error) throw r.error;
     return r.data || null;
 }
@@ -147,7 +147,7 @@ async function ativoEquipamento(id) {
 }
 
 async function equipamentos() {
-    const r = await supabase.from("equipamentos").select("*").order("id", { ascending: true });
+    const r = await supabase.from("equipamentos").select("*").eq("ativo", true).order("id", { ascending: true });
     if (r.error) throw r.error;
     return r.data || [];
 }
@@ -160,7 +160,7 @@ async function disponiveis() {
 async function boxOcupada(box, ignorar = null) {
     if (box == null || box === "") return false;
 
-    const r = await supabase.from("equipamentos").select("id").eq("box_id", Number(box));
+    const r = await supabase.from("equipamentos").select("id").eq("box_id", Number(box)).eq("ativo", true);
     if (r.error) throw r.error;
 
     return (r.data || []).some(x => Number(x.id) !== Number(ignorar));
@@ -1108,7 +1108,7 @@ app.post("/api/rfid/selecionar", async (req, res) => {
 /* FUNCIONÁRIOS */
 app.get("/api/funcionarios", async (req, res) => {
     try {
-        const r = await supabase.from("funcionarios").select("*").order("id", { ascending: true });
+        const r = await supabase.from("funcionarios").select("*").eq("ativo", true).order("id", { ascending: true });
         if (r.error) throw r.error;
 
         res.json({
@@ -1122,7 +1122,7 @@ app.get("/api/funcionarios", async (req, res) => {
 
 app.get("/funcionarios", async (req, res) => {
     try {
-        const r = await supabase.from("funcionarios").select("*").order("id", { ascending: true });
+        const r = await supabase.from("funcionarios").select("*").eq("ativo", true).order("id", { ascending: true });
         res.json(r.data || []);
     } catch (e) {
         erroResposta(res, e);
@@ -1174,23 +1174,42 @@ app.post("/api/funcionarios", async (req, res) => {
     }
 });
 
+/*
+ * "Excluir" aqui significa desativar, não apagar a linha.
+ * Isso evita a trava de integridade do banco (o histórico de
+ * empréstimos aponta pro funcionário) e mantém o histórico
+ * mostrando exatamente quem pegou o quê, mesmo depois de excluído.
+ * Só é bloqueado se o funcionário estiver com um equipamento
+ * emprestado agora mesmo.
+ */
 app.delete("/api/funcionarios/:id", async (req, res) => {
     try {
-        const a = await ativosFuncionario(Number(req.params.id));
+        const id = Number(req.params.id);
+        const a = await ativosFuncionario(id);
 
         if (a.length) {
             return res.status(409).json({
                 sucesso: false,
-                erro: "Não é possível excluir um funcionário com equipamento emprestado."
+                erro: "Não é possível excluir: este funcionário está com um equipamento emprestado. Registre a devolução antes."
             });
         }
 
-        const r = await supabase.from("funcionarios").delete().eq("id", req.params.id);
+        const r = await supabase
+            .from("funcionarios")
+            .update({ ativo: false })
+            .eq("id", id)
+            .select()
+            .maybeSingle();
+
         if (r.error) throw r.error;
+
+        if (!r.data) {
+            return res.status(404).json({ sucesso: false, erro: "Funcionário não encontrado." });
+        }
 
         res.json({
             sucesso: true,
-            mensagem: "Funcionário excluído."
+            mensagem: "Funcionário excluído. O histórico de empréstimos dele continua registrado."
         });
     } catch (e) {
         erroResposta(res, e, 400);
@@ -1200,7 +1219,7 @@ app.delete("/api/funcionarios/:id", async (req, res) => {
 /* EQUIPAMENTOS */
 app.get("/api/equipamentos", async (req, res) => {
     try {
-        const r = await supabase.from("equipamentos").select("*").order("id", { ascending: true });
+        const r = await supabase.from("equipamentos").select("*").eq("ativo", true).order("id", { ascending: true });
         if (r.error) throw r.error;
 
         res.json({
@@ -1214,7 +1233,7 @@ app.get("/api/equipamentos", async (req, res) => {
 
 app.get("/equipamentos", async (req, res) => {
     try {
-        const r = await supabase.from("equipamentos").select("*").order("id", { ascending: true });
+        const r = await supabase.from("equipamentos").select("*").eq("ativo", true).order("id", { ascending: true });
         res.json(r.data || []);
     } catch (e) {
         erroResposta(res, e);
@@ -1353,23 +1372,38 @@ app.put("/api/equipamentos/:id", async (req, res) => {
     }
 });
 
+/*
+ * Mesma lógica dos funcionários: "excluir" desativa, não apaga a
+ * linha, então o histórico de empréstimos continua íntegro.
+ */
 app.delete("/api/equipamentos/:id", async (req, res) => {
     try {
-        const a = await ativoEquipamento(Number(req.params.id));
+        const id = Number(req.params.id);
+        const a = await ativoEquipamento(id);
 
         if (a) {
             return res.status(409).json({
                 sucesso: false,
-                erro: "Não é possível excluir um equipamento emprestado."
+                erro: "Não é possível excluir: este equipamento está emprestado agora. Registre a devolução antes."
             });
         }
 
-        const r = await supabase.from("equipamentos").delete().eq("id", req.params.id);
+        const r = await supabase
+            .from("equipamentos")
+            .update({ ativo: false })
+            .eq("id", id)
+            .select()
+            .maybeSingle();
+
         if (r.error) throw r.error;
+
+        if (!r.data) {
+            return res.status(404).json({ sucesso: false, erro: "Equipamento não encontrado." });
+        }
 
         res.json({
             sucesso: true,
-            mensagem: "Equipamento excluído."
+            mensagem: "Equipamento excluído. O histórico de empréstimos dele continua registrado."
         });
     } catch (e) {
         erroResposta(res, e, 400);
@@ -1576,12 +1610,46 @@ app.put("/api/emprestimos/:id/devolver", async (req, res) => {
     }
 });
 
+/*
+ * Apaga de vez uma movimentação do histórico.
+ * Só permite apagar empréstimos já DEVOLVIDOS — isso protege a
+ * operação em andamento: um empréstimo Ativo ou Pendente RFID
+ * nunca pode ser apagado por aqui, porque o equipamento ficaria
+ * marcado como emprestado sem nenhum jeito de devolvê-lo.
+ */
+app.delete("/api/emprestimos/:id", async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+
+        const atual = await supabase.from("emprestimos").select("*").eq("id", id).maybeSingle();
+        if (atual.error) throw atual.error;
+
+        if (!atual.data) {
+            return res.status(404).json({ sucesso: false, erro: "Movimentação não encontrada." });
+        }
+
+        if (status(atual.data.status) !== "devolvido") {
+            return res.status(409).json({
+                sucesso: false,
+                erro: "Só é possível apagar movimentações já devolvidas. Esta ainda está em andamento."
+            });
+        }
+
+        const r = await supabase.from("emprestimos").delete().eq("id", id);
+        if (r.error) throw r.error;
+
+        res.json({ sucesso: true, mensagem: "Movimentação apagada do histórico." });
+    } catch (e) {
+        erroResposta(res, e, 400);
+    }
+});
+
 /* DASHBOARD */
 app.get("/api/dashboard", async (req, res) => {
     try {
         const [f, e, ativos] = await Promise.all([
-            supabase.from("funcionarios").select("id", { count: "exact", head: true }),
-            supabase.from("equipamentos").select("id,status,box_id"),
+            supabase.from("funcionarios").select("id", { count: "exact", head: true }).eq("ativo", true),
+            supabase.from("equipamentos").select("id,status,box_id").eq("ativo", true),
             supabase.from("emprestimos").select("id").eq("status", "Ativo").is("data_devolucao", null)
         ]);
 

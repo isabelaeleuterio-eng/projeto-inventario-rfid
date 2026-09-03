@@ -72,11 +72,14 @@
       </div>
 
       <div class="panel">
-        <div class="panel-head"><h2>Histórico de movimentações</h2></div>
+        <div class="panel-head">
+          <h2>Histórico de movimentações</h2>
+          <span style="font-size:12px;color:var(--ink-faint);">Movimentações em aberto não podem ser apagadas</span>
+        </div>
         <div class="panel-body flush">
           <table>
-            <thead><tr><th>Funcionário</th><th>Equipamento</th><th>Box</th><th>Retirada</th><th>Devolução</th></tr></thead>
-            <tbody id="tbEmprestimos"><tr class="empty-row"><td colspan="5">Carregando…</td></tr></tbody>
+            <thead><tr><th>Funcionário</th><th>Equipamento</th><th>Box</th><th>Retirada</th><th>Devolução</th><th></th></tr></thead>
+            <tbody id="tbEmprestimos"><tr class="empty-row"><td colspan="6">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -244,14 +247,17 @@ async function carregarHistorico(){
     const r = await fetch('/api/ultimos-emprestimos');
     const d = await r.json();
     const lista = d.emprestimos || [];
-    $('#tbEmprestimos').innerHTML = lista.length ? lista.map(e => `
-      <tr>
+    $('#tbEmprestimos').innerHTML = lista.length ? lista.map(e => {
+      const concluido = !!e.data_devolucao;
+      return `<tr>
         <td>${escapeHtml(e.funcionario?.nome || '—')}</td>
         <td>${escapeHtml(e.equipamento?.nome || '—')}</td>
         <td class="mono">${escapeHtml(e.box ?? e.equipamento?.box_id ?? '—')}</td>
         <td class="mono">${fmtData(e.data_retirada)}</td>
-        <td class="mono">${e.data_devolucao ? fmtData(e.data_devolucao) : '<span class="badge badge-amber">em aberto</span>'}</td>
-      </tr>`).join('') : `<tr class="empty-row"><td colspan="5">Nenhuma movimentação registrada ainda.</td></tr>`;
+        <td class="mono">${concluido ? fmtData(e.data_devolucao) : '<span class="badge badge-amber">em aberto</span>'}</td>
+        <td style="text-align:right;">${concluido ? `<button class="btn btn-ghost" data-del-emprestimo="${e.id}">apagar</button>` : ''}</td>
+      </tr>`;
+    }).join('') : `<tr class="empty-row"><td colspan="6">Nenhuma movimentação registrada ainda.</td></tr>`;
   }catch(e){}
 }
 
@@ -380,18 +386,27 @@ async function carregarListasCadastro(){
 document.addEventListener('click', async (ev) => {
   const btnF = ev.target.closest('[data-del-func]');
   const btnE = ev.target.closest('[data-del-equip]');
+  const btnM = ev.target.closest('[data-del-emprestimo]');
+
   if(btnF){
-    if(!confirm('Excluir este funcionário?')) return;
+    if(!confirm('Excluir este funcionário? Ele some das listas, mas o histórico dele continua registrado.')) return;
     const r = await fetch('/api/funcionarios/' + btnF.dataset.delFunc, { method:'DELETE' });
     const d = await r.json();
     if(!d.sucesso) alert(d.erro || 'Não foi possível excluir.');
     atualizarTudo();
   }
   if(btnE){
-    if(!confirm('Excluir este equipamento?')) return;
+    if(!confirm('Excluir este equipamento? Ele some das listas, mas o histórico dele continua registrado.')) return;
     const r = await fetch('/api/equipamentos/' + btnE.dataset.delEquip, { method:'DELETE' });
     const d = await r.json();
     if(!d.sucesso) alert(d.erro || 'Não foi possível excluir.');
+    atualizarTudo();
+  }
+  if(btnM){
+    if(!confirm('Apagar esta movimentação do histórico? Essa ação não pode ser desfeita.')) return;
+    const r = await fetch('/api/emprestimos/' + btnM.dataset.delEmprestimo, { method:'DELETE' });
+    const d = await r.json();
+    if(!d.sucesso) alert(d.erro || 'Não foi possível apagar.');
     atualizarTudo();
   }
 });
