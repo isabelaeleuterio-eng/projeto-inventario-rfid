@@ -1,76 +1,171 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Inventário RFID | Controle</title>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Controle RFID | Inventário</title>
 <style>
-:root{--navy:#0b1220;--blue:#2563eb;--green:#10b981;--red:#ef4444;--amber:#f59e0b;--bg:#f4f7fb;--text:#0f172a;--muted:#64748b;--line:#e2e8f0}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
-header{background:linear-gradient(135deg,#0b1220,#172554);color:#fff;padding:20px 5%;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}.brand{display:flex;gap:12px;align-items:center}.logo{width:44px;height:44px;border-radius:13px;background:#fff1;padding:8px;font-size:25px;text-align:center}.brand h1{margin:0;font-size:21px}.brand p{margin:3px 0 0;color:#cbd5e1;font-size:13px}nav{display:flex;gap:8px;flex-wrap:wrap}nav a{color:#e2e8f0;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:700}nav a:hover,nav a.active{background:#ffffff18;color:#fff}
-.wrap{width:92%;max-width:1250px;margin:30px auto}.title{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:18px}.title h2{font-size:31px;margin:0}.title p{color:var(--muted);margin:7px 0 0}.cloud{padding:8px 12px;border-radius:999px;background:#dcfce7;color:#166534;font-size:12px;font-weight:900;white-space:nowrap}.cloud.off{background:#fee2e2;color:#991b1b}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.card,.panel{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 30px #0f172a0a}.card{padding:18px}.label{color:var(--muted);font-weight:800;font-size:12px}.num{font-size:35px;font-weight:900;margin-top:7px}.blue{color:var(--blue)}.green{color:var(--green)}.red{color:var(--red)}
-.panel{padding:22px;margin-top:18px}.panel h3{margin:0 0 6px;font-size:19px}.sub{color:var(--muted);font-size:13px}.rfidmain{border:2px solid #dbeafe;background:linear-gradient(180deg,#fff,#f8fbff)}.status{padding:15px;border-radius:13px;background:#eff6ff;color:#1d4ed8;font-weight:900;margin:15px 0 10px}.status.ok{background:#dcfce7;color:#166534}.status.err{background:#fee2e2;color:#991b1b}.status.wait{background:#fef3c7;color:#92400e}.uid{font:700 21px Consolas,monospace;letter-spacing:1px;color:#1d4ed8;background:#f8fafc;padding:12px;border-radius:11px}.details{margin-top:12px;padding:14px;border-radius:12px;background:#f8fafc;line-height:1.8}
-.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}.step{padding:10px;border-radius:10px;background:#f1f5f9;color:#64748b;text-align:center;font-size:12px;font-weight:800}.step.active{background:#dbeafe;color:#1d4ed8}.step.done{background:#dcfce7;color:#166534}
-.actionbox{margin-top:17px;padding:18px;border:1px solid var(--line);border-radius:14px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1;min-width:180px}.choice{margin-top:15px}.choice select{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:11px;font-size:15px;background:#fff}.choice button{margin-top:10px;width:100%}
-button{border:0;border-radius:11px;padding:12px 16px;font-weight:800;cursor:pointer}.primary{background:var(--blue);color:#fff}.greenbtn{background:var(--green);color:#fff}.gray{background:#334155;color:#fff}.redbtn{background:var(--red);color:#fff}button:disabled{opacity:.55;cursor:not-allowed}.hidden{display:none}
-.table{overflow:auto}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line);font-size:14px}th{background:#f8fafc;color:var(--muted);font-size:12px;text-transform:uppercase}.pill{padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}.okpill{background:#dcfce7;color:#166534}.waitpill{background:#fef3c7;color:#92400e}.errpill{background:#fee2e2;color:#991b1b}
-.toolbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:10px}.toolbar button{padding:9px 12px;font-size:12px}
-@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}.title{align-items:start;flex-direction:column}}@media(max-width:520px){.grid{grid-template-columns:1fr}.wrap{width:94%}}
-</style></head>
+:root{--nav:#0b1220;--blue:#2563eb;--blue2:#dbeafe;--green:#10b981;--green2:#dcfce7;--red:#ef4444;--red2:#fee2e2;--amber:#f59e0b;--amber2:#fef3c7;--ink:#0f172a;--muted:#64748b;--bg:#f4f7fb;--card:#fff;--line:#e2e8f0}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(135deg,#f8fafc,#eef4ff);color:var(--ink)}
+header{background:linear-gradient(135deg,#0b1220,#172554);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;box-shadow:0 8px 30px #0b122022}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:44px;height:44px;border-radius:13px;background:#ffffff18;display:grid;place-items:center;font-size:25px}.brand h1{margin:0;font-size:20px}.brand p{margin:3px 0 0;color:#bfdbfe;font-size:13px}
+nav{display:flex;gap:8px}nav a{color:#dbeafe;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:700}nav a:hover,nav a.active{background:#ffffff18;color:#fff}
+main{max-width:1240px;margin:28px auto;padding:0 18px}.hero{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:20px}.hero h2{margin:0;font-size:30px}.hero p{margin:7px 0 0;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:800;background:#e2e8f0;color:#475569}.badge.ok{background:var(--green2);color:#047857}.badge.warn{background:var(--amber2);color:#92400e}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 30px #0f172a0a}.label{color:var(--muted);font-size:13px;font-weight:700}.num{font-size:32px;font-weight:900;margin-top:7px}.blue{color:var(--blue)}.green{color:#059669}.red{color:#dc2626}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;margin-bottom:18px;box-shadow:0 10px 35px #0f172a0b}.panel h3{margin:0 0 6px;font-size:19px}.sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0}.step{padding:11px;border-radius:12px;background:#f1f5f9;color:#64748b;text-align:center;font-size:12px;font-weight:800}.step.on{background:var(--blue2);color:#1d4ed8}.step.done{background:var(--green2);color:#047857}
+.rfidbox{border-radius:17px;padding:18px;background:#0f172a;color:#fff;position:relative;overflow:hidden}.rfidbox:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:#2563eb22;right:-80px;top:-80px}.state{display:inline-flex;padding:7px 10px;border-radius:999px;background:#ffffff18;color:#bfdbfe;font-weight:800;font-size:12px}.state.ok{background:#10b98122;color:#86efac}.state.err{background:#ef444422;color:#fca5a5}.uid{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:24px;letter-spacing:2px;margin:14px 0 6px;color:#93c5fd}.msg{font-size:16px;font-weight:800}.detail{margin-top:12px;color:#cbd5e1;font-size:14px}
+.actiongrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.action{border:2px solid transparent;border-radius:16px;padding:18px;text-align:left;background:#f8fafc;cursor:pointer;transition:.15s;font-weight:800}.action:hover{transform:translateY(-1px);border-color:#93c5fd}.action.selected{border-color:var(--blue);background:var(--blue2)}.action.disabled{opacity:.45;cursor:not-allowed}.action .big{font-size:25px;display:block;margin-bottom:7px}.action small{display:block;color:var(--muted);font-weight:600;margin-top:4px}
+.equipgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.equip{border:2px solid var(--line);background:#fff;border-radius:16px;padding:16px;cursor:pointer;text-align:left}.equip:hover{border-color:#93c5fd}.equip.selected{border-color:var(--blue);background:#eff6ff}.equip.off{opacity:.5;cursor:not-allowed}.equipname{font-weight:900;font-size:17px}.meta{color:var(--muted);font-size:12px;margin-top:6px}.statuspill{display:inline-block;margin-top:10px;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:900}.available{background:var(--green2);color:#047857}.loan{background:var(--red2);color:#b91c1c}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.btn{border:0;border-radius:12px;padding:11px 15px;font-weight:800;cursor:pointer}.primary{background:var(--blue);color:#fff}.dark{background:#334155;color:#fff}.light{background:#e2e8f0;color:#334155}.danger{background:var(--red);color:#fff}.btn:disabled{opacity:.45;cursor:not-allowed}
+.alert{padding:14px;border-radius:14px;font-weight:800;margin-top:12px}.alert.ok{background:var(--green2);color:#047857}.alert.err{background:var(--red2);color:#b91c1c}.alert.info{background:var(--blue2);color:#1d4ed8}
+.selected{border:1px solid #bfdbfe;background:#eff6ff;padding:15px;border-radius:15px}.selected strong{font-size:18px}.hidden{display:none!important}
+.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:720px}th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line);font-size:13px}th{background:#f8fafc;color:#475569}td b{color:#0f172a}
+footer{text-align:center;color:#94a3b8;font-size:12px;padding:12px 0 30px}
+@media(max-width:850px){.cards{grid-template-columns:repeat(2,1fr)}.hero{align-items:flex-start;flex-direction:column}.steps{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){header{padding:15px}.cards{grid-template-columns:1fr 1fr}.actiongrid{grid-template-columns:1fr}.panel{padding:16px}.hero h2{font-size:25px}}
+</style>
+</head>
 <body>
-<header><div class="brand"><div class="logo">🏷️</div><div><h1>Inventário RFID</h1><p>Controle seguro de retiradas e devoluções</p></div></div><nav><a href="/">Dashboard</a><a href="/cadastro">Cadastro</a><a class="active" href="/controle">Controle</a></nav></header>
-<main class="wrap">
-<section class="title"><div><h2>Controle RFID</h2><p>O sistema confirma a pessoa, a escolha e a tag do equipamento antes de registrar a movimentação.</p></div><span id="cloud" class="cloud">● Conectado</span></section>
-<section class="grid"><div class="card"><div class="label">👥 FUNCIONÁRIOS</div><div id="nF" class="num blue">—</div></div><div class="card"><div class="label">🧰 EQUIPAMENTOS</div><div id="nE" class="num blue">—</div></div><div class="card"><div class="label">✓ DISPONÍVEIS</div><div id="nD" class="num green">—</div></div><div class="card"><div class="label">↗ EMPRESTADOS</div><div id="nM" class="num red">—</div></div></section>
+<header><div class="brand"><div class="logo">📡</div><div><h1>Inventário RFID</h1><p>Controle seguro de retirada e devolução</p></div></div><nav><a href="/">Dashboard</a><a href="/cadastro">Cadastro</a><a class="active" href="/controle">Controle</a></nav></header>
+<main>
+<section class="hero"><div><h2>Operação RFID</h2><p>Fluxo obrigatório: pessoa → ação → equipamento → tag física.</p></div><span id="cloud" class="badge">● Conectando à nuvem...</span></section>
 
-<section class="panel rfidmain">
-<h3>📡 Operação RFID</h3><div class="sub">Fluxo obrigatório: <b>1. pessoa → 2. ação → 3. equipamento → 4. tag do equipamento</b>.</div>
-<div id="status" class="status wait">Aguardando a tag do funcionário...</div>
-<div id="uid" class="uid">---</div>
-<div id="msg" class="sub" style="margin-top:10px">Aproxime a tag pessoal do leitor.</div>
-<div id="details" class="details">Nenhuma operação em andamento.</div>
-<div class="steps"><div id="s1" class="step active">1 · Identificar pessoa</div><div id="s2" class="step">2 · Escolher ação</div><div id="s3" class="step">3 · Escolher equipamento</div><div id="s4" class="step">4 · Confirmar tag</div></div>
-
-<div id="actionBox" class="actionbox hidden"><b>O que deseja fazer?</b><div class="sub">Escolha uma única opção para continuar.</div><div class="actions"><button id="retirar" class="greenbtn">📥 Retirar equipamento</button><button id="devolver" class="redbtn">📤 Devolver equipamento</button></div></div>
-<div id="choiceBox" class="choice hidden"><b id="choiceTitle">Selecione o equipamento</b><select id="equipmentSelect"><option value="">Selecione...</option></select><button id="confirmChoice" class="primary">Continuar</button></div>
-<div class="toolbar"><button id="reset" class="gray">↻ Reiniciar operação</button></div>
+<section class="cards">
+<div class="card"><div class="label">Funcionários</div><div id="funcionarios" class="num blue">0</div></div>
+<div class="card"><div class="label">Equipamentos</div><div id="equipamentos" class="num blue">0</div></div>
+<div class="card"><div class="label">Disponíveis</div><div id="disponiveis" class="num green">0</div></div>
+<div class="card"><div class="label">Emprestados</div><div id="emprestados" class="num red">0</div></div>
 </section>
 
-<section class="panel"><h3>🧰 Equipamentos</h3><div class="sub">Situação atual do inventário.</div><div class="table"><table><thead><tr><th>Equipamento</th><th>Tag</th><th>Box</th><th>Status</th></tr></thead><tbody id="equipTable"></tbody></table></div></section>
-<section class="panel" id="historico"><h3>📋 Histórico</h3><div class="sub">Últimas movimentações registradas.</div><div class="table"><table><thead><tr><th>Funcionário</th><th>Equipamento</th><th>Retirada</th><th>Devolução</th><th>Situação</th></tr></thead><tbody id="history"></tbody></table></div></section>
+<section class="panel">
+<div class="row"><div><h3>📡 Estação RFID</h3><p class="sub">O sistema só altera o estoque quando o fluxo completo for validado.</p></div><button class="btn dark" onclick="resetar()">↻ Reiniciar operação</button></div>
+<div class="steps"><div id="s1" class="step on">1 · Identificar pessoa</div><div id="s2" class="step">2 · Escolher ação</div><div id="s3" class="step">3 · Escolher equipamento</div><div id="s4" class="step">4 · Confirmar tag</div></div>
+<div class="rfidbox"><span id="state" class="state">AGUARDANDO</span><div id="uid" class="uid">---</div><div id="msg" class="msg">Passe a tag do funcionário no RC522.</div><div id="detail" class="detail"></div></div>
+<div id="notice"></div>
+</section>
+
+<section id="actionPanel" class="panel hidden">
+<h3>👤 O que deseja fazer?</h3><p id="actionHelp" class="sub">Funcionário identificado. Escolha uma única ação.</p>
+<div class="actiongrid">
+<button id="retirarBtn" class="action" onclick="escolherAcao('retirada')"><span class="big">📦</span>Retirar equipamento<small>Escolher um equipamento disponível.</small></button>
+<button id="devolverBtn" class="action" onclick="escolherAcao('devolucao')"><span class="big">↩️</span>Devolver equipamento<small>Escolher um equipamento que pertence a este funcionário.</small></button>
+</div>
+</section>
+
+<section id="equipPanel" class="panel hidden">
+<div class="row"><div><h3 id="equipTitle">🔧 Escolha o equipamento</h3><p id="equipHelp" class="sub">Selecione antes de aproximar qualquer tag.</p></div><button class="btn light" onclick="voltarAcao()">← Voltar</button></div>
+<div id="equipGrid" class="equipgrid"></div>
+<div class="row" style="margin-top:14px"><div id="selection" class="selected hidden"></div><button id="continueBtn" class="btn primary" disabled onclick="confirmarEquipamento()">Continuar →</button></div>
+</section>
+
+<section id="waitPanel" class="panel hidden">
+<div class="selected"><strong id="waitTitle">Equipamento selecionado</strong><div id="waitInfo" class="meta"></div></div>
+<div class="alert info">🏷️ Agora aproxime <strong>somente a tag física do equipamento selecionado</strong> do leitor.</div>
+</section>
+
+<section class="panel"><div class="row"><div><h3>🔧 Equipamentos</h3><p class="sub">Situação atual do inventário.</p></div><button class="btn light" onclick="carregarDados()">↻ Atualizar</button></div><div class="tablewrap"><table><thead><tr><th>Equipamento</th><th>Tag</th><th>Box</th><th>Status</th></tr></thead><tbody id="equipList"></tbody></table></div></section>
+
+<section class="panel"><h3>📋 Histórico recente</h3><p class="sub">Últimas movimentações registradas.</p><div class="tablewrap"><table><thead><tr><th>Funcionário</th><th>Equipamento</th><th>Retirada</th><th>Devolução</th><th>Situação</th></tr></thead><tbody id="history"></tbody></table></div></section>
+<footer>Inventário RFID · ESP32 + RC522 · Operação protegida por validação de tag</footer>
 </main>
 <script>
-const $=id=>document.getElementById(id),esc=v=>String(v??"-").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-async function req(url,opt={}){const r=await fetch(url,{cache:"no-store",...opt,headers:{"Content-Type":"application/json",...(opt.headers||{})}});const t=await r.text();let d={};try{d=t?JSON.parse(t):{}}catch{throw Error("Resposta inválida do servidor.")}if(!r.ok)throw Error(d.erro||d.mensagem||"Operação não concluída.");return d}
-let ultima=0,funcionario=null,acao=null,opcoes={retirada:[],devolucao:[]},processando=false;
-function status(text,kind="wait"){ $("status").className="status "+kind;$("status").textContent=text}
-function steps(n){for(let i=1;i<=4;i++){const x=$("s"+i);x.className="step "+(i<n?"done":i===n?"active":"")}}
-function esconder(){ $("actionBox").classList.add("hidden");$("choiceBox").classList.add("hidden") }
-function mostrarAcoes(){$("actionBox").classList.remove("hidden");$("choiceBox").classList.add("hidden")}
-function preencherLista(tipo){acao=tipo;const lista=opcoes[tipo]||[];$("choiceTitle").textContent=tipo==="retirada"?"Qual equipamento deseja retirar?":"Qual equipamento deseja devolver?";$("equipmentSelect").innerHTML='<option value="">Selecione...</option>'+lista.map(e=>`<option value="${e.id}">${esc(e.nome)} · Box ${esc(e.box_id)}</option>`).join("");$("choiceBox").classList.remove("hidden")}
-async function processar(d){
- $("uid").textContent=d.uid||"---";
- if(d.tipo==="funcionario_identificado"){
-   funcionario=d.funcionario||null;opcoes.retirada=d.equipamentosDisponiveis||[];opcoes.devolucao=d.equipamentosEmprestados||[];
-   $("details").innerHTML=`<b>Funcionário identificado:</b> ${esc(funcionario?.nome)}<br><b>Matrícula:</b> ${esc(funcionario?.matricula)}`;
-   $("msg").textContent=d.mensagem||"Escolha a operação.";status("👤 Funcionário identificado","ok");steps(2);
-   $("devolver").disabled=opcoes.devolucao.length===0;mostrarAcoes();return;
- }
- if(d.tipo==="equipamento_selecionado"){status(acao==="devolucao"?"📤 Devolução selecionada":"📥 Retirada selecionada","wait");$("msg").textContent=d.mensagem;$("details").innerHTML=`<b>Funcionário:</b> ${esc(d.funcionario?.nome||funcionario?.nome)}<br><b>Equipamento:</b> ${esc(d.equipamento?.nome)}<br><b>Box:</b> ${esc(d.equipamento?.box_id)}<br><br><b>Agora aproxime a tag física deste equipamento.</b>`;steps(4);esconder();return}
- if(d.tipo==="retirada_concluida"){status("✅ RETIRADA CONCLUÍDA","ok");$("msg").textContent=d.mensagem;$("details").innerHTML=`<b>Funcionário:</b> ${esc(typeof d.funcionario==="object"?d.funcionario.nome:d.funcionario)}<br><b>Equipamento:</b> ${esc(d.equipamento?.nome||d.equipamento)}<br><b>Box:</b> ${esc(d.box??d.equipamento?.box_id)}`;limparCliente();steps(1);await carregarTudo();return}
- if(d.tipo==="devolucao_concluida"){status("✅ DEVOLUÇÃO CONCLUÍDA","ok");$("msg").textContent=d.mensagem;$("details").innerHTML=`<b>Funcionário:</b> ${esc(d.funcionario?.nome||d.funcionario)}<br><b>Equipamento:</b> ${esc(d.equipamento?.nome||d.equipamento)}<br><b>Box:</b> ${esc(d.box??d.equipamento?.box_id)}`;limparCliente();steps(1);await carregarTudo();return}
- if(d.tipo==="equipamento_incorreto"){status("❌ TAG INCORRETA","err");$("msg").textContent=d.mensagem;$("details").innerHTML=`<b>Selecionado:</b> ${esc(d.equipamentoEsperado?.nome)}<br><b>Recebido:</b> ${esc(d.equipamentoRecebido?.nome)}<br><br><b>Passe novamente a tag do equipamento selecionado.</b>`;steps(4);return}
- if(d.tipo==="equipamento_emprestado"){status("⚠️ EQUIPAMENTO INDISPONÍVEL","err");$("msg").textContent=d.mensagem;return}
- if(d.tipo==="equipamento_sem_funcionario"){status("❌ IDENTIFIQUE O FUNCIONÁRIO PRIMEIRO","err");$("msg").textContent=d.mensagem;limparCliente();steps(1);return}
- if(d.tipo==="tag_nao_cadastrada"||d.tipo==="tag_desconhecida"){status("❌ TAG NÃO CADASTRADA","err");$("msg").textContent=d.mensagem;return}
- if(d.tipo==="fluxo_expirado"){status("⌛ OPERAÇÃO EXPIRADA","err");$("msg").textContent=d.mensagem;limparCliente();steps(1);return}
- if(d.tipo==="emprestimo_nao_encontrado"||d.tipo==="operacao_conflito"){status("⚠️ OPERAÇÃO NÃO CONCLUÍDA","err");$("msg").textContent=d.mensagem;return}
- if(d.tipo==="tag_duplicada"){status("❌ TAG DUPLICADA","err");$("msg").textContent=d.mensagem;return}
+const CLOUD="https://projeto-inventario-rfid.onrender.com";
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"-").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+let lastEvent=0, busy=false, funcionario=null, acao=null, equipamentos=[], selecionado=null;
+
+async function api(path,opt={}){
+ const r=await fetch(CLOUD+path,{cache:"no-store",...opt,headers:{"Content-Type":"application/json","Accept":"application/json",...(opt.headers||{})}});
+ const t=await r.text(); let d={}; try{d=t?JSON.parse(t):{}}catch{throw Error("Resposta inválida do servidor");}
+ if(!r.ok) throw Error(d.erro||d.mensagem||("Erro HTTP "+r.status)); return d;
 }
-function limparCliente(){funcionario=null;acao=null;opcoes={retirada:[],devolucao:[]};esconder()}
-async function poll(){if(processando)return;try{const d=await req("/rfid/ultima");if(!d.nova||d.momento===ultima)return;ultima=d.momento;processando=true;await fetch("/rfid/limpar",{method:"POST"}).catch(()=>{});await processar(d)}catch(e){console.warn(e)}finally{processando=false}}
-$("retirar").onclick=()=>{if(!opcoes.retirada.length){status("⚠️ SEM EQUIPAMENTOS DISPONÍVEIS","err");return}preencherLista("retirada");steps(3)};
-$("devolver").onclick=()=>{if(!opcoes.devolucao.length){status("ℹ️ NENHUMA DEVOLUÇÃO PENDENTE","wait");return}preencherLista("devolucao");steps(3)};
-$("confirmChoice").onclick=async()=>{const id=$("equipmentSelect").value;if(!id){status("⚠️ SELECIONE UM EQUIPAMENTO","err");return}try{$("confirmChoice").disabled=true;const d=await req("/api/rfid/selecionar",{method:"POST",body:JSON.stringify({funcionario_id:funcionario.id,equipamento_id:Number(id),acao})});await processar(d)}catch(e){status("❌ NÃO FOI POSSÍVEL CONTINUAR","err");$("msg").textContent=e.message}finally{$("confirmChoice").disabled=false}};
-$("reset").onclick=async()=>{try{await req("/api/rfid/resetar",{method:"POST"});limparCliente();$("uid").textContent="---";$("details").textContent="Nenhuma operação em andamento.";$("msg").textContent="Aproxime a tag pessoal do leitor.";status("Aguardando a tag do funcionário...","wait");steps(1)}catch(e){alert(e.message)}};
-async function carregarTudo(){try{const d=await req("/api/dashboard");$("nF").textContent=d.funcionarios??0;$("nE").textContent=d.equipamentos??0;$("nD").textContent=d.disponiveis??0;$("nM").textContent=d.emprestados??0;$("cloud").textContent="● Conectado";$("cloud").className="cloud"}catch(e){$("cloud").textContent="● Sem conexão";$("cloud").className="cloud off"}try{const e=await req("/api/equipamentos");$("equipTable").innerHTML=(e.equipamentos||[]).map(x=>`<tr><td>${esc(x.nome)}</td><td><code>${esc(x.uid_tag)}</code></td><td>${esc(x.box_id)}</td><td><span class="pill ${String(x.status).toLowerCase()==="disponivel"?"okpill":"waitpill"}">${esc(x.status)}</span></td></tr>`).join("")||'<tr><td colspan="4">Nenhum equipamento.</td></tr>'}catch(e){}try{const h=await req("/api/ultimos-emprestimos");const l=h.emprestimos||[];$("history").innerHTML=l.map(x=>`<tr><td>${esc(x.funcionario?.nome)}</td><td>${esc(x.equipamento?.nome)}</td><td>${esc(x.data_retirada?new Date(x.data_retirada).toLocaleString("pt-BR"):"—")}</td><td>${esc(x.data_devolucao?new Date(x.data_devolucao).toLocaleString("pt-BR"):"—")}</td><td><span class="pill ${x.data_devolucao?"okpill":"waitpill"}">${x.data_devolucao?"Devolvido":"Emprestado"}</span></td></tr>`).join("")||'<tr><td colspan="5">Nenhuma movimentação registrada.</td></tr>'}catch(e){}}
-carregarTudo();setInterval(poll,800);setInterval(carregarTudo,10000);
-</script></body></html>
+function step(n){for(let i=1;i<=4;i++){$("s"+i).className="step "+(i<n?"done":i===n?"on":"")}}
+function state(text,kind=""){ $("state").textContent=text;$("state").className="state "+kind }
+function notice(text,kind="info"){ $("notice").innerHTML=text?`<div class="alert ${kind}">${text}</div>`:""; }
+function renderPerson(f){funcionario=f||null;$("detail").innerHTML=f?`<b>Funcionário:</b> ${esc(f.nome)} &nbsp;·&nbsp; <b>Matrícula:</b> ${esc(f.matricula)}`:"";}
+function resetUI(){
+ funcionario=null;acao=null;selecionado=null;busy=false;
+ $("actionPanel").classList.add("hidden");$("equipPanel").classList.add("hidden");$("waitPanel").classList.add("hidden");
+ $("selection").classList.add("hidden");$("continueBtn").disabled=true;notice("");
+ step(1);state("AGUARDANDO");$("uid").textContent="---";$("msg").textContent="Passe a tag do funcionário no RC522.";renderPerson(null);
+}
+async function resetar(){try{await api("/api/rfid/resetar",{method:"POST"});resetUI();}catch(e){notice("Não foi possível reiniciar: "+esc(e.message),"err")}}
+function showActions(d){
+ funcionario=d.funcionario||null; acao=null; selecionado=null;
+ $("actionPanel").classList.remove("hidden");$("equipPanel").classList.add("hidden");$("waitPanel").classList.add("hidden");
+ renderPerson(funcionario);step(2);state("FUNCIONÁRIO IDENTIFICADO","ok");$("msg").textContent=d.mensagem||"Escolha a ação.";
+ const disp=d.equipamentosDisponiveis||((d.modo==="selecionar_retirada")?d.equipamentos:[]);
+ const loans=d.equipamentosEmprestados||((d.modo==="selecionar_devolucao")?d.equipamentos:[]);
+ $("retirarBtn").classList.remove("selected","disabled");$("devolverBtn").classList.remove("selected","disabled");
+ if(!disp.length){$("retirarBtn").classList.add("disabled");$("retirarBtn").disabled=true}else{$("retirarBtn").disabled=false}
+ if(!loans.length){$("devolverBtn").classList.add("disabled");$("devolverBtn").disabled=true}else{$("devolverBtn").disabled=false}
+ equipamentos= d.equipamentos || disp || [];
+ window.available=disp;window.loans=loans;
+ notice("Escolha a ação primeiro. <b>Nenhuma tag de equipamento será aceita antes dessa escolha.</b>","info");
+}
+function escolherAcao(a){
+ if((a==="retirada" && $("retirarBtn").disabled)||(a==="devolucao"&&$("devolverBtn").disabled))return;
+ acao=a;$("retirarBtn").classList.toggle("selected",a==="retirada");$("devolverBtn").classList.toggle("selected",a==="devolucao");
+ showEquipments(a==="retirada"?window.available:window.loans);step(3);
+}
+function showEquipments(list){
+ $("equipPanel").classList.remove("hidden");$("waitPanel").classList.add("hidden");
+ $("equipTitle").textContent=acao==="retirada"?"📦 Escolha o equipamento para retirar":"↩️ Escolha o equipamento para devolver";
+ $("equipHelp").textContent=acao==="retirada"?"Selecione um equipamento disponível. Depois passe a tag física dele.":"Selecione o equipamento que está emprestado para este funcionário. Depois passe a tag física dele.";
+ selecionado=null;$("continueBtn").disabled=true;$("selection").classList.add("hidden");
+ $("equipGrid").innerHTML=(list||[]).map(e=>`<button class="equip" onclick="selecionar(${Number(e.id)}, this)"><div class="equipname">${esc(e.nome)}</div><div class="meta">Box ${esc(e.box_id)} · UID ${esc(e.uid_tag)}</div><span class="statuspill ${acao==="retirada"?"available":"loan"}">${acao==="retirada"?"DISPONÍVEL":"COM ESTE FUNCIONÁRIO"}</span></button>`).join("") || `<div class="alert ${acao==="retirada"?"err":"info"}">${acao==="retirada"?"Não há equipamentos disponíveis no momento.":"Este funcionário não possui equipamento emprestado para devolução."}</div>`;
+}
+function selecionar(id, el){
+ const list=acao==="retirada"?window.available:window.loans;selecionado=(list||[]).find(x=>Number(x.id)===Number(id));if(!selecionado)return;
+ document.querySelectorAll(".equip").forEach(b=>b.classList.remove("selected"));if(el)el.classList.add("selected");
+ $("selection").innerHTML=`<strong>✓ ${esc(selecionado.nome)}</strong><div class="meta">Box ${esc(selecionado.box_id)} · Tag ${esc(selecionado.uid_tag)}</div>`;$("selection").classList.remove("hidden");$("continueBtn").disabled=false;
+}
+async function confirmarEquipamento(){
+ if(!funcionario||!selecionado||!acao)return;
+ try{
+  $("continueBtn").disabled=true;busy=true;
+  const d=await api("/api/rfid/selecionar",{method:"POST",body:JSON.stringify({funcionario_id:funcionario.id,equipamento_id:selecionado.id,acao})});
+  $("equipPanel").classList.add("hidden");$("waitPanel").classList.remove("hidden");$("waitTitle").textContent=`${acao==="retirada"?"Retirada":"Devolução"}: ${selecionado.nome}`;$("waitInfo").textContent=`Box ${selecionado.box_id} · UID esperado ${selecionado.uid_tag}`;
+  step(4);state("AGUARDANDO TAG","");$("msg").textContent=d.mensagem||`Aproxime a tag de ${selecionado.nome}.`;notice("Tag do equipamento selecionado aguardada. Se outra tag for aproximada, a operação será recusada.","info");
+ }catch(e){busy=false;$("continueBtn").disabled=false;notice(esc(e.message),"err")}
+}
+function voltarAcao(){acao=null;selecionado=null;$("equipPanel").classList.add("hidden");step(2);notice("Escolha a ação para continuar.","info")}
+async function ler(){
+ try{
+  const d=await api("/rfid/ultima");
+  if(!d.nova||d.momento===lastEvent)return;
+  lastEvent=d.momento;
+  processEvent(d);
+  api("/rfid/limpar",{method:"POST"}).catch(()=>{});
+ }catch(e){}
+}
+function processEvent(d){
+ $("uid").textContent=d.uid||"---";
+ if(d.tipo==="funcionario_identificado"){showActions(d);return}
+ if(d.tipo==="equipamento_selecionado"){
+   $("waitPanel").classList.remove("hidden");step(4);state("AGUARDANDO TAG","");$("msg").textContent=d.mensagem;return
+ }
+ if(d.tipo==="retirada_concluida"||d.tipo==="devolucao_concluida"){
+   busy=false;state(d.tipo==="retirada_concluida"?"RETIRADA CONCLUÍDA":"DEVOLUÇÃO CONCLUÍDA","ok");$("msg").textContent=d.mensagem;renderPerson(d.funcionario&&typeof d.funcionario==="object"?d.funcionario:funcionario);notice(`✅ Operação concluída: <b>${esc(d.equipamento?.nome||d.equipamento||"equipamento")}</b>.`,"ok");
+   $("actionPanel").classList.add("hidden");$("equipPanel").classList.add("hidden");$("waitPanel").classList.add("hidden");step(4);carregarDados();setTimeout(resetUI,3500);return
+ }
+ if(["equipamento_incorreto","tag_nao_cadastrada","equipamento_emprestado","equipamento_sem_funcionario","fluxo_expirado","emprestimo_nao_encontrado","operacao_conflito"].includes(d.tipo)){
+   busy=false;state(d.tipo==="equipamento_incorreto"?"TAG INCORRETA":"LEITURA RECUSADA","err");$("msg").textContent=d.mensagem||"A leitura não foi aceita.";notice(`<b>Operação não concluída.</b> ${esc(d.mensagem||"Confira o procedimento e tente novamente.")}`,"err");
+   if(d.tipo==="equipamento_incorreto"||d.tipo==="tag_nao_cadastrada"){$("waitPanel").classList.remove("hidden");step(4)}
+   return
+ }
+ if(d.tipo==="tag_ja_cadastrada"){state("TAG JÁ CADASTRADA","err");$("msg").textContent=d.mensagem;notice(esc(d.mensagem),"err")}
+}
+async function carregarDados(){
+ try{
+  const [dash,eq,hist,status]=await Promise.all([api("/api/dashboard"),api("/api/equipamentos"),api("/api/ultimos-emprestimos"),api("/api/status")]);
+  $("funcionarios").textContent=dash.funcionarios??0;$("equipamentos").textContent=dash.equipamentos??0;$("disponiveis").textContent=dash.disponiveis??0;$("emprestados").textContent=dash.emprestados??0;
+  const online=status?.servidor==="online";$("cloud").textContent=online?"● Nuvem online":"● Nuvem indisponível";$("cloud").className="badge "+(online?"ok":"warn");
+  const list=eq.equipamentos||[];$("equipList").innerHTML=list.map(e=>`<tr><td><b>${esc(e.nome)}</b></td><td>${esc(e.uid_tag)}</td><td>${esc(e.box_id)}</td><td><span class="statuspill ${String(e.status).toLowerCase()==="disponivel"?"available":"loan"}">${esc(e.status)}</span></td></tr>`).join("")||`<tr><td colspan="4">Nenhum equipamento cadastrado.</td></tr>`;
+  const hs=hist.emprestimos||[];$("history").innerHTML=hs.map(x=>`<tr><td>${esc(x.funcionario?.nome)}</td><td>${esc(x.equipamento?.nome)}</td><td>${x.data_retirada?new Date(x.data_retirada).toLocaleString("pt-BR"):"-"}</td><td>${x.data_devolucao?new Date(x.data_devolucao).toLocaleString("pt-BR"):"-"}</td><td><span class="statuspill ${x.data_devolucao?"available":"loan"}">${x.data_devolucao?"DEVOLVIDO":"ATIVO"}</span></td></tr>`).join("")||`<tr><td colspan="5">Nenhum empréstimo registrado.</td></tr>`;
+ }catch(e){$("cloud").textContent="● Erro de conexão";$("cloud").className="badge warn"}
+}
+setInterval(ler,700);setInterval(carregarDados,5000);ler();carregarDados();
+</script>
+</body></html>

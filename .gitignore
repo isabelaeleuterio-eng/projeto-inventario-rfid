@@ -1,8 +1,6 @@
+node_modules/
 .env
 .env.*
 !.env.example
-node_modules/
 *.log
-*.backup
-*.bak
 *.zip

@@ -1,15 +1,26 @@
 {
-  "name": "projeto-inventario-rfid",
-  "version": "4.1.0",
-  "private": true,
+  "name": "projeto-invetario",
+  "version": "3.0.0",
+  "description": "Sistema de inventário RFID com ESP32, Node.js e Supabase",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
+  "keywords": [
+    "rfid",
+    "esp32",
+    "inventario",
+    "supabase",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.0",
+    "@supabase/supabase-js": "^2.112.4",
     "cors": "^2.8.6",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0"
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
   }
 }
