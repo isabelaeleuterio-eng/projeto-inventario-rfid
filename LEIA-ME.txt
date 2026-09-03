@@ -1,35 +1,31 @@
-INVENTÁRIO RFID — VERSÃO FINAL DE APRESENTAÇÃO
+INVENTARIO RFID - VERSAO FINAL
 
-Pasta oficial:
+PASTA OFICIAL:
 PROJETO-INVENTARIO-RFID-LIMPO
 
-Fluxo:
-1. Passe a tag da pessoa.
-2. Se ela não tiver empréstimo ativo, selecione Retirar.
-3. Selecione um equipamento disponível.
-4. Passe a tag física do equipamento.
-5. O sistema registra EMPRESTADO.
-6. Ao tentar pegar outro equipamento com empréstimo ativo, o sistema bloqueia e informa que é necessário devolver o anterior.
-7. Para devolver, passe a tag da pessoa. O sistema mostra o equipamento que deve ser devolvido.
-8. Passe a tag física desse equipamento.
-9. O sistema registra DEVOLVIDO e libera a Box.
+FLUXO:
+1. Passe a tag do funcionario.
+2. Se nao houver emprestimo ativo, escolha retirar ou devolver.
+3. Escolha UM equipamento.
+4. Passe novamente a tag fisica do equipamento.
+5. Somente a tag correta conclui a operacao.
+6. Se o funcionario ja tiver um equipamento, o sistema bloqueia outro ate a devolucao.
 
-Regra de Box:
-- Uma Box comporta apenas um objeto.
-- Cadastro de um segundo equipamento na mesma Box é recusado.
-- Retirada é recusada se a Box estiver ocupada por outro equipamento emprestado.
-- O servidor verifica a Box novamente no momento da retirada.
-
-Nuvem:
-https://projeto-inventario-rfid.onrender.com
-
-Variáveis necessárias no Render/.env:
-SUPABASE_URL
-SUPABASE_SECRET_KEY
+REGRA DA BOX:
+Cada box comporta apenas um objeto. O cadastro e a edicao recusam box duplicada.
+Ao iniciar, o servidor tambem corrige automaticamente box_id duplicado existente, atribuindo a proxima box livre.
 
 ESP32:
-POST /api/esp32/online
-POST /api/esp32/rfid
-Payload RFID: {"uid":"...","leitor":"entrada"}
+POST /api/esp32/rfid com JSON {"uid":"...","leitor":"entrada"}.
+O servidor aceita UID com espacos e tambem campos UID, uid_tag, tag e rfid.
 
-Não publique .env.
+DEPLOY:
+npm install
+npm start
+
+git add .
+git commit -m "Versao final RFID"
+git push origin master
+
+O Render publica automaticamente.
+Nao altere o .env que ja funciona.

@@ -1,6 +1,1775 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cadastro | Inventário RFID</title><style>
-body{font-family:Segoe UI,Arial;margin:0;background:#f4f7fb;color:#10213a}header{background:#0f172a;color:#fff;padding:22px 6%}main{max-width:900px;margin:25px auto;width:92%}.card{background:#fff;padding:24px;border-radius:18px;margin:15px 0}input,select{width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ccd6e3;border-radius:10px;box-sizing:border-box}button{background:#2563eb;color:#fff;border:0;padding:12px 18px;border-radius:10px;font-weight:700}.nav{color:white;text-decoration:none;margin-right:15px}</style></head><body><header><h1>🛠️ Cadastro RFID</h1><a class="nav" href="/">Dashboard</a><a class="nav" href="/controle">Controle</a></header><main><div class="card"><h2>Cadastrar funcionário</h2><form id="f"><input id="fn" placeholder="Nome" required><input id="fm" placeholder="Matrícula" required><input id="fu" placeholder="UID da tag pessoal" required><button>Salvar funcionário</button></form><p id="fmmsg"></p></div><div class="card"><h2>Cadastrar equipamento</h2><p>Regra: cada Box pode ter somente um objeto cadastrado.</p><form id="e"><input id="en" placeholder="Nome do equipamento" required><input id="eu" placeholder="UID da tag do equipamento" required><input id="eb" type="number" min="1" placeholder="Box" value="1" required><input id="ed" placeholder="Descrição"><button>Salvar equipamento</button></form><p id="emsg"></p></div></main><script>
-async function post(url,data,msg){try{let r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}),d=await r.json();msg.textContent=d.mensagem||d.erro||"Concluído";}catch(e){msg.textContent=e.message}}
-f.onsubmit=e=>{e.preventDefault();post("/api/funcionarios",{nome:fn.value,matricula:fm.value,uid_rfid:fu.value},fmmsg)}
-document.getElementById("e").onsubmit=e=>{e.preventDefault();post("/api/equipamentos",{nome:en.value,uid_rfid:eu.value,box:Number(eb.value),descricao:ed.value},emsg)}
-</script></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Cadastro - Inventário RFID</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+
+            margin: 0;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background: #f1f5f9;
+
+            color: #1e293b;
+        }
+
+        /* ================================================= */
+        /* CABEÇALHO */
+        /* ================================================= */
+
+        header {
+
+            background: #0f172a;
+
+            color: white;
+
+            padding: 22px 30px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            flex-wrap: wrap;
+
+            gap: 15px;
+        }
+
+        header h1 {
+
+            margin: 0;
+
+            font-size: 25px;
+        }
+
+        header p {
+
+            margin: 5px 0 0;
+
+            color: #cbd5e1;
+        }
+
+        .navegacao {
+
+            display: flex;
+
+            gap: 10px;
+        }
+
+        .navegacao a {
+
+            text-decoration: none;
+
+            color: white;
+
+            background: #334155;
+
+            padding: 10px 16px;
+
+            border-radius: 7px;
+
+            font-weight: bold;
+        }
+
+        .navegacao a:hover {
+
+            background: #475569;
+        }
+
+        .navegacao .ativo {
+
+            background: #10b981;
+        }
+
+        /* ================================================= */
+        /* CONTAINER */
+        /* ================================================= */
+
+        .container {
+
+            width: 94%;
+
+            max-width: 1200px;
+
+            margin: 30px auto;
+        }
+
+        /* ================================================= */
+        /* TITULO */
+        /* ================================================= */
+
+        .titulo {
+
+            margin-bottom: 25px;
+        }
+
+        .titulo h2 {
+
+            margin: 0;
+
+            font-size: 32px;
+        }
+
+        .titulo p {
+
+            color: #64748b;
+
+            margin-top: 7px;
+        }
+
+        /* ================================================= */
+        /* GRID */
+        /* ================================================= */
+
+        .grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(320px, 1fr)
+                );
+
+            gap: 22px;
+        }
+
+        /* ================================================= */
+        /* PAINEL */
+        /* ================================================= */
+
+        .painel {
+
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 25px;
+
+            box-shadow:
+                0 3px 12px
+                rgba(0,0,0,.08);
+        }
+
+        .painel h3 {
+
+            margin-top: 0;
+
+            font-size: 21px;
+        }
+
+        /* ================================================= */
+        /* RFID */
+        /* ================================================= */
+
+        .rfid {
+
+            border-left:
+                6px solid #10b981;
+        }
+
+        .rfid-status {
+
+            padding: 15px;
+
+            border-radius: 8px;
+
+            background: #f8fafc;
+
+            font-weight: bold;
+
+            margin-bottom: 15px;
+        }
+
+        .aguardando {
+
+            color: #d97706;
+
+            background: #fff7ed;
+        }
+
+        .sucesso {
+
+            color: #15803d;
+
+            background: #f0fdf4;
+        }
+
+        .erro {
+
+            color: #dc2626;
+
+            background: #fef2f2;
+        }
+
+        .uid {
+
+            font-family: monospace;
+
+            font-size: 23px;
+
+            color: #2563eb;
+
+            padding: 10px;
+
+            background: #eff6ff;
+
+            border-radius: 8px;
+
+            word-break: break-all;
+        }
+
+        .mensagem-rfid {
+
+            margin-top: 15px;
+
+            font-weight: bold;
+        }
+
+        /* ================================================= */
+        /* FORMULARIO */
+        /* ================================================= */
+
+        label {
+
+            display: block;
+
+            font-weight: bold;
+
+            margin-top: 15px;
+
+            margin-bottom: 6px;
+        }
+
+        input,
+        select {
+
+            width: 100%;
+
+            padding: 12px;
+
+            border: 1px solid #cbd5e1;
+
+            border-radius: 7px;
+
+            font-size: 15px;
+
+            background: white;
+        }
+
+        input:focus,
+        select:focus {
+
+            outline: none;
+
+            border-color: #10b981;
+
+            box-shadow:
+                0 0 0 2px
+                rgba(16,185,129,.15);
+        }
+
+        input[readonly] {
+
+            background: #f8fafc;
+        }
+
+        /* ================================================= */
+        /* BOTÕES */
+        /* ================================================= */
+
+        button {
+
+            border: none;
+
+            border-radius: 7px;
+
+            padding: 12px 18px;
+
+            font-size: 15px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            margin-top: 15px;
+        }
+
+        button:hover {
+
+            opacity: .9;
+        }
+
+        .btn-rfid {
+
+            background: #059669;
+
+            color: white;
+
+            width: 100%;
+        }
+
+        .btn-cadastrar {
+
+            background: #2563eb;
+
+            color: white;
+
+            width: 100%;
+        }
+
+        .btn-atualizar {
+
+            background: #475569;
+
+            color: white;
+        }
+
+        .btn-excluir {
+
+            background: #dc2626;
+
+            color: white;
+
+            padding: 8px 12px;
+
+            margin: 0;
+        }
+
+        /* ================================================= */
+        /* MENSAGEM */
+        /* ================================================= */
+
+        .mensagem {
+
+            margin-top: 15px;
+
+            font-weight: bold;
+
+            min-height: 22px;
+        }
+
+        /* ================================================= */
+        /* TABELAS */
+        /* ================================================= */
+
+        .tabela {
+
+            overflow-x: auto;
+        }
+
+        table {
+
+            width: 100%;
+
+            border-collapse: collapse;
+
+            margin-top: 15px;
+        }
+
+        th {
+
+            background: #0f172a;
+
+            color: white;
+
+            text-align: left;
+
+            padding: 12px;
+        }
+
+        td {
+
+            padding: 12px;
+
+            border-bottom:
+                1px solid #e2e8f0;
+        }
+
+        tr:hover {
+
+            background: #f8fafc;
+        }
+
+        .status-disponivel {
+
+            color: #15803d;
+
+            font-weight: bold;
+        }
+
+        .status-emprestado {
+
+            color: #dc2626;
+
+            font-weight: bold;
+        }
+
+        /* ================================================= */
+        /* OCULTO */
+        /* ================================================= */
+
+        .oculto {
+
+            display: none;
+        }
+
+        /* ================================================= */
+        /* RESPONSIVO */
+        /* ================================================= */
+
+        @media(max-width: 700px) {
+
+            header {
+
+                flex-direction: column;
+
+                align-items: flex-start;
+            }
+
+            .navegacao {
+
+                width: 100%;
+            }
+
+            .navegacao a {
+
+                flex: 1;
+
+                text-align: center;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+
+    <div>
+
+        <h1>
+            🏷️ Inventário RFID
+        </h1>
+
+        <p>
+            Sistema de Cadastro
+        </p>
+
+    </div>
+
+    <div class="navegacao">
+
+        <a href="/">
+            Dashboard
+        </a>
+
+        <a href="/cadastro"
+           class="ativo">
+            Cadastro
+        </a>
+
+        <a href="/controle">
+            Controle
+        </a>
+
+    </div>
+
+</header>
+
+<div class="container">
+
+    <div class="titulo">
+
+        <h2>
+            Cadastro
+        </h2>
+
+        <p>
+            Cadastre funcionários e equipamentos RFID.
+        </p>
+
+    </div>
+
+    <div class="grid">
+
+        <!-- ================================================= -->
+        <!-- FUNCIONÁRIO -->
+        <!-- ================================================= -->
+
+        <div class="painel">
+
+            <h3>
+                👤 Cadastrar Funcionário
+            </h3>
+
+            <form id="formFuncionario">
+
+                <label>
+                    Nome
+                </label>
+
+                <input
+                    type="text"
+                    id="nomeFuncionario"
+                    placeholder="Nome completo"
+                    required
+                >
+
+                <label>
+                    Matrícula
+                </label>
+
+                <input
+                    type="text"
+                    id="matriculaFuncionario"
+                    placeholder="Número da matrícula"
+                >
+
+                <label>
+                    Tag RFID
+                </label>
+
+                <input
+                    type="text"
+                    id="uidFuncionario"
+                    placeholder="Aproxime a tag"
+                    readonly
+                    required
+                >
+
+                <button
+                    type="button"
+                    class="btn-rfid"
+                    onclick="lerTagFuncionario()"
+                >
+                    📡 LER TAG DO FUNCIONÁRIO
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn-cadastrar"
+                >
+                    👤 CADASTRAR FUNCIONÁRIO
+                </button>
+
+                <div
+                    id="msgFuncionario"
+                    class="mensagem">
+                </div>
+
+            </form>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- EQUIPAMENTO -->
+        <!-- ================================================= -->
+
+        <div class="painel">
+
+            <h3>
+                🔧 Cadastrar Equipamento
+            </h3>
+
+            <form id="formEquipamento">
+
+                <label>
+                    Nome do equipamento
+                </label>
+
+                <input
+                    type="text"
+                    id="nomeEquipamento"
+                    placeholder="Ex: Martelo"
+                    required
+                >
+
+                <label>
+                    Número do Box
+                </label>
+
+                <input
+                    type="number"
+                    id="boxEquipamento"
+                    placeholder="Ex: 1"
+                    min="1"
+                    required
+                >
+
+                <label>
+                    Tag RFID
+                </label>
+
+                <input
+                    type="text"
+                    id="uidEquipamento"
+                    placeholder="Aproxime a tag"
+                    readonly
+                    required
+                >
+
+                <button
+                    type="button"
+                    class="btn-rfid"
+                    onclick="lerTagEquipamento()"
+                >
+                    📡 LER TAG DO EQUIPAMENTO
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn-cadastrar"
+                >
+                    🔧 CADASTRAR EQUIPAMENTO
+                </button>
+
+                <div
+                    id="msgEquipamento"
+                    class="mensagem">
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- LEITOR RFID -->
+    <!-- ===================================================== -->
+
+    <div class="painel rfid"
+         style="margin-top:22px">
+
+        <h3>
+            📡 Leitor RFID
+        </h3>
+
+        <div
+            id="rfidStatus"
+            class="rfid-status aguardando"
+        >
+            Aguardando leitura...
+        </div>
+
+        <div
+            id="rfidUID"
+            class="uid"
+        >
+            ---
+        </div>
+
+        <div
+            id="rfidMensagem"
+            class="mensagem-rfid"
+        >
+            Clique em um dos botões de leitura acima.
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- FUNCIONÁRIOS -->
+    <!-- ===================================================== -->
+
+    <div class="painel"
+         style="margin-top:22px">
+
+        <h3>
+            👥 Funcionários cadastrados
+        </h3>
+
+        <button
+            class="btn-atualizar"
+            onclick="carregarFuncionarios()"
+        >
+            🔄 Atualizar
+        </button>
+
+        <div class="tabela">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            ID
+                        </th>
+
+                        <th>
+                            Nome
+                        </th>
+
+                        <th>
+                            Matrícula
+                        </th>
+
+                        <th>
+                            UID
+                        </th>
+
+                        <th>
+                            Ação
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody
+                    id="listaFuncionarios">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- EQUIPAMENTOS -->
+    <!-- ===================================================== -->
+
+    <div class="painel"
+         style="margin-top:22px">
+
+        <h3>
+            🔧 Equipamentos cadastrados
+        </h3>
+
+        <button
+            class="btn-atualizar"
+            onclick="carregarEquipamentos()"
+        >
+            🔄 Atualizar
+        </button>
+
+        <div class="tabela">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            ID
+                        </th>
+
+                        <th>
+                            Equipamento
+                        </th>
+
+                        <th>
+                            UID
+                        </th>
+
+                        <th>
+                            Box
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Ação
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody
+                    id="listaEquipamentos">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    // =====================================================
+    // VARIÁVEIS
+    // =====================================================
+
+    let ultimaLeitura = 0;
+
+    let modoLeitura = null;
+
+
+    // =====================================================
+    // PROTEGER HTML
+    // =====================================================
+
+    function escaparHTML(valor) {
+
+        if (
+            valor === null ||
+            valor === undefined
+        ) {
+
+            return "";
+
+        }
+
+        return String(valor)
+
+            .replace(/&/g, "&amp;")
+
+            .replace(/</g, "&lt;")
+
+            .replace(/>/g, "&gt;")
+
+            .replace(/"/g, "&quot;")
+
+            .replace(/'/g, "&#039;");
+    }
+
+
+    // =====================================================
+    // LER TAG FUNCIONÁRIO
+    // =====================================================
+
+    function lerTagFuncionario() {
+
+        modoLeitura = "funcionario";
+
+        document
+            .getElementById("rfidStatus")
+            .className =
+                "rfid-status aguardando";
+
+        document
+            .getElementById("rfidStatus")
+            .textContent =
+                "🟡 Aguardando tag do funcionário...";
+
+        document
+            .getElementById("rfidMensagem")
+            .textContent =
+                "Aproxime a tag do RC522.";
+
+        document
+            .getElementById("uidFuncionario")
+            .value = "";
+
+    }
+
+
+    // =====================================================
+    // LER TAG EQUIPAMENTO
+    // =====================================================
+
+    function lerTagEquipamento() {
+
+        modoLeitura = "equipamento";
+
+        document
+            .getElementById("rfidStatus")
+            .className =
+                "rfid-status aguardando";
+
+        document
+            .getElementById("rfidStatus")
+            .textContent =
+                "🟡 Aguardando tag do equipamento...";
+
+        document
+            .getElementById("rfidMensagem")
+            .textContent =
+                "Aproxime a tag do RC522.";
+
+        document
+            .getElementById("uidEquipamento")
+            .value = "";
+
+    }
+
+
+    // =====================================================
+    // CONSULTAR RFID
+    // =====================================================
+
+    async function consultarRFID() {
+
+        try {
+
+            const resposta =
+                await fetch(
+                    "/rfid/ultima"
+                );
+
+            if (!resposta.ok) {
+
+                return;
+
+            }
+
+            const dados =
+                await resposta.json();
+
+            if (!dados.nova) {
+
+                return;
+
+            }
+
+            if (
+                dados.momento ===
+                ultimaLeitura
+            ) {
+
+                return;
+
+            }
+
+            ultimaLeitura =
+                dados.momento;
+
+            await fetch(
+                "/rfid/limpar",
+                {
+                    method: "POST"
+                }
+            );
+
+            processarRFID(dados);
+
+        }
+
+        catch (erro) {
+
+            console.error(
+                "Erro RFID:",
+                erro
+            );
+
+        }
+
+    }
+
+
+    // =====================================================
+    // PROCESSAR RFID
+    // =====================================================
+
+    function processarRFID(dados) {
+
+        const uid =
+            dados.uid || "";
+
+        document
+            .getElementById("rfidUID")
+            .textContent =
+                uid || "---";
+
+
+        // -------------------------------------------------
+        // CADASTRO
+        // -------------------------------------------------
+
+        if (
+            modoLeitura ===
+            "funcionario"
+        ) {
+
+            if (!uid) {
+
+                return;
+
+            }
+
+            document
+                .getElementById("uidFuncionario")
+                .value = uid;
+
+            document
+                .getElementById("rfidStatus")
+                .className =
+                    "rfid-status sucesso";
+
+            document
+                .getElementById("rfidStatus")
+                .textContent =
+                    "🟢 TAG DO FUNCIONÁRIO LIDA";
+
+            document
+                .getElementById("rfidMensagem")
+                .textContent =
+                    "UID preenchido no cadastro.";
+
+            modoLeitura = null;
+
+            return;
+        }
+
+
+        if (
+            modoLeitura ===
+            "equipamento"
+        ) {
+
+            if (!uid) {
+
+                return;
+
+            }
+
+            document
+                .getElementById("uidEquipamento")
+                .value = uid;
+
+            document
+                .getElementById("rfidStatus")
+                .className =
+                    "rfid-status sucesso";
+
+            document
+                .getElementById("rfidStatus")
+                .textContent =
+                    "🟢 TAG DO EQUIPAMENTO LIDA";
+
+            document
+                .getElementById("rfidMensagem")
+                .textContent =
+                    "UID preenchido no cadastro.";
+
+            modoLeitura = null;
+
+            return;
+        }
+
+    }
+
+
+    // =====================================================
+    // CADASTRAR FUNCIONÁRIO
+    // =====================================================
+
+    document
+        .getElementById("formFuncionario")
+        .addEventListener(
+            "submit",
+            async function(event) {
+
+                event.preventDefault();
+
+                const nome =
+                    document
+                        .getElementById(
+                            "nomeFuncionario"
+                        )
+                        .value
+                        .trim();
+
+                const matricula =
+                    document
+                        .getElementById(
+                            "matriculaFuncionario"
+                        )
+                        .value
+                        .trim();
+
+                const uid =
+                    document
+                        .getElementById(
+                            "uidFuncionario"
+                        )
+                        .value
+                        .trim();
+
+                const mensagem =
+                    document
+                        .getElementById(
+                            "msgFuncionario"
+                        );
+
+
+                if (!nome) {
+
+                    mensagem.className =
+                        "mensagem erro";
+
+                    mensagem.textContent =
+                        "Informe o nome.";
+
+                    return;
+
+                }
+
+
+                if (!uid) {
+
+                    mensagem.className =
+                        "mensagem erro";
+
+                    mensagem.textContent =
+                        "Leia a tag do funcionário.";
+
+                    return;
+
+                }
+
+
+                try {
+
+                    const resposta =
+                        await fetch(
+                            "/funcionarios",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body:
+                                    JSON.stringify({
+                                        nome:
+                                            nome,
+
+                                        matricula:
+                                            matricula,
+
+                                        uid_tag_pessoal:
+                                            uid
+                                    })
+                            }
+                        );
+
+
+                    const resultado =
+                        await resposta.json();
+
+
+                    if (!resposta.ok) {
+
+                        mensagem.className =
+                            "mensagem erro";
+
+                        mensagem.textContent =
+                            resultado.erro ||
+                            "Erro ao cadastrar.";
+
+                        return;
+
+                    }
+
+
+                    mensagem.className =
+                        "mensagem sucesso";
+
+                    mensagem.textContent =
+                        "✓ " +
+                        resultado.mensagem;
+
+
+                    document
+                        .getElementById(
+                            "formFuncionario"
+                        )
+                        .reset();
+
+
+                    carregarFuncionarios();
+
+                }
+
+                catch (erro) {
+
+                    mensagem.className =
+                        "mensagem erro";
+
+                    mensagem.textContent =
+                        "Erro de conexão com o servidor.";
+
+                }
+
+            }
+        );
+
+
+    // =====================================================
+    // CADASTRAR EQUIPAMENTO
+    // =====================================================
+
+    document
+        .getElementById("formEquipamento")
+        .addEventListener(
+            "submit",
+            async function(event) {
+
+                event.preventDefault();
+
+                const nome =
+                    document
+                        .getElementById(
+                            "nomeEquipamento"
+                        )
+                        .value
+                        .trim();
+
+                const box =
+                    document
+                        .getElementById(
+                            "boxEquipamento"
+                        )
+                        .value
+                        .trim();
+
+                const uid =
+                    document
+                        .getElementById(
+                            "uidEquipamento"
+                        )
+                        .value
+                        .trim();
+
+                const mensagem =
+                    document
+                        .getElementById(
+                            "msgEquipamento"
+                        );
+
+
+                if (!nome) {
+
+                    mensagem.className =
+                        "mensagem erro";
+
+                    mensagem.textContent =
+                        "Informe o nome do equipamento.";
+
+                    return;
+
+                }
+
+
+                if (!box) {
+
+                    mensagem.className =
+                        "mensagem erro";
+
+                    mensagem.textContent =
+                        "Informe o número do Box.";
+
+                    return;
+
+                }
+
+
+                if (!uid) {
+
+                    mensagem.className =
+                        "mensagem erro";
+
+                    mensagem.textContent =
+                        "Leia a tag do equipamento.";
+
+                    return;
+
+                }
+
+
+                try {
+
+                    const resposta =
+                        await fetch(
+                            "/equipamentos",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body:
+                                    JSON.stringify({
+
+                                        nome:
+                                            nome,
+
+                                        box_id:
+                                            box,
+
+                                        uid_tag:
+                                            uid
+
+                                    })
+                            }
+                        );
+
+
+                    const resultado =
+                        await resposta.json();
+
+
+                    if (!resposta.ok) {
+
+                        mensagem.className =
+                            "mensagem erro";
+
+                        mensagem.textContent =
+                            resultado.erro ||
+                            "Erro ao cadastrar.";
+
+                        return;
+
+                    }
+
+
+                    mensagem.className =
+                        "mensagem sucesso";
+
+                    mensagem.textContent =
+                        "✓ " +
+                        resultado.mensagem;
+
+
+                    document
+                        .getElementById(
+                            "formEquipamento"
+                        )
+                        .reset();
+
+
+                    carregarEquipamentos();
+
+                }
+
+                catch (erro) {
+
+                    mensagem.className =
+                        "mensagem erro";
+
+                    mensagem.textContent =
+                        "Erro de conexão com o servidor.";
+
+                }
+
+            }
+        );
+
+
+    // =====================================================
+    // CARREGAR FUNCIONÁRIOS
+    // =====================================================
+
+    async function carregarFuncionarios() {
+
+        const tabela =
+            document
+                .getElementById(
+                    "listaFuncionarios"
+                );
+
+        try {
+
+            const resposta =
+                await fetch(
+                    "/funcionarios"
+                );
+
+            const dados =
+                await resposta.json();
+
+
+            tabela.innerHTML = "";
+
+
+            if (
+                !Array.isArray(dados) ||
+                dados.length === 0
+            ) {
+
+                tabela.innerHTML = `
+                    <tr>
+                        <td colspan="5">
+                            Nenhum funcionário cadastrado.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+
+            }
+
+
+            dados.forEach(
+                function(funcionario) {
+
+                    tabela.innerHTML += `
+
+                        <tr>
+
+                            <td>
+                                ${Number(funcionario.id)}
+                            </td>
+
+                            <td>
+                                ${escaparHTML(
+                                    funcionario.nome
+                                )}
+                            </td>
+
+                            <td>
+                                ${escaparHTML(
+                                    funcionario.matricula || "-"
+                                )}
+                            </td>
+
+                            <td>
+                                ${escaparHTML(
+                                    funcionario.uid_tag_pessoal
+                                )}
+                            </td>
+
+                            <td>
+
+                                <button
+                                    class="btn-excluir"
+                                    onclick="excluirFuncionario(
+                                        ${Number(funcionario.id)}
+                                    )"
+                                >
+                                    🗑️ Excluir
+                                </button>
+
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                }
+            );
+
+        }
+
+        catch (erro) {
+
+            tabela.innerHTML = `
+                <tr>
+                    <td colspan="5">
+                        Erro ao carregar funcionários.
+                    </td>
+                </tr>
+            `;
+
+        }
+
+    }
+
+
+    // =====================================================
+    // CARREGAR EQUIPAMENTOS
+    // =====================================================
+
+    async function carregarEquipamentos() {
+
+        const tabela =
+            document
+                .getElementById(
+                    "listaEquipamentos"
+                );
+
+        try {
+
+            const resposta =
+                await fetch(
+                    "/equipamentos"
+                );
+
+            const dados =
+                await resposta.json();
+
+
+            tabela.innerHTML = "";
+
+
+            if (
+                !Array.isArray(dados) ||
+                dados.length === 0
+            ) {
+
+                tabela.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            Nenhum equipamento cadastrado.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+
+            }
+
+
+            dados.forEach(
+                function(equipamento) {
+
+                    const classe =
+                        equipamento.status ===
+                        "disponivel"
+                            ? "status-disponivel"
+                            : "status-emprestado";
+
+
+                    tabela.innerHTML += `
+
+                        <tr>
+
+                            <td>
+                                ${Number(
+                                    equipamento.id
+                                )}
+                            </td>
+
+                            <td>
+                                ${escaparHTML(
+                                    equipamento.nome
+                                )}
+                            </td>
+
+                            <td>
+                                ${escaparHTML(
+                                    equipamento.uid_tag
+                                )}
+                            </td>
+
+                            <td>
+                                ${escaparHTML(
+                                    equipamento.box_id
+                                )}
+                            </td>
+
+                            <td
+                                class="${classe}"
+                            >
+                                ${escaparHTML(
+                                    equipamento.status
+                                )}
+                            </td>
+
+                            <td>
+
+                                <button
+                                    class="btn-excluir"
+                                    onclick="excluirEquipamento(
+                                        ${Number(
+                                            equipamento.id
+                                        )}
+                                    )"
+                                >
+                                    🗑️ Excluir
+                                </button>
+
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                }
+            );
+
+        }
+
+        catch (erro) {
+
+            tabela.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        Erro ao carregar equipamentos.
+                    </td>
+                </tr>
+            `;
+
+        }
+
+    }
+
+
+    // =====================================================
+    // EXCLUIR FUNCIONÁRIO
+    // =====================================================
+
+    async function excluirFuncionario(id) {
+
+        if (
+            !confirm(
+                "Deseja realmente excluir este funcionário?"
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const resposta =
+                await fetch(
+                    "/funcionarios/" + id,
+                    {
+                        method: "DELETE"
+                    }
+                );
+
+
+            const resultado =
+                await resposta.json();
+
+
+            if (!resposta.ok) {
+
+                alert(
+                    resultado.erro ||
+                    "Erro ao excluir."
+                );
+
+                return;
+
+            }
+
+
+            alert(
+                resultado.mensagem
+            );
+
+
+            carregarFuncionarios();
+
+        }
+
+        catch (erro) {
+
+            alert(
+                "Erro de conexão com o servidor."
+            );
+
+        }
+
+    }
+
+
+    // =====================================================
+    // EXCLUIR EQUIPAMENTO
+    // =====================================================
+
+    async function excluirEquipamento(id) {
+
+        if (
+            !confirm(
+                "Deseja realmente excluir este equipamento?"
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const resposta =
+                await fetch(
+                    "/equipamentos/" + id,
+                    {
+                        method: "DELETE"
+                    }
+                );
+
+
+            const resultado =
+                await resposta.json();
+
+
+            if (!resposta.ok) {
+
+                alert(
+                    resultado.erro ||
+                    "Erro ao excluir."
+                );
+
+                return;
+
+            }
+
+
+            alert(
+                resultado.mensagem
+            );
+
+
+            carregarEquipamentos();
+
+        }
+
+        catch (erro) {
+
+            alert(
+                "Erro de conexão com o servidor."
+            );
+
+        }
+
+    }
+
+
+    // =====================================================
+    // INICIAR
+    // =====================================================
+
+    carregarFuncionarios();
+
+    carregarEquipamentos();
+
+    setInterval(
+        consultarRFID,
+        500
+    );
+
+</script>
+
+</body>
+
+</html>

@@ -1,15 +1,8 @@
 {
-  "name": "projeto-inventario-rfid",
-  "version": "5.0.0",
-  "private": true,
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.57.0",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0"
-  }
+  "name":"projeto-inventario-rfid",
+  "version":"6.0.0",
+  "private":true,
+  "main":"server.js",
+  "scripts":{"start":"node server.js"},
+  "dependencies":{"@supabase/supabase-js":"^2.57.0","cors":"^2.8.5","dotenv":"^17.2.2","express":"^5.1.0"}
 }
