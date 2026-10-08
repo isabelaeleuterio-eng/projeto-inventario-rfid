@@ -1,0 +1,2972 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Operação | Inventário RFID</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background:
+                #f3f6fa;
+
+            color:
+                #17202a;
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+        /* =====================================================
+           ESTRUTURA
+        ===================================================== */
+
+        .app {
+            min-height: 100vh;
+
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            min-width: 250px;
+
+            min-height: 100vh;
+
+            background:
+                #101827;
+
+            color: white;
+
+            display: flex;
+            flex-direction: column;
+
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+        }
+
+        .main {
+            width: calc(100% - 250px);
+
+            margin-left: 250px;
+
+            min-height: 100vh;
+        }
+
+        /* =====================================================
+           MARCA
+        ===================================================== */
+
+        .brand {
+            padding: 25px 22px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 12px;
+
+            border-bottom:
+                1px solid
+                rgba(255,255,255,0.08);
+        }
+
+        .brand-icon {
+            width: 45px;
+            height: 45px;
+
+            border-radius: 12px;
+
+            background:
+                #2563eb;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 23px;
+        }
+
+        .brand-title {
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        .brand-subtitle {
+            margin-top: 4px;
+
+            color:
+                #9ca9bb;
+
+            font-size: 11px;
+        }
+
+        /* =====================================================
+           MENU
+        ===================================================== */
+
+        .menu {
+            padding: 22px 15px;
+        }
+
+        .menu-label {
+            padding:
+                0 13px
+                10px;
+
+            color:
+                #738198;
+
+            font-size: 10px;
+            font-weight: 900;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+        }
+
+        .menu a {
+            display: flex;
+            align-items: center;
+
+            gap: 11px;
+
+            padding:
+                13px 14px;
+
+            margin-bottom: 6px;
+
+            border-radius: 10px;
+
+            color:
+                #cbd5e1;
+
+            text-decoration: none;
+
+            font-size: 14px;
+            font-weight: 700;
+
+            transition:
+                0.2s;
+        }
+
+        .menu a:hover {
+            background:
+                rgba(255,255,255,0.07);
+
+            color: white;
+        }
+
+        .menu a.active {
+            background:
+                #2563eb;
+
+            color: white;
+        }
+
+        .menu-icon {
+            width: 23px;
+
+            text-align: center;
+
+            font-size: 17px;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+
+            padding: 18px;
+        }
+
+        .connection {
+            padding:
+                10px 12px;
+
+            border-radius: 9px;
+
+            background:
+                rgba(255,255,255,0.06);
+
+            display: flex;
+            align-items: center;
+
+            gap: 8px;
+
+            color:
+                #cbd5e1;
+
+            font-size: 11px;
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+
+            border-radius: 50%;
+
+            background:
+                #f59e0b;
+        }
+
+        .connection-dot.online {
+            background:
+                #22c55e;
+        }
+
+        .connection-dot.offline {
+            background:
+                #ef4444;
+        }
+
+        /* =====================================================
+           TOPO
+        ===================================================== */
+
+        .topbar {
+            height: 76px;
+
+            padding:
+                0 30px;
+
+            background:
+                white;
+
+            border-bottom:
+                1px solid
+                #e5e7eb;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 20px;
+        }
+
+        .top-title {
+            display: flex;
+            flex-direction: column;
+
+            gap: 4px;
+        }
+
+        .top-title strong {
+            font-size: 18px;
+        }
+
+        .top-title span {
+            color:
+                #7b8794;
+
+            font-size: 12px;
+        }
+
+        .server {
+            display: flex;
+            align-items: center;
+
+            gap: 8px;
+
+            padding:
+                8px 13px;
+
+            border-radius: 20px;
+
+            background:
+                #ecfdf3;
+
+            color:
+                #15803d;
+
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .server-dot {
+            width: 8px;
+            height: 8px;
+
+            border-radius: 50%;
+
+            background:
+                #22c55e;
+        }
+
+        .server.offline {
+            background:
+                #fef2f2;
+
+            color:
+                #b91c1c;
+        }
+
+        .server.offline .server-dot {
+            background:
+                #ef4444;
+        }
+
+        /* =====================================================
+           CONTEÚDO
+        ===================================================== */
+
+        .content {
+            width: 100%;
+
+            max-width: 1250px;
+
+            margin: 0 auto;
+
+            padding:
+                35px 30px 50px;
+        }
+
+        .page-header {
+            margin-bottom: 25px;
+        }
+
+        .kicker {
+            color:
+                #2563eb;
+
+            font-size: 11px;
+            font-weight: 900;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+
+            margin-bottom: 7px;
+        }
+
+        .page-header h1 {
+            margin: 0;
+
+            font-size: 31px;
+            font-weight: 900;
+        }
+
+        .page-header p {
+            margin:
+                8px 0 0;
+
+            max-width: 700px;
+
+            color:
+                #687586;
+
+            font-size: 14px;
+
+            line-height: 1.5;
+        }
+
+        /* =====================================================
+           ÁREA DE OPERAÇÃO
+        ===================================================== */
+
+        .operation-card {
+            background:
+                white;
+
+            border:
+                1px solid
+                #e1e7ef;
+
+            border-radius:
+                18px;
+
+            box-shadow:
+                0 8px 28px
+                rgba(15,23,42,0.05);
+
+            overflow: hidden;
+        }
+
+        .operation-head {
+            padding:
+                20px 25px;
+
+            border-bottom:
+                1px solid
+                #edf0f4;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+        }
+
+        .operation-head-title {
+            font-size: 15px;
+            font-weight: 900;
+        }
+
+        .operation-head-subtitle {
+            margin-top: 4px;
+
+            color:
+                #7b8794;
+
+            font-size: 12px;
+        }
+
+        .operation-state {
+            padding:
+                7px 11px;
+
+            border-radius:
+                20px;
+
+            background:
+                #f1f5f9;
+
+            color:
+                #64748b;
+
+            font-size: 11px;
+            font-weight: 800;
+
+            white-space: nowrap;
+        }
+
+        .operation-state.active {
+            background:
+                #eff6ff;
+
+            color:
+                #2563eb;
+        }
+
+        .operation-body {
+            padding:
+                40px 35px;
+        }
+
+        /* =====================================================
+           RFID CENTRAL
+        ===================================================== */
+
+        .rfid-area {
+            max-width: 850px;
+
+            margin: 0 auto;
+
+            text-align: center;
+        }
+
+        .rfid-circle {
+            width: 100px;
+            height: 100px;
+
+            margin:
+                0 auto 22px;
+
+            border-radius: 50%;
+
+            background:
+                #eff6ff;
+
+            border:
+                8px solid
+                #dbeafe;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 42px;
+        }
+
+        .main-message {
+            min-height: 38px;
+
+            font-size: 25px;
+            font-weight: 900;
+
+            line-height: 1.35;
+        }
+
+        .main-submessage {
+            margin-top: 8px;
+
+            color:
+                #748092;
+
+            font-size: 13px;
+
+            line-height: 1.5;
+        }
+
+        /* =====================================================
+           FUNCIONÁRIO
+        ===================================================== */
+
+        .person-card {
+            margin:
+                25px auto 0;
+
+            max-width: 600px;
+
+            padding:
+                18px;
+
+            border:
+                1px solid
+                #dbeafe;
+
+            background:
+                #f8fbff;
+
+            border-radius:
+                14px;
+
+            display: flex;
+            flex-wrap: wrap;
+
+            justify-content: center;
+
+            gap: 9px;
+        }
+
+        .person-tag {
+            padding:
+                8px 12px;
+
+            background:
+                #eaf2ff;
+
+            color:
+                #24527a;
+
+            border-radius:
+                20px;
+
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        /* =====================================================
+           EQUIPAMENTOS
+        ===================================================== */
+
+        .equipment-area {
+            margin-top: 30px;
+        }
+
+        .section-title {
+            margin-bottom: 13px;
+
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .equipment-list {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(190px, 1fr)
+                );
+
+            gap: 12px;
+        }
+
+        .equipment-button {
+            width: 100%;
+
+            padding:
+                16px;
+
+            background:
+                white;
+
+            border:
+                1px solid
+                #dce3eb;
+
+            border-radius:
+                12px;
+
+            text-align: left;
+
+            cursor: pointer;
+
+            transition:
+                0.2s;
+        }
+
+        .equipment-button:hover {
+            border-color:
+                #2563eb;
+
+            background:
+                #f8fbff;
+
+            transform:
+                translateY(-2px);
+
+            box-shadow:
+                0 5px 16px
+                rgba(37,99,235,0.10);
+        }
+
+        .equipment-name {
+            display: block;
+
+            color:
+                #17202a;
+
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .equipment-description {
+            display: block;
+
+            margin-top: 6px;
+
+            color:
+                #7b8794;
+
+            font-size: 11px;
+
+            line-height: 1.4;
+        }
+
+        /* =====================================================
+           EQUIPAMENTO SELECIONADO
+        ===================================================== */
+
+        .selected-equipment {
+            margin:
+                25px auto 0;
+
+            max-width: 600px;
+
+            padding:
+                18px;
+
+            border:
+                1px solid
+                #bfdbfe;
+
+            background:
+                #eff6ff;
+
+            border-radius:
+                14px;
+        }
+
+        .selected-title {
+            color:
+                #1d4ed8;
+
+            font-size: 11px;
+            font-weight: 900;
+
+            text-transform: uppercase;
+        }
+
+        .selected-name {
+            margin-top: 6px;
+
+            font-size: 17px;
+            font-weight: 900;
+        }
+
+        .selected-help {
+            margin-top: 6px;
+
+            color:
+                #64748b;
+
+            font-size: 12px;
+
+            line-height: 1.5;
+        }
+
+        /* =====================================================
+           DEVOLUÇÃO
+        ===================================================== */
+
+        .return-card {
+            margin:
+                25px auto 0;
+
+            max-width: 600px;
+
+            padding:
+                20px;
+
+            background:
+                #fffaf0;
+
+            border:
+                1px solid
+                #fed7aa;
+
+            border-radius:
+                14px;
+        }
+
+        .return-title {
+            color:
+                #c2410c;
+
+            font-size: 12px;
+            font-weight: 900;
+
+            text-transform: uppercase;
+        }
+
+        .return-equipment {
+            margin-top: 7px;
+
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .return-help {
+            margin-top: 7px;
+
+            color:
+                #7c6a58;
+
+            font-size: 12px;
+
+            line-height: 1.5;
+        }
+
+        /* =====================================================
+           ALERTAS
+        ===================================================== */
+
+        .alert {
+            display: none;
+
+            max-width: 700px;
+
+            margin:
+                25px auto 0;
+
+            padding:
+                14px 17px;
+
+            border-radius:
+                10px;
+
+            font-size: 13px;
+            font-weight: 700;
+
+            line-height: 1.5;
+
+            text-align: center;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert.info {
+            background:
+                #eff6ff;
+
+            color:
+                #1d4ed8;
+        }
+
+        .alert.success {
+            background:
+                #ecfdf3;
+
+            color:
+                #15803d;
+        }
+
+        .alert.error {
+            background:
+                #fef2f2;
+
+            color:
+                #b91c1c;
+        }
+
+        /* =====================================================
+           STATUS INFERIOR
+        ===================================================== */
+
+        .status-area {
+            margin-top: 20px;
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    2,
+                    minmax(0, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+        .status-card {
+            padding:
+                17px;
+
+            background:
+                white;
+
+            border:
+                1px solid
+                #e1e7ef;
+
+            border-radius:
+                13px;
+        }
+
+        .status-card-title {
+            color:
+                #7b8794;
+
+            font-size: 11px;
+            font-weight: 800;
+
+            text-transform: uppercase;
+        }
+
+        .status-card-value {
+            margin-top: 7px;
+
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        /* =====================================================
+           ÚLTIMA TAG LIDA
+        ===================================================== */
+
+        .last-rfid {
+            margin: 22px auto 0;
+            max-width: 700px;
+            padding: 15px 17px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            text-align: left;
+        }
+
+        .last-rfid-title {
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+        }
+
+        .last-rfid-row {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .last-rfid-uid {
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: .5px;
+            word-break: break-all;
+        }
+
+        .last-rfid-type {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            color: #475569;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .last-rfid-type.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .last-rfid-type.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .last-rfid-empty {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .action-note {
+            margin-top: 12px;
+            color: #64748b;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .equipment-button:disabled {
+            cursor: wait;
+            opacity: .55;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .completed-card {
+            margin: 25px auto 0;
+            max-width: 600px;
+            padding: 20px;
+            background: #ecfdf3;
+            border: 1px solid #bbf7d0;
+            border-radius: 14px;
+        }
+
+        .completed-title {
+            color: #15803d;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .completed-text {
+            margin-top: 7px;
+            color: #166534;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        .mobile-header {
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+
+            .sidebar {
+                width: 215px;
+                min-width: 215px;
+            }
+
+            .main {
+                width:
+                    calc(100% - 215px);
+
+                margin-left:
+                    215px;
+            }
+
+            .content {
+                padding:
+                    28px 20px 40px;
+            }
+
+            .operation-body {
+                padding:
+                    32px 22px;
+            }
+
+        }
+
+        @media (max-width: 700px) {
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .mobile-header {
+                height: 60px;
+
+                padding:
+                    0 16px;
+
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+
+                background:
+                    #101827;
+
+                color: white;
+            }
+
+            .mobile-brand {
+                display: flex;
+                align-items: center;
+
+                gap: 9px;
+
+                font-size: 14px;
+                font-weight: 900;
+            }
+
+            .mobile-icon {
+                width: 33px;
+                height: 33px;
+
+                border-radius: 9px;
+
+                background:
+                    #2563eb;
+
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .topbar {
+                height: 64px;
+
+                padding:
+                    0 15px;
+            }
+
+            .top-title span {
+                display: none;
+            }
+
+            .top-title strong {
+                font-size: 16px;
+            }
+
+            .server {
+                padding:
+                    7px 9px;
+
+                font-size: 10px;
+            }
+
+            .content {
+                padding:
+                    23px 13px 35px;
+            }
+
+            .page-header h1 {
+                font-size: 27px;
+            }
+
+            .page-header p {
+                font-size: 13px;
+            }
+
+            .operation-head {
+                padding:
+                    17px;
+
+                align-items: flex-start;
+
+                flex-direction: column;
+            }
+
+            .operation-body {
+                padding:
+                    28px 15px;
+            }
+
+            .rfid-circle {
+                width: 85px;
+                height: 85px;
+
+                font-size: 36px;
+            }
+
+            .main-message {
+                font-size: 21px;
+            }
+
+            .equipment-list {
+                grid-template-columns: 1fr;
+            }
+
+            .status-area {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="app">
+
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                📦
+            </div>
+
+            <div>
+
+                <div class="brand-title">
+                    Inventário RFID
+                </div>
+
+                <div class="brand-subtitle">
+                    Gestão de equipamentos
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <nav class="menu">
+
+            <div class="menu-label">
+                Sistema
+            </div>
+
+
+            <a
+                href="/"
+                class="active"
+            >
+
+                <span class="menu-icon">
+                    🔄
+                </span>
+
+                <span>
+                    Operação
+                </span>
+
+            </a>
+
+
+            <a href="/cadastro">
+
+                <span class="menu-icon">
+                    📋
+                </span>
+
+                <span>
+                    Cadastro
+                </span>
+
+            </a>
+
+
+            <a href="/controle">
+
+                <span class="menu-icon">
+                    📊
+                </span>
+
+                <span>
+                    Controle
+                </span>
+
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <div class="connection">
+
+                <span
+                    id="connectionDot"
+                    class="connection-dot"
+                ></span>
+
+                <span id="connectionText">
+                    Verificando servidor...
+                </span>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         CONTEÚDO PRINCIPAL
+    ====================================================== -->
+
+    <main class="main">
+
+
+        <!-- MOBILE -->
+
+        <div class="mobile-header">
+
+            <div class="mobile-brand">
+
+                <div class="mobile-icon">
+                    📦
+                </div>
+
+                Inventário RFID
+
+            </div>
+
+
+            <span
+                id="mobileConnectionDot"
+                class="connection-dot"
+            ></span>
+
+        </div>
+
+
+        <!-- TOPO -->
+
+        <header class="topbar">
+
+            <div class="top-title">
+
+                <strong>
+                    Operação
+                </strong>
+
+                <span>
+                    Retirada e devolução de equipamentos
+                </span>
+
+            </div>
+
+
+            <div
+                id="serverStatus"
+                class="server"
+            >
+
+                <span
+                    class="server-dot"
+                ></span>
+
+                <span id="serverStatusText">
+                    Verificando...
+                </span>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             ÁREA
+        ================================================== -->
+
+        <section class="content">
+
+
+            <div class="page-header">
+
+                <div class="kicker">
+                    <span>●</span>
+                    Operação
+                </div>
+
+                <h1>
+                    Retirada e devolução
+                </h1>
+
+                <p>
+                    Aproxime sua tag pessoal para iniciar
+                    uma operação de retirada ou devolução
+                    de equipamento.
+                </p>
+
+            </div>
+
+
+            <!-- =================================================
+                 CARD PRINCIPAL
+            ================================================== -->
+
+            <section class="operation-card">
+
+
+                <div class="operation-head">
+
+                    <div>
+
+                        <div class="operation-head-title">
+                            Operação RFID
+                        </div>
+
+                        <div class="operation-head-subtitle">
+                            Siga as instruções apresentadas na tela.
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="operationState"
+                        class="operation-state"
+                    >
+                        Aguardando funcionário
+                    </div>
+
+                </div>
+
+
+                <div class="operation-body">
+
+
+                    <div class="rfid-area">
+
+
+                        <div class="rfid-circle">
+                            📡
+                        </div>
+
+
+                        <div
+                            id="mainMessage"
+                            class="main-message"
+                        >
+                            Passe a tag do funcionário.
+                        </div>
+
+
+                        <div
+                            id="mainSubmessage"
+                            class="main-submessage"
+                        >
+                            Aproxime sua tag pessoal do leitor RFID.
+                        </div>
+
+
+                        <div
+                            id="details"
+                        ></div>
+
+
+                        <div
+                            id="alert"
+                            class="alert"
+                        ></div>
+
+                        <div
+                            id="lastRfid"
+                            class="last-rfid"
+                        >
+                            <div class="last-rfid-title">
+                                Última tag lida
+                            </div>
+
+                            <div class="last-rfid-row">
+                                <span
+                                    id="lastRfidUid"
+                                    class="last-rfid-empty"
+                                >
+                                    Nenhuma tag lida ainda
+                                </span>
+
+                                <span
+                                    id="lastRfidType"
+                                    class="last-rfid-type"
+                                >
+                                    Aguardando
+                                </span>
+                            </div>
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </section>
+
+
+            <!-- =================================================
+                 STATUS
+            ================================================== -->
+
+            <div class="status-area">
+
+
+                <div class="status-card">
+
+                    <div class="status-card-title">
+                        Etapa atual
+                    </div>
+
+                    <div
+                        id="stepStatus"
+                        class="status-card-value"
+                    >
+                        Aguardando funcionário
+                    </div>
+
+                </div>
+
+
+                <div class="status-card">
+
+                    <div class="status-card-title">
+                        Comunicação RFID
+                    </div>
+
+                    <div
+                        id="rfidStatus"
+                        class="status-card-value"
+                    >
+                        Aguardando leitura
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+<script>
+
+
+// ============================================================
+// ESTADO
+// ============================================================
+
+let estadoAnterior = null;
+
+let eventoAnterior = 0;
+
+
+// ============================================================
+// ELEMENTOS
+// ============================================================
+
+const mainMessage =
+    document.getElementById(
+        "mainMessage"
+    );
+
+
+const mainSubmessage =
+    document.getElementById(
+        "mainSubmessage"
+    );
+
+
+const details =
+    document.getElementById(
+        "details"
+    );
+
+
+const alertBox =
+    document.getElementById(
+        "alert"
+    );
+
+
+const lastRfidUid =
+    document.getElementById(
+        "lastRfidUid"
+    );
+
+
+const lastRfidType =
+    document.getElementById(
+        "lastRfidType"
+    );
+
+
+const operationState =
+    document.getElementById(
+        "operationState"
+    );
+
+
+const stepStatus =
+    document.getElementById(
+        "stepStatus"
+    );
+
+
+const rfidStatus =
+    document.getElementById(
+        "rfidStatus"
+    );
+
+
+const serverStatus =
+    document.getElementById(
+        "serverStatus"
+    );
+
+
+const serverStatusText =
+    document.getElementById(
+        "serverStatusText"
+    );
+
+
+const connectionDot =
+    document.getElementById(
+        "connectionDot"
+    );
+
+
+const connectionText =
+    document.getElementById(
+        "connectionText"
+    );
+
+
+const mobileConnectionDot =
+    document.getElementById(
+        "mobileConnectionDot"
+    );
+
+
+// ============================================================
+// ESCAPAR HTML
+// ============================================================
+
+function escapeHtml(valor) {
+
+    return String(
+        valor ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+// ============================================================
+// INTERFACE
+// ============================================================
+
+function mostrarMensagem(
+    mensagem
+) {
+
+    mainMessage.textContent =
+        mensagem ||
+        "";
+
+}
+
+
+function mostrarSubmensagem(
+    mensagem
+) {
+
+    mainSubmessage.textContent =
+        mensagem ||
+        "";
+
+}
+
+
+function mostrarAlerta(
+    mensagem,
+    tipo = "info"
+) {
+
+    alertBox.textContent =
+        mensagem ||
+        "";
+
+    alertBox.className =
+        "alert show " +
+        tipo;
+
+}
+
+
+function esconderAlerta() {
+
+    alertBox.textContent =
+        "";
+
+    alertBox.className =
+        "alert";
+
+}
+
+
+function mostrarUltimaTag(
+    uid,
+    tipo = "info",
+    textoTipo = "Tag lida"
+) {
+
+    if (!uid) {
+        return;
+    }
+
+    lastRfidUid.textContent =
+        String(uid);
+
+    lastRfidUid.className =
+        "last-rfid-uid";
+
+    lastRfidType.textContent =
+        textoTipo;
+
+    lastRfidType.className =
+        "last-rfid-type " + tipo;
+}
+
+
+function atualizarEstadoVisual(
+    texto,
+    ativo = false
+) {
+
+    operationState.textContent =
+        texto;
+
+    stepStatus.textContent =
+        texto;
+
+    operationState.className =
+        ativo
+            ? "operation-state active"
+            : "operation-state";
+
+}
+
+
+// ============================================================
+// FUNCIONÁRIO
+// ============================================================
+
+function mostrarFuncionario(
+    funcionario
+) {
+
+    if (!funcionario) {
+
+        return "";
+
+    }
+
+    return `
+        <div class="person-card">
+
+            <div class="person-tag">
+                👤
+                ${escapeHtml(
+                    funcionario.nome
+                )}
+            </div>
+
+            <div class="person-tag">
+                Matrícula:
+                ${escapeHtml(
+                    funcionario.matricula || "-"
+                )}
+            </div>
+
+            ${
+                funcionario.setor
+                    ? `
+                        <div class="person-tag">
+                            Setor:
+                            ${escapeHtml(
+                                funcionario.setor
+                            )}
+                        </div>
+                    `
+                    : ""
+            }
+
+        </div>
+    `;
+
+}
+
+
+// ============================================================
+// EQUIPAMENTO
+// ============================================================
+
+function mostrarEquipamento(
+    equipamento
+) {
+
+    if (!equipamento) {
+
+        return "";
+
+    }
+
+    return `
+        <div class="selected-equipment">
+
+            <div class="selected-title">
+                Equipamento
+            </div>
+
+            <div class="selected-name">
+                🔧
+                ${escapeHtml(
+                    equipamento.nome
+                )}
+            </div>
+
+            ${
+                equipamento.descricao
+                    ? `
+                        <div class="selected-help">
+                            ${escapeHtml(
+                                equipamento.descricao
+                            )}
+                        </div>
+                    `
+                    : ""
+            }
+
+        </div>
+    `;
+
+}
+
+
+// ============================================================
+// EQUIPAMENTO DE DEVOLUÇÃO
+// ============================================================
+
+function mostrarEquipamentoDevolucao(
+    equipamento
+) {
+
+    if (!equipamento) {
+
+        return "";
+
+    }
+
+    return `
+        <div class="return-card">
+
+            <div class="return-title">
+                Devolução pendente
+            </div>
+
+            <div class="return-equipment">
+                🔧
+                ${escapeHtml(
+                    equipamento.nome
+                )}
+            </div>
+
+            ${
+                equipamento.descricao
+                    ? `
+                        <div class="return-help">
+                            ${escapeHtml(
+                                equipamento.descricao
+                            )}
+                        </div>
+                    `
+                    : ""
+            }
+
+            <div class="return-help">
+                Passe a tag física deste equipamento
+                para continuar.
+            </div>
+
+        </div>
+    `;
+
+}
+
+
+// ============================================================
+// TELA INICIAL
+// ============================================================
+
+function telaInicial() {
+
+    mostrarMensagem(
+        "Passe a tag do funcionário."
+    );
+
+    mostrarSubmensagem(
+        "Aproxime sua tag pessoal do leitor RFID."
+    );
+
+    details.innerHTML =
+        "";
+
+    esconderAlerta();
+
+    atualizarEstadoVisual(
+        "Aguardando funcionário",
+        false
+    );
+
+    rfidStatus.textContent =
+        "Aguardando leitura";
+
+}
+
+
+// ============================================================
+// FUNCIONÁRIO IDENTIFICADO
+// ============================================================
+
+function mostrarFuncionarioIdentificado(
+    evento
+) {
+
+    mostrarUltimaTag(
+        evento.uid,
+        "success",
+        "Funcionário"
+    );
+
+    const funcionario =
+        evento.funcionario;
+
+    const equipamentos =
+        evento.equipamentos || [];
+
+
+    rfidStatus.textContent =
+        "Funcionário identificado";
+
+
+    if (
+        evento.modo ===
+        "devolucao"
+    ) {
+
+        atualizarEstadoVisual(
+            "Devolução",
+            true
+        );
+
+        mostrarMensagem(
+            evento.mensagem ||
+            "Você possui um equipamento para devolver."
+        );
+
+        mostrarSubmensagem(
+            "Passe a tag do equipamento indicado."
+        );
+
+        details.innerHTML =
+            mostrarFuncionario(
+                funcionario
+            ) +
+            mostrarEquipamentoDevolucao(
+                evento.equipamento
+            );
+
+        mostrarAlerta(
+            "Passe a tag do equipamento para continuar.",
+            "info"
+        );
+
+        return;
+
+    }
+
+
+    atualizarEstadoVisual(
+        "Escolha do equipamento",
+        true
+    );
+
+    mostrarMensagem(
+        evento.mensagem ||
+        "Funcionário identificado."
+    );
+
+    mostrarSubmensagem(
+        "Escolha qual equipamento deseja retirar."
+    );
+
+    details.innerHTML =
+        mostrarFuncionario(
+            funcionario
+        );
+
+
+    if (
+        equipamentos.length === 0
+    ) {
+
+        details.innerHTML += `
+            <div class="alert show error">
+                Não existem equipamentos disponíveis
+                para retirada.
+            </div>
+        `;
+
+        mostrarAlerta(
+            "Nenhum equipamento disponível.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    let html = `
+        <div class="equipment-area">
+
+            <div class="section-title">
+                Equipamentos disponíveis
+            </div>
+
+            <div class="equipment-list">
+    `;
+
+
+    equipamentos.forEach(
+        equipamento => {
+
+            html += `
+                <button
+                    type="button"
+                    class="equipment-button"
+                    onclick="escolherEquipamento(
+                        ${Number(
+                            equipamento.id
+                        )}
+                    )"
+                >
+
+                    <span class="equipment-name">
+                        🔧
+                        ${escapeHtml(
+                            equipamento.nome
+                        )}
+                    </span>
+
+                    <span class="equipment-description">
+                        ${
+                            escapeHtml(
+                                equipamento.descricao ||
+                                "Equipamento disponível"
+                            )
+                        }
+                    </span>
+
+                </button>
+            `;
+
+        }
+    );
+
+
+    html += `
+            </div>
+
+        </div>
+    `;
+
+
+    details.innerHTML +=
+        html;
+
+
+    mostrarAlerta(
+        "Escolha o equipamento que deseja retirar.",
+        "info"
+    );
+
+}
+
+
+// ============================================================
+// ESCOLHER EQUIPAMENTO
+// ============================================================
+
+let escolhendoEquipamento = false;
+
+
+async function escolherEquipamento(
+    equipamentoId
+) {
+
+    if (escolhendoEquipamento) {
+        return;
+    }
+
+    escolhendoEquipamento = true;
+
+    try {
+
+        atualizarEstadoVisual(
+            "Registrando escolha",
+            true
+        );
+
+        rfidStatus.textContent =
+            "Processando";
+
+
+        mostrarAlerta(
+            "Registrando equipamento escolhido...",
+            "info"
+        );
+
+
+        const resposta =
+            await fetch(
+                "/api/retirada/escolher",
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            equipamento_id:
+                                equipamentoId
+                        })
+
+                }
+            );
+
+
+        const dados =
+            await resposta.json();
+
+
+        if (
+            !resposta.ok ||
+            !dados.sucesso
+        ) {
+
+            throw new Error(
+                dados.mensagem ||
+                "Não foi possível escolher o equipamento."
+            );
+
+        }
+
+
+        atualizarEstadoVisual(
+            "Aguardando tag do equipamento",
+            true
+        );
+
+        rfidStatus.textContent =
+            "Aguardando equipamento";
+
+
+        mostrarMensagem(
+            "Passe a tag do equipamento."
+        );
+
+        mostrarSubmensagem(
+            "A tag será conferida antes da liberação."
+        );
+
+
+        details.innerHTML =
+            mostrarFuncionario(
+                estadoAnterior?.funcionario
+            ) +
+            mostrarEquipamento(
+                dados.equipamento
+            );
+
+
+        mostrarAlerta(
+            "Agora aproxime a tag física do equipamento.",
+            "info"
+        );
+
+
+    } catch (erro) {
+
+        console.error(
+            erro
+        );
+
+        mostrarAlerta(
+            erro.message ||
+            "Erro de comunicação com o servidor.",
+            "error"
+        );
+
+        atualizarEstadoVisual(
+            "Erro na operação",
+            false
+        );
+
+    } finally {
+
+        escolhendoEquipamento = false;
+
+    }
+
+}
+
+
+// ============================================================
+// EQUIPAMENTO CONFIRMADO
+// ============================================================
+
+function mostrarEquipamentoConfirmado(
+    evento
+) {
+
+    mostrarUltimaTag(
+        evento.uid,
+        "success",
+        "Equipamento confirmado"
+    );
+
+    atualizarEstadoVisual(
+        "Operação autorizada",
+        true
+    );
+
+    rfidStatus.textContent =
+        "Equipamento confirmado";
+
+
+    mostrarMensagem(
+        evento.mensagem ||
+        "Equipamento confirmado."
+    );
+
+
+    mostrarSubmensagem(
+        "A operação foi autorizada pelo sistema."
+    );
+
+
+    details.innerHTML =
+        mostrarFuncionario(
+            evento.funcionario
+        ) +
+        mostrarEquipamento(
+            evento.equipamento
+        );
+
+
+    mostrarAlerta(
+        evento.mensagem ||
+        "Equipamento confirmado.",
+        "success"
+    );
+
+
+    setTimeout(
+        () => {
+
+            telaInicial();
+
+        },
+        5000
+    );
+
+}
+
+
+// ============================================================
+// DEVOLUÇÃO CONCLUÍDA
+// ============================================================
+
+function mostrarDevolucaoConcluida(
+    evento
+) {
+
+    mostrarUltimaTag(
+        evento.uid,
+        "success",
+        "Devolução"
+    );
+
+    atualizarEstadoVisual(
+        "Devolução concluída",
+        true
+    );
+
+    rfidStatus.textContent =
+        "Operação concluída";
+
+
+    mostrarMensagem(
+        "DEVOLUÇÃO CONCLUÍDA!"
+    );
+
+
+    mostrarSubmensagem(
+        "O equipamento voltou a ficar disponível."
+    );
+
+
+    details.innerHTML =
+        mostrarFuncionario(
+            evento.funcionario
+        ) +
+        mostrarEquipamento(
+            evento.equipamento
+        );
+
+
+    mostrarAlerta(
+        "Devolução registrada com sucesso.",
+        "success"
+    );
+
+
+    setTimeout(
+        telaInicial,
+        5000
+    );
+
+}
+
+
+// ============================================================
+// TAG DESCONHECIDA
+// ============================================================
+
+function mostrarTagDesconhecida(
+    evento
+) {
+
+    mostrarUltimaTag(
+        evento.uid,
+        "error",
+        "Não cadastrada"
+    );
+
+    atualizarEstadoVisual(
+        "Tag não cadastrada",
+        false
+    );
+
+    rfidStatus.textContent =
+        "Tag desconhecida";
+
+
+    mostrarMensagem(
+        "TAG NÃO CADASTRADA"
+    );
+
+
+    mostrarSubmensagem(
+        "Esta tag não está registrada no sistema."
+    );
+
+
+    details.innerHTML = `
+        <div class="return-card">
+
+            <div class="return-title">
+                Tag RFID
+            </div>
+
+            <div class="return-equipment">
+                ${escapeHtml(
+                    evento.uid ||
+                    "desconhecida"
+                )}
+            </div>
+
+        </div>
+    `;
+
+
+    mostrarAlerta(
+        "A tag não está cadastrada.",
+        "error"
+    );
+
+}
+
+
+// ============================================================
+// EQUIPAMENTO INCORRETO
+// ============================================================
+
+function mostrarEquipamentoIncorreto(
+    evento
+) {
+
+    mostrarUltimaTag(
+        evento.uid,
+        "error",
+        "Equipamento incorreto"
+    );
+
+    atualizarEstadoVisual(
+        "Equipamento incorreto",
+        true
+    );
+
+    rfidStatus.textContent =
+        "Tag incorreta";
+
+
+    mostrarMensagem(
+        "EQUIPAMENTO INCORRETO"
+    );
+
+
+    mostrarSubmensagem(
+        "Aproxime a tag do equipamento correto."
+    );
+
+
+    details.innerHTML =
+        mostrarEquipamento(
+            evento.equipamento
+        );
+
+
+    if (
+        evento.equipamentoEsperado
+    ) {
+
+        details.innerHTML += `
+            <div class="selected-equipment">
+
+                <div class="selected-title">
+                    Equipamento esperado
+                </div>
+
+                <div class="selected-name">
+                    🔧
+                    ${escapeHtml(
+                        evento.equipamentoEsperado.nome
+                    )}
+                </div>
+
+            </div>
+        `;
+
+    }
+
+
+    mostrarAlerta(
+        evento.mensagem ||
+        "Tag de equipamento incorreta.",
+        "error"
+    );
+
+}
+
+
+// ============================================================
+// PROCESSAR EVENTO RFID
+// ============================================================
+
+function processarEvento(
+    evento
+) {
+
+    if (!evento) {
+
+        return;
+
+    }
+
+
+    if (
+        !evento.id ||
+        evento.id === eventoAnterior
+    ) {
+
+        return;
+
+    }
+
+
+    eventoAnterior =
+        evento.id;
+
+    if (
+        evento.uid &&
+        ![
+            "funcionario_identificado",
+            "equipamento_confirmado",
+            "equipamento_devolucao_confirmado",
+            "devolucao_concluida",
+            "tag_desconhecida",
+            "equipamento_incorreto",
+            "funcionario_inativo"
+        ].includes(evento.tipo)
+    ) {
+        mostrarUltimaTag(
+            evento.uid,
+            "success",
+            "Tag lida"
+        );
+    }
+
+
+    switch (
+        evento.tipo
+    ) {
+
+
+        case "funcionario_identificado":
+
+            mostrarFuncionarioIdentificado(
+                evento
+            );
+
+            break;
+
+
+        case "equipamento_escolhido":
+
+            atualizarEstadoVisual(
+                "Aguardando tag do equipamento",
+                true
+            );
+
+            rfidStatus.textContent =
+                "Aguardando equipamento";
+
+            mostrarMensagem(
+                evento.mensagem ||
+                "Passe a tag do equipamento."
+            );
+
+            mostrarAlerta(
+                "Passe a tag do equipamento.",
+                "info"
+            );
+
+            break;
+
+
+        case "equipamento_confirmado":
+
+            mostrarEquipamentoConfirmado(
+                evento
+            );
+
+            break;
+
+
+        case "equipamento_devolucao_confirmado":
+
+            mostrarEquipamentoConfirmado(
+                evento
+            );
+
+            break;
+
+
+        case "devolucao_concluida":
+
+            mostrarDevolucaoConcluida(
+                evento
+            );
+
+            break;
+
+
+        case "tag_desconhecida":
+
+            mostrarTagDesconhecida(
+                evento
+            );
+
+            break;
+
+
+        case "equipamento_incorreto":
+
+            mostrarEquipamentoIncorreto(
+                evento
+            );
+
+            break;
+
+
+        case "funcionario_inativo":
+
+            mostrarUltimaTag(
+                evento.uid,
+                "error",
+                "Funcionário inativo"
+            );
+
+            atualizarEstadoVisual(
+                "Funcionário inativo",
+                false
+            );
+
+            rfidStatus.textContent =
+                "Acesso negado";
+
+            mostrarMensagem(
+                "FUNCIONÁRIO INATIVO"
+            );
+
+            mostrarSubmensagem(
+                "Este funcionário não pode realizar operações."
+            );
+
+            mostrarAlerta(
+                evento.mensagem ||
+                "Funcionário inativo.",
+                "error"
+            );
+
+            break;
+
+
+        case "fluxo_expirado":
+
+            telaInicial();
+
+            mostrarAlerta(
+                evento.mensagem ||
+                "A operação expirou.",
+                "error"
+            );
+
+            break;
+
+
+        case "equipamento_sem_fluxo":
+
+            // A tag lida pertence a um EQUIPAMENTO, não a um funcionário.
+            // Portanto, não iniciamos a retirada/devolução nem mostramos
+            // a lista de equipamentos para escolha.
+
+            mostrarUltimaTag(
+                evento.uid,
+                "error",
+                "É um equipamento"
+            );
+
+            atualizarEstadoVisual(
+                "Tag de funcionário necessária",
+                false
+            );
+
+            rfidStatus.textContent =
+                "Tag de equipamento detectada";
+
+            mostrarMensagem(
+                "ESSA TAG NÃO É DE UM FUNCIONÁRIO"
+            );
+
+            mostrarSubmensagem(
+                "A tag lida pertence a um equipamento. Passe primeiro a sua tag pessoal de funcionário."
+            );
+
+            details.innerHTML = `
+                <div class="return-card" style="
+                    background:#fff7ed;
+                    border-color:#fdba74;
+                ">
+                    <div class="return-title" style="color:#c2410c;">
+                        ⚠️ Tag de equipamento detectada
+                    </div>
+
+                    <div class="return-equipment" style="
+                        font-family:Consolas, monospace;
+                        font-size:16px;
+                    ">
+                        UID: ${escapeHtml(evento.uid || "não identificado")}
+                    </div>
+
+                    ${
+                        evento.equipamento?.nome
+                            ? `
+                                <div class="return-help" style="
+                                    margin-top:10px;
+                                    font-weight:800;
+                                    color:#9a3412;
+                                ">
+                                    Equipamento: ${escapeHtml(evento.equipamento.nome)}
+                                </div>
+                            `
+                            : ""
+                    }
+
+                    <div class="return-help">
+                        Esta tag não pode iniciar uma retirada ou devolução.
+                        <br>
+                        Passe primeiro a tag pessoal do funcionário.
+                    </div>
+                </div>
+            `;
+
+            mostrarAlerta(
+                "A tag passada é de um equipamento. Passe primeiro a tag do funcionário.",
+                "error"
+            );
+
+            break;
+
+
+        default:
+
+            if (
+                evento.mensagem
+            ) {
+
+                mostrarMensagem(
+                    evento.mensagem
+                );
+
+            }
+
+            break;
+
+    }
+
+}
+
+
+// ============================================================
+// SERVIDOR
+// ============================================================
+
+async function verificarServidor() {
+
+    try {
+
+        const resposta =
+            await fetch(
+                "/health",
+                {
+                    cache:
+                        "no-store"
+                }
+            );
+
+
+        const dados =
+            await resposta.json();
+
+
+        if (
+            dados.sucesso &&
+            dados.servidor &&
+            dados.banco
+        ) {
+
+            serverStatus.className =
+                "server";
+
+            serverStatusText.textContent =
+                "Servidor online";
+
+
+            connectionDot.className =
+                "connection-dot online";
+
+            connectionText.textContent =
+                "Servidor conectado";
+
+
+            mobileConnectionDot.className =
+                "connection-dot online";
+
+
+        } else {
+
+            throw new Error(
+                "Servidor ou banco indisponível."
+            );
+
+        }
+
+
+    } catch (erro) {
+
+        console.error(
+            "Servidor:",
+            erro
+        );
+
+
+        serverStatus.className =
+            "server offline";
+
+        serverStatusText.textContent =
+            "Servidor offline";
+
+
+        connectionDot.className =
+            "connection-dot offline";
+
+        connectionText.textContent =
+            "Servidor offline";
+
+
+        mobileConnectionDot.className =
+            "connection-dot offline";
+
+    }
+
+}
+
+
+// ============================================================
+// EVENTO RFID
+// ============================================================
+
+async function atualizarEvento() {
+
+    try {
+
+        const resposta =
+            await fetch(
+                "/api/rfid/evento",
+                {
+                    cache:
+                        "no-store"
+                }
+            );
+
+
+        if (!resposta.ok) {
+
+            return;
+
+        }
+
+
+        const dados =
+            await resposta.json();
+
+
+        if (
+            !dados.sucesso
+        ) {
+
+            return;
+
+        }
+
+
+        const evento =
+            dados.evento;
+
+
+        if (
+            evento &&
+            evento.nova
+        ) {
+
+            processarEvento(
+                evento
+            );
+
+
+            await fetch(
+                "/api/rfid/evento/ler",
+                {
+                    method:
+                        "POST"
+                }
+            );
+
+        }
+
+
+    } catch (erro) {
+
+        console.error(
+            "RFID:",
+            erro
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// ESTADO DO FLUXO
+// ============================================================
+
+async function atualizarEstado() {
+
+    try {
+
+        const resposta =
+            await fetch(
+                "/api/rfid/estado",
+                {
+                    cache:
+                        "no-store"
+                }
+            );
+
+
+        if (!resposta.ok) {
+
+            return;
+
+        }
+
+
+        const dados =
+            await resposta.json();
+
+
+        if (
+            !dados.sucesso
+        ) {
+
+            return;
+
+        }
+
+
+        estadoAnterior =
+            dados.fluxo;
+
+
+    } catch (erro) {
+
+        console.error(
+            "Estado:",
+            erro
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+
+async function inicializar() {
+
+    telaInicial();
+
+    await verificarServidor();
+
+    await atualizarEstado();
+
+    await atualizarEvento();
+
+}
+
+
+// ============================================================
+// ATUALIZAÇÕES AUTOMÁTICAS
+// ============================================================
+
+setInterval(
+    verificarServidor,
+    5000
+);
+
+
+setInterval(
+    atualizarEvento,
+    500
+);
+
+
+setInterval(
+    atualizarEstado,
+    1000
+);
+
+
+// ============================================================
+// INICIAR
+// ============================================================
+
+inicializar();
+
+
+</script>
+
+
+</body>
+
+</html>
