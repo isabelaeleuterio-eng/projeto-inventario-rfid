@@ -1,632 +1,317 @@
-/*
-  ESP32 + RC522 + INVENTÁRIO RFID
-  VERSÃO NUVEM - CORRIGIDA
-
-  ESP32 envia diretamente para o Render:
-  https://projeto-inventario-rfid.onrender.com
-
-  Leitor:
-  entrada
-
-  Fluxo:
-  1. ESP32 conecta no Wi-Fi
-  2. Avisa o servidor que está online
-  3. Lê a tag RFID
-  4. Envia o UID para a API
-  5. O servidor identifica funcionário/equipamento
-
-  -----------------------------------------------------------
-  CORREÇÕES NESTA VERSÃO
-  -----------------------------------------------------------
-  1) TIMEOUT AUMENTADO (15s -> 40s).
-     O Render gratuito "hiberna" o servidor depois de um
-     tempo sem uso. Quando isso acontece, a PRIMEIRA
-     requisição depois de dormir pode levar 20-50s para
-     responder. Com 15s de timeout, essa leitura sempre
-     falhava silenciosamente (parecia que "nada acontecia").
-
-  2) RETENTATIVA AUTOMÁTICA.
-     Se o envio falhar (timeout, Wi-Fi instável, etc.), o
-     ESP32 tenta mais uma vez automaticamente antes de
-     desistir da leitura.
-
-  3) PING DE "MANTER ACORDADO" A CADA 10 MINUTOS.
-     O ESP32 agora acorda o servidor periodicamente (mesmo
-     sem ninguém passar tag), então na prática o Render quase
-     nunca chega a dormir e a leitura funciona na hora.
-
-  4) WiFi.setSleep(false).
-     Desliga o modo de economia de energia do Wi-Fi do ESP32,
-     que causa lentidão e quedas de conexão intermitentes.
-
-  5) Reconecta e reavisa o servidor automaticamente se o
-     Wi-Fi cair e voltar.
-*/
-
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <SPI.h>
 #include <MFRC522.h>
+#include "segredos.h"
 
-// ============================================================
-// RC522
-// ============================================================
-
+// ---------------- RC522 ----------------
 #define SS_PIN  5
 #define RST_PIN 22
-
 MFRC522 rfid(SS_PIN, RST_PIN);
 
-// ============================================================
-// WI-FI
-// ============================================================
+// ---------------- FECHADURA (relé) ----------------
+#define PIN_RELE 26
+const bool RELE_ATIVO_EM_LOW = true;          // a maioria dos módulos de relé liga com sinal LOW
+const unsigned long TEMPO_ABERTO_MS = 5000;   // tempo que a fechadura fica recuada
+bool releLigado = false;
+unsigned long fechaEm = 0;
 
-const char* WIFI_SSID = "Família Eleuterio-2G";
-const char* WIFI_PASSWORD = "Carlao01091910";
-
-// ============================================================
-// SERVIDOR NA NUVEM
-// ============================================================
-
-const char* SERVER_URL =
-  "https://projeto-inventario-rfid.onrender.com";
-
-// Tempo máximo de espera por resposta do servidor.
-// Precisa ser alto por causa da hibernação do Render free.
-const unsigned long HTTP_TIMEOUT_MS = 40000;
-
-// ============================================================
-// CONTROLE DE LEITURA
-// ============================================================
+// ---------------- Tempos ----------------
+const unsigned long HTTP_TIMEOUT_RFID_MS = 40000;  // Render pode demorar para acordar
+const unsigned long HTTP_TIMEOUT_PING_MS = 10000;
+const unsigned long INTERVALO_PING       = 20000;
+const unsigned long ANTI_DUPLICACAO_MS   = 2000;
+const int MAX_FALHAS_WIFI = 3;
 
 String ultimoUID = "";
 unsigned long ultimaLeitura = 0;
-const unsigned long TEMPO_ANTI_DUPLICACAO = 2000;
-
-// ============================================================
-// CONTROLE DE "MANTER SERVIDOR ACORDADO"
-// ============================================================
-
 unsigned long ultimoPing = 0;
-const unsigned long INTERVALO_PING = 10UL * 60UL * 1000UL; // 10 minutos
+unsigned long ultimaTentativaWiFi = 0;
+int falhasWiFi = 0;
 
-// ============================================================
-// CONVERTER UID
-// ============================================================
+// ===============================================================
+// FECHADURA
+// ===============================================================
+void fechadura(bool abrir) {
+  digitalWrite(PIN_RELE, (abrir == RELE_ATIVO_EM_LOW) ? LOW : HIGH);
+}
 
-String uidParaString() {
+void abrirFechadura() {
+  fechadura(true);
+  releLigado = true;
+  fechaEm = millis() + TEMPO_ABERTO_MS;
+  Serial.printf("FECHADURA ABERTA por %lu ms\n", TEMPO_ABERTO_MS);
+}
 
-  String uid = "";
-
-  for (byte i = 0; i < rfid.uid.size; i++) {
-
-    if (rfid.uid.uidByte[i] < 0x10) {
-      uid += "0";
-    }
-
-    uid += String(
-      rfid.uid.uidByte[i],
-      HEX
-    );
+void atualizarFechadura() {
+  if (releLigado && (long)(millis() - fechaEm) >= 0) {
+    fechadura(false);
+    releLigado = false;
+    Serial.println("Fechadura travada.");
   }
+}
 
+// ===============================================================
+// UTILIDADES
+// ===============================================================
+String uidParaString() {
+  String uid = "";
+  for (byte i = 0; i < rfid.uid.size; i++) {
+    if (rfid.uid.uidByte[i] < 0x10) uid += "0";
+    uid += String(rfid.uid.uidByte[i], HEX);
+  }
   uid.toUpperCase();
-
   return uid;
 }
 
-// ============================================================
-// CONECTAR WI-FI
-// ============================================================
+// ===============================================================
+// WI-FI: escolhe sozinho entre casa e eduroam
+// ===============================================================
+int procurarRede() {
+  Serial.println("Procurando redes conhecidas...");
+  int n = WiFi.scanNetworks();
+  int achada = -1;
 
-bool conectarWiFi() {
-
-  if (WiFi.status() == WL_CONNECTED) {
-    return true;
+  for (int i = 0; i < NUM_REDES && achada < 0; i++) {
+    for (int j = 0; j < n; j++) {
+      if (WiFi.SSID(j) == REDES[i].ssid) {
+        achada = i;
+        break;
+      }
+    }
   }
 
-  Serial.println();
-  Serial.println("==============================");
-  Serial.println("CONECTANDO AO WI-FI");
-  Serial.println("==============================");
+  WiFi.scanDelete();
+  return achada;
+}
 
-  Serial.print("Rede: ");
-  Serial.println(WIFI_SSID);
+bool conectarWiFi() {
+  if (WiFi.status() == WL_CONNECTED) return true;
 
   WiFi.mode(WIFI_STA);
-
-  // Desliga o modo de economia de energia do rádio Wi-Fi.
-  // Sem isso o ESP32 pode ficar lento/instável em conexões
-  // HTTP contínuas.
   WiFi.setSleep(false);
+
+  int idx = procurarRede();
+  if (idx < 0) {
+    Serial.println("Nenhuma rede conhecida por perto.");
+    return false;
+  }
+
+  const Rede& r = REDES[idx];
+  Serial.printf("Conectando em '%s' (%s)\n", r.ssid,
+                r.enterprise ? "WPA2-Enterprise" : "Wi-Fi comum");
 
   WiFi.disconnect(true);
   delay(500);
 
-  WiFi.begin(
-    WIFI_SSID,
-    WIFI_PASSWORD
-  );
-
-  unsigned long inicio = millis();
-
-  while (
-    WiFi.status() != WL_CONNECTED &&
-    millis() - inicio < 20000
-  ) {
-
-    delay(500);
-
-    Serial.print(".");
+  if (r.enterprise) {
+    WiFi.begin(r.ssid, WPA2_AUTH_PEAP, r.identidade, r.usuario, r.senha);
+  } else {
+    WiFi.begin(r.ssid, r.senha);
   }
 
+  unsigned long inicio = millis();
+  unsigned long limite = r.enterprise ? 60000 : 20000;
+
+  while (WiFi.status() != WL_CONNECTED && millis() - inicio < limite) {
+    delay(500);
+    Serial.print(".");
+  }
   Serial.println();
 
   if (WiFi.status() != WL_CONNECTED) {
-
-    Serial.println();
-    Serial.println("ERRO: WIFI NAO CONECTADO");
-
+    Serial.println("Falha ao conectar. Confira usuario e senha.");
     return false;
   }
 
-  Serial.println();
-  Serial.println("WIFI CONECTADO!");
-
-  Serial.print("IP do ESP32: ");
-  Serial.println(WiFi.localIP());
-
-  Serial.print("RSSI: ");
-  Serial.println(WiFi.RSSI());
-
+  Serial.printf("Conectado! IP: %s | sinal: %d dBm\n",
+                WiFi.localIP().toString().c_str(), WiFi.RSSI());
   return true;
 }
 
-// ============================================================
-// AVISAR SERVIDOR QUE ESP32 ESTÁ ONLINE
-// (também funciona como "acordar" o Render)
-// ============================================================
-
-bool avisarOnline() {
-
-  if (!conectarWiFi()) {
-    return false;
-  }
-
-  Serial.println();
-  Serial.println("==============================");
-  Serial.println("AVISANDO SERVIDOR");
-  Serial.println("==============================");
-
-  String url =
-    String(SERVER_URL) +
-    "/api/esp32/online";
-
-  Serial.print("URL: ");
-  Serial.println(url);
-
+// ===============================================================
+// HTTP
+// ===============================================================
+int postJSON(const char* caminho, const String& corpo,
+             unsigned long timeoutMs, String* resposta = nullptr) {
   WiFiClientSecure client;
   client.setInsecure();
 
   HTTPClient http;
+  String url = String(SERVER_URL) + caminho;
 
-  if (!http.begin(client, url)) {
-    Serial.println("ERRO: nao foi possivel iniciar HTTPS.");
-    return false;
-  }
+  if (!http.begin(client, url)) return -1;
 
-  http.setTimeout(HTTP_TIMEOUT_MS);
+  http.setTimeout(timeoutMs);
+  http.addHeader("Content-Type", "application/json");
 
-  http.addHeader(
-    "Content-Type",
-    "application/json"
-  );
-
-  String body =
-    String("{\"ip\":\"") +
-    WiFi.localIP().toString() +
-    "\"}";
-
-  Serial.print("Enviando: ");
-  Serial.println(body);
-
-  int codigo = http.POST(body);
-
-  Serial.print("HTTP: ");
-  Serial.println(codigo);
-
-  if (codigo <= 0) {
-    Serial.print("Erro HTTP detalhado: ");
-    Serial.println(http.errorToString(codigo));
-  }
-
-  bool sucesso = false;
+  int codigo = http.POST(corpo);
 
   if (codigo > 0) {
-
-    String resposta =
-      http.getString();
-
-    Serial.println("Resposta do servidor:");
-
-    Serial.println(resposta);
-
-    sucesso = true;
-
+    String r = http.getString();
+    if (resposta) *resposta = r;
   } else {
-
-    Serial.print("Erro ao avisar servidor: ");
-    Serial.println(
-      http.errorToString(codigo)
-    );
+    Serial.printf("Erro HTTP: %s\n", http.errorToString(codigo).c_str());
   }
 
   http.end();
-
-  ultimoPing = millis();
-
-  return sucesso;
+  return codigo;
 }
 
-// ============================================================
-// ENVIAR RFID PARA O SERVIDOR (com retentativa)
-// ============================================================
-
-bool tentarEnviarRFID(String uid) {
-
-  String url =
-    String(SERVER_URL) +
-    "/api/esp32/rfid";
-
-  Serial.print("URL: ");
-  Serial.println(url);
+bool testarServidor() {
+  WiFiClientSecure client;
+  client.setInsecure();
 
   HTTPClient http;
+  if (!http.begin(client, String(SERVER_URL) + "/health")) return false;
 
-  http.begin(url);
-
-  // Timeout alto: o Render pode demorar bastante para
-  // responder quando estava hibernando.
-  http.setTimeout(HTTP_TIMEOUT_MS);
-
-  http.addHeader(
-    "Content-Type",
-    "application/json"
-  );
-
-  String body =
-    String("{\"uid\":\"") +
-    uid +
-    "\",\"leitor\":\"entrada\",\"tipo\":\"rfid\"}";
-
-  Serial.print("JSON enviado: ");
-  Serial.println(body);
-
-  int codigo =
-    http.POST(body);
-
-  Serial.print("Codigo HTTP: ");
-  Serial.println(codigo);
-
-  if (codigo <= 0) {
-    Serial.print("Erro HTTP detalhado: ");
-    Serial.println(http.errorToString(codigo));
-  }
-
-  bool sucesso = false;
-
-  if (codigo > 0) {
-
-    String resposta =
-      http.getString();
-
-    Serial.println();
-    Serial.println("RESPOSTA DO SERVIDOR:");
-    Serial.println("------------------------------");
-
-    Serial.println(resposta);
-
-    Serial.println("------------------------------");
-
-    sucesso = true;
-
-  } else {
-
-    Serial.println();
-    Serial.println("ERRO AO ENVIAR:");
-
-    Serial.println(
-      http.errorToString(codigo)
-    );
-  }
-
+  http.setTimeout(HTTP_TIMEOUT_RFID_MS);
+  int codigo = http.GET();
+  Serial.printf("Servidor /health: %d\n", codigo);
   http.end();
 
-  return sucesso;
+  return codigo == 200;
 }
 
-void enviarRFID(String uid) {
+void avisarOnline() {
+  String corpo = String("{\"ip\":\"") + WiFi.localIP().toString() + "\"}";
+  int codigo = postJSON("/api/esp32/online", corpo, HTTP_TIMEOUT_PING_MS);
+  Serial.printf("Ping do servidor: %d\n", codigo);
+  ultimoPing = millis();
+}
 
+void enviarRFID(const String& uid) {
   if (!conectarWiFi()) {
-
-    Serial.println(
-      "Sem Wi-Fi. RFID nao enviado."
-    );
-
+    Serial.println("Sem Wi-Fi. Tag nao enviada.");
     return;
   }
 
-  Serial.println();
-  Serial.println("==============================");
-  Serial.println("ENVIANDO RFID AO SERVIDOR");
-  Serial.println("==============================");
+  String corpo = String("{\"uid\":\"") + uid +
+                 "\",\"leitor\":\"entrada\",\"tipo\":\"rfid\"}";
+  String resposta;
+  int codigo = -1;
 
-  Serial.print("UID: ");
-  Serial.println(uid);
+  for (int tentativa = 1; tentativa <= 2; tentativa++) {
+    codigo = postJSON("/api/esp32/rfid", corpo, HTTP_TIMEOUT_RFID_MS, &resposta);
+    if (codigo > 0) break;  // qualquer resposta do servidor conta como entregue
 
-  bool ok = tentarEnviarRFID(uid);
-
-  if (!ok) {
-
-    Serial.println();
-    Serial.println(
-      "Primeira tentativa falhou. Tentando novamente em 2s..."
-    );
-
+    Serial.println("Falhou. Tentando de novo em 2 s...");
     delay(2000);
-
-    ok = tentarEnviarRFID(uid);
+    if (WiFi.status() != WL_CONNECTED) conectarWiFi();
   }
 
-  if (!ok) {
-    Serial.println(
-      "Nao foi possivel enviar a leitura mesmo apos retentativa."
-    );
+  if (codigo > 0) {
+    Serial.printf("HTTP %d | %s\n", codigo, resposta.c_str());
+
+    // O servidor autorizou a operação: libera a fechadura.
+    if (resposta.indexOf("\"tipo\":\"retirada_concluida\"") >= 0 ||
+        resposta.indexOf("\"tipo\":\"devolucao_concluida\"") >= 0 ||
+        resposta.indexOf("\"abrir\":true") >= 0) {
+      abrirFechadura();
+    }
+  } else {
+    Serial.println("NAO FOI POSSIVEL ENVIAR A TAG.");
   }
 
   ultimoPing = millis();
 }
 
-// ============================================================
-// SETUP
-// ============================================================
-
-void setup() {
-
-  Serial.begin(115200);
-
-  delay(1000);
-
-  Serial.println();
-  Serial.println("==============================");
-  Serial.println(" INVENTARIO RFID");
-  Serial.println(" ESP32 + RC522 + NUVEM");
-  Serial.println("==============================");
-
-  // ----------------------------------------------------------
-  // SPI
-  // ----------------------------------------------------------
-
-  Serial.println();
-  Serial.println("Inicializando SPI...");
-
+// ===============================================================
+// RC522
+// ===============================================================
+void inicializarRC522() {
   SPI.begin();
-
-  // ----------------------------------------------------------
-  // RC522
-  // ----------------------------------------------------------
-
-  Serial.println("Inicializando RC522...");
-
   rfid.PCD_Init();
-
   delay(100);
-
-  // Ganho máximo para facilitar a leitura das tags, inclusive UIDs de 7 bytes.
   rfid.PCD_SetAntennaGain(MFRC522::RxGain_max);
 
-  byte versao =
-    rfid.PCD_ReadRegister(
-      MFRC522::VersionReg
-    );
+  byte versao = rfid.PCD_ReadRegister(MFRC522::VersionReg);
+  Serial.printf("Versao RC522: 0x%02X\n", versao);
 
-  Serial.print("Versao RC522: 0x");
-
-  Serial.println(
-    versao,
-    HEX
-  );
-
-  if (
-    versao == 0x00 ||
-    versao == 0xFF
-  ) {
-
-    Serial.println();
-    Serial.println(
-      "ATENCAO: RC522 nao detectado corretamente."
-    );
-
+  if (versao == 0x00 || versao == 0xFF) {
+    Serial.println("ATENCAO: RC522 nao detectado. Confira a ligacao e os 3.3V.");
   } else {
-
-    Serial.println(
-      "RC522 detectado corretamente."
-    );
+    Serial.println("RC522 OK.");
   }
-
-  // ----------------------------------------------------------
-  // WI-FI
-  // ----------------------------------------------------------
-
-  conectarWiFi();
-
-  delay(1000);
-
-  // ----------------------------------------------------------
-  // SERVIDOR (isso já "acorda" o Render se estiver dormindo)
-  // ----------------------------------------------------------
-
-  avisarOnline();
-
-  // ----------------------------------------------------------
-  // PRONTO
-  // ----------------------------------------------------------
-
-  Serial.println();
-  Serial.println("==============================");
-  Serial.println("SISTEMA PRONTO");
-  Serial.println("==============================");
-
-  Serial.println(
-    "Aproxime uma tag..."
-  );
-
-  Serial.println();
 }
 
-// ============================================================
-// LOOP
-// ============================================================
+// ===============================================================
+// SETUP / LOOP
+// ===============================================================
+void setup() {
+  Serial.begin(115200);
 
-void loop() {
+  pinMode(PIN_RELE, OUTPUT);
+  fechadura(false);  // sempre começa travada
 
-  // ----------------------------------------------------------
-  // VERIFICAR WI-FI
-  // ----------------------------------------------------------
+  delay(1500);
+  Serial.println("\n=== INVENTARIO RFID ===");
 
-  if (
-    WiFi.status() != WL_CONNECTED
-  ) {
+  inicializarRC522();
 
-    Serial.println();
-    Serial.println(
-      "Wi-Fi desconectado. Reconectando..."
-    );
-
-    if (conectarWiFi()) {
-      // Reconectou depois de cair: reavisa o servidor.
-      avisarOnline();
-    }
-
-    delay(1000);
-  }
-
-  // ----------------------------------------------------------
-  // MANTER O RENDER ACORDADO (ping periódico)
-  // ----------------------------------------------------------
-
-  if (millis() - ultimoPing > INTERVALO_PING) {
+  if (conectarWiFi()) {
+    testarServidor();
     avisarOnline();
   }
 
-  // ----------------------------------------------------------
-  // VERIFICAR NOVA TAG
-  // ----------------------------------------------------------
+  Serial.println("Sistema pronto. Aproxime uma tag...");
+  Serial.println("(Teste da fechadura: digite 'a' no Monitor Serial e envie)");
+}
 
-  if (
-    !rfid.PICC_IsNewCardPresent()
-  ) {
+void loop() {
+  atualizarFechadura();
 
-    delay(50);
-
-    return;
+  // Teste manual da fechadura pelo Monitor Serial
+  if (Serial.available()) {
+    char c = Serial.read();
+    if (c == 'a' || c == 'A') abrirFechadura();
   }
 
-  // ----------------------------------------------------------
-  // LER TAG
-  // ----------------------------------------------------------
+  // Sem Wi-Fi: tenta de novo; depois de 3 falhas reinicia (limpa o estado da rede)
+  if (WiFi.status() != WL_CONNECTED) {
+    if (millis() - ultimaTentativaWiFi > 10000) {
+      ultimaTentativaWiFi = millis();
 
-  if (
-    !rfid.PICC_ReadCardSerial()
-  ) {
-
-    delay(50);
-
-    return;
-  }
-
-  // ----------------------------------------------------------
-  // PEGAR UID
-  // ----------------------------------------------------------
-
-  String uid =
-    uidParaString();
-
-  // ----------------------------------------------------------
-  // IGNORAR TAG REPETIDA
-  // ----------------------------------------------------------
-
-  if (
-    uid == ultimoUID &&
-    millis() - ultimaLeitura <
-      TEMPO_ANTI_DUPLICACAO
-  ) {
-
-    rfid.PICC_HaltA();
-
-    rfid.PCD_StopCrypto1();
-
+      if (conectarWiFi()) {
+        falhasWiFi = 0;
+        testarServidor();
+        avisarOnline();
+      } else if (++falhasWiFi >= MAX_FALHAS_WIFI) {
+        Serial.println("Reiniciando o ESP32...");
+        delay(500);
+        ESP.restart();
+      }
+    }
     delay(100);
-
     return;
   }
 
-  // ----------------------------------------------------------
-  // REGISTRAR LEITURA
-  // ----------------------------------------------------------
+  // Mantém o servidor acordado e o status "ESP32 online" no site
+  if (millis() - ultimoPing > INTERVALO_PING) avisarOnline();
 
-  ultimoUID =
-    uid;
-
-  ultimaLeitura =
-    millis();
-
-  // ----------------------------------------------------------
-  // MOSTRAR TAG
-  // ----------------------------------------------------------
-
-  Serial.println();
-
-  Serial.println("==============================");
-  Serial.println("TAG DETECTADA");
-  Serial.println("==============================");
-
-  Serial.print("UID: ");
-  Serial.println(uid);
-
-  Serial.print("Tamanho UID: ");
-  Serial.print(rfid.uid.size);
-  Serial.println(" bytes");
-
-  if (rfid.uid.size == 7) {
-    Serial.println("Tipo: UID de 7 bytes (tag de equipamento).");
-  } else if (rfid.uid.size == 4) {
-    Serial.println("Tipo: UID de 4 bytes (tag/cartao de funcionario).");
-  } else {
-    Serial.println("Tipo: UID de tamanho diferente.");
+  if (!rfid.PICC_IsNewCardPresent() || !rfid.PICC_ReadCardSerial()) {
+    delay(50);
+    return;
   }
 
-  // ----------------------------------------------------------
-  // ENVIAR PARA NUVEM
-  // ----------------------------------------------------------
+  String uid = uidParaString();
+
+  if (uid == ultimoUID && millis() - ultimaLeitura < ANTI_DUPLICACAO_MS) {
+    rfid.PICC_HaltA();
+    rfid.PCD_StopCrypto1();
+    delay(100);
+    return;
+  }
+
+  ultimoUID = uid;
+  ultimaLeitura = millis();
+
+  Serial.printf("\nTAG: %s (%d bytes)\n", uid.c_str(), rfid.uid.size);
 
   enviarRFID(uid);
 
-  // ----------------------------------------------------------
-  // FINALIZAR COMUNICACAO RFID
-  // ----------------------------------------------------------
-
   rfid.PICC_HaltA();
-
   rfid.PCD_StopCrypto1();
-
-  Serial.println();
-  Serial.println(
-    "Aproxime outra tag..."
-  );
-
-  Serial.println();
-
   delay(150);
 }

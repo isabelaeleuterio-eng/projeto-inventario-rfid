@@ -867,106 +867,6 @@
         }
 
         /* =====================================================
-           ÚLTIMA TAG LIDA
-        ===================================================== */
-
-        .last-rfid {
-            margin: 22px auto 0;
-            max-width: 700px;
-            padding: 15px 17px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            text-align: left;
-        }
-
-        .last-rfid-title {
-            color: #64748b;
-            font-size: 10px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: .8px;
-        }
-
-        .last-rfid-row {
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .last-rfid-uid {
-            font-family: Consolas, "Courier New", monospace;
-            font-size: 15px;
-            font-weight: 900;
-            letter-spacing: .5px;
-            word-break: break-all;
-        }
-
-        .last-rfid-type {
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: #e2e8f0;
-            color: #475569;
-            font-size: 10px;
-            font-weight: 900;
-        }
-
-        .last-rfid-type.success {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .last-rfid-type.error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .last-rfid-empty {
-            color: #94a3b8;
-            font-size: 12px;
-        }
-
-        .action-note {
-            margin-top: 12px;
-            color: #64748b;
-            font-size: 11px;
-            line-height: 1.5;
-        }
-
-        .equipment-button:disabled {
-            cursor: wait;
-            opacity: .55;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .completed-card {
-            margin: 25px auto 0;
-            max-width: 600px;
-            padding: 20px;
-            background: #ecfdf3;
-            border: 1px solid #bbf7d0;
-            border-radius: 14px;
-        }
-
-        .completed-title {
-            color: #15803d;
-            font-size: 12px;
-            font-weight: 900;
-            text-transform: uppercase;
-        }
-
-        .completed-text {
-            margin-top: 7px;
-            color: #166534;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        /* =====================================================
            MOBILE
         ===================================================== */
 
@@ -1392,31 +1292,6 @@
                             class="alert"
                         ></div>
 
-                        <div
-                            id="lastRfid"
-                            class="last-rfid"
-                        >
-                            <div class="last-rfid-title">
-                                Última tag lida
-                            </div>
-
-                            <div class="last-rfid-row">
-                                <span
-                                    id="lastRfidUid"
-                                    class="last-rfid-empty"
-                                >
-                                    Nenhuma tag lida ainda
-                                </span>
-
-                                <span
-                                    id="lastRfidType"
-                                    class="last-rfid-type"
-                                >
-                                    Aguardando
-                                </span>
-                            </div>
-                        </div>
-
 
                     </div>
 
@@ -1515,18 +1390,6 @@ const details =
 const alertBox =
     document.getElementById(
         "alert"
-    );
-
-
-const lastRfidUid =
-    document.getElementById(
-        "lastRfidUid"
-    );
-
-
-const lastRfidType =
-    document.getElementById(
-        "lastRfidType"
     );
 
 
@@ -1661,30 +1524,6 @@ function esconderAlerta() {
     alertBox.className =
         "alert";
 
-}
-
-
-function mostrarUltimaTag(
-    uid,
-    tipo = "info",
-    textoTipo = "Tag lida"
-) {
-
-    if (!uid) {
-        return;
-    }
-
-    lastRfidUid.textContent =
-        String(uid);
-
-    lastRfidUid.className =
-        "last-rfid-uid";
-
-    lastRfidType.textContent =
-        textoTipo;
-
-    lastRfidType.className =
-        "last-rfid-type " + tipo;
 }
 
 
@@ -1892,12 +1731,6 @@ function mostrarFuncionarioIdentificado(
     evento
 ) {
 
-    mostrarUltimaTag(
-        evento.uid,
-        "success",
-        "Funcionário"
-    );
-
     const funcionario =
         evento.funcionario;
 
@@ -2058,18 +1891,9 @@ function mostrarFuncionarioIdentificado(
 // ESCOLHER EQUIPAMENTO
 // ============================================================
 
-let escolhendoEquipamento = false;
-
-
 async function escolherEquipamento(
     equipamentoId
 ) {
-
-    if (escolhendoEquipamento) {
-        return;
-    }
-
-    escolhendoEquipamento = true;
 
     try {
 
@@ -2177,10 +2001,6 @@ async function escolherEquipamento(
             false
         );
 
-    } finally {
-
-        escolhendoEquipamento = false;
-
     }
 
 }
@@ -2193,12 +2013,6 @@ async function escolherEquipamento(
 function mostrarEquipamentoConfirmado(
     evento
 ) {
-
-    mostrarUltimaTag(
-        evento.uid,
-        "success",
-        "Equipamento confirmado"
-    );
 
     atualizarEstadoVisual(
         "Operação autorizada",
@@ -2256,12 +2070,6 @@ function mostrarDevolucaoConcluida(
     evento
 ) {
 
-    mostrarUltimaTag(
-        evento.uid,
-        "success",
-        "Devolução"
-    );
-
     atualizarEstadoVisual(
         "Devolução concluída",
         true
@@ -2311,12 +2119,6 @@ function mostrarDevolucaoConcluida(
 function mostrarTagDesconhecida(
     evento
 ) {
-
-    mostrarUltimaTag(
-        evento.uid,
-        "error",
-        "Não cadastrada"
-    );
 
     atualizarEstadoVisual(
         "Tag não cadastrada",
@@ -2370,12 +2172,6 @@ function mostrarTagDesconhecida(
 function mostrarEquipamentoIncorreto(
     evento
 ) {
-
-    mostrarUltimaTag(
-        evento.uid,
-        "error",
-        "Equipamento incorreto"
-    );
 
     atualizarEstadoVisual(
         "Equipamento incorreto",
@@ -2463,25 +2259,6 @@ function processarEvento(
     eventoAnterior =
         evento.id;
 
-    if (
-        evento.uid &&
-        ![
-            "funcionario_identificado",
-            "equipamento_confirmado",
-            "equipamento_devolucao_confirmado",
-            "devolucao_concluida",
-            "tag_desconhecida",
-            "equipamento_incorreto",
-            "funcionario_inativo"
-        ].includes(evento.tipo)
-    ) {
-        mostrarUltimaTag(
-            evento.uid,
-            "success",
-            "Tag lida"
-        );
-    }
-
 
     switch (
         evento.tipo
@@ -2566,12 +2343,6 @@ function processarEvento(
 
 
         case "funcionario_inativo":
-
-            mostrarUltimaTag(
-                evento.uid,
-                "error",
-                "Funcionário inativo"
-            );
 
             atualizarEstadoVisual(
                 "Funcionário inativo",
