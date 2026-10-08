@@ -3,15 +3,21 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Controle | Inventário RFID</title>
 
     <style>
+
         :root {
             --bg: #f4f7fb;
             --card: #ffffff;
             --border: #e2e8f0;
+
             --text: #172033;
             --muted: #64748b;
 
@@ -28,20 +34,33 @@
             --orange: #d97706;
             --orange-light: #fffbeb;
 
-            --shadow: 0 12px 35px rgba(15, 23, 42, .08);
+            --gray-light: #f8fafc;
+
+            --shadow:
+                0 12px 35px rgba(
+                    15,
+                    23,
+                    42,
+                    .08
+                );
+
             --radius: 18px;
         }
+
 
         * {
             box-sizing: border-box;
         }
 
+
         html {
             scroll-behavior: smooth;
         }
 
+
         body {
             margin: 0;
+
             font-family:
                 Inter,
                 system-ui,
@@ -51,8 +70,10 @@
                 sans-serif;
 
             background: var(--bg);
+
             color: var(--text);
         }
+
 
         button,
         input,
@@ -60,19 +81,30 @@
             font: inherit;
         }
 
+
         button {
             cursor: pointer;
         }
 
+
+        /* =====================================================
+           LAYOUT
+        ===================================================== */
+
         .app {
             min-height: 100vh;
+
             display: flex;
         }
 
-        /* SIDEBAR */
+
+        /* =====================================================
+           SIDEBAR
+        ===================================================== */
 
         .sidebar {
             position: fixed;
+
             left: 0;
             top: 0;
             bottom: 0;
@@ -94,15 +126,25 @@
             z-index: 100;
         }
 
+
         .brand {
             padding: 25px 21px;
 
             display: flex;
             align-items: center;
+
             gap: 12px;
 
-            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            border-bottom:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    .08
+                );
         }
+
 
         .brand-icon {
             width: 45px;
@@ -124,23 +166,35 @@
             font-size: 22px;
 
             box-shadow:
-                0 8px 22px rgba(37, 99, 235, .35);
+                0 8px 22px
+                rgba(
+                    37,
+                    99,
+                    235,
+                    .35
+                );
         }
+
 
         .brand-title {
             font-size: 16px;
             font-weight: 800;
         }
 
+
         .brand-subtitle {
             margin-top: 3px;
+
             color: #94a3b8;
+
             font-size: 11px;
         }
+
 
         .menu {
             padding: 22px 12px;
         }
+
 
         .menu-label {
             padding: 0 12px 9px;
@@ -151,20 +205,25 @@
             font-weight: 800;
 
             text-transform: uppercase;
+
             letter-spacing: 1px;
         }
+
 
         .menu a {
             display: flex;
             align-items: center;
+
             gap: 12px;
 
             padding: 13px 14px;
+
             margin-bottom: 6px;
 
             border-radius: 12px;
 
             color: #cbd5e1;
+
             text-decoration: none;
 
             font-size: 14px;
@@ -173,44 +232,75 @@
             transition: .2s ease;
         }
 
+
         .menu a:hover {
-            background: rgba(255, 255, 255, .07);
+            background:
+                rgba(
+                    255,
+                    255,
+                    255,
+                    .07
+                );
+
             color: white;
         }
+
 
         .menu a.active {
             background: #2563eb;
+
             color: white;
 
             box-shadow:
-                0 8px 20px rgba(37, 99, 235, .28);
+                0 8px 20px
+                rgba(
+                    37,
+                    99,
+                    235,
+                    .28
+                );
         }
+
 
         .menu-icon {
             width: 24px;
+
             text-align: center;
+
             font-size: 17px;
         }
 
+
         .sidebar-footer {
             margin-top: auto;
+
             padding: 20px;
         }
+
 
         .connection {
             display: flex;
             align-items: center;
+
             gap: 9px;
 
             padding: 11px 13px;
 
             border-radius: 10px;
 
-            background: rgba(255, 255, 255, .06);
+            background:
+                rgba(
+                    255,
+                    255,
+                    255,
+                    .06
+                );
 
             color: #cbd5e1;
+
             font-size: 11px;
         }
+
 
         .connection-dot {
             width: 8px;
@@ -223,24 +313,36 @@
             flex-shrink: 0;
         }
 
+
         .connection-dot.offline {
             background: #ef4444;
         }
 
-        /* MAIN */
+
+        /* =====================================================
+           MAIN
+        ===================================================== */
 
         .main {
             margin-left: 245px;
-            width: calc(100% - 245px);
+
+            width:
+                calc(
+                    100% - 245px
+                );
+
             min-height: 100vh;
         }
+
 
         .topbar {
             height: 72px;
 
             background: white;
 
-            border-bottom: 1px solid var(--border);
+            border-bottom:
+                1px solid
+                var(--border);
 
             display: flex;
             align-items: center;
@@ -249,38 +351,51 @@
             padding: 0 30px;
         }
 
+
         .top-title {
             display: flex;
             flex-direction: column;
+
             gap: 3px;
         }
+
 
         .top-title strong {
             font-size: 17px;
         }
 
+
         .top-title span {
             color: var(--muted);
+
             font-size: 12px;
         }
+
 
         .server {
             display: flex;
             align-items: center;
+
             gap: 8px;
 
             padding: 8px 13px;
 
             border-radius: 30px;
 
-            background: var(--green-light);
-            color: var(--green);
+            background:
+                var(--green-light);
+
+            color:
+                var(--green);
 
             font-size: 12px;
             font-weight: 800;
 
-            border: 1px solid #bbf7d0;
+            border:
+                1px solid
+                #bbf7d0;
         }
+
 
         .server-dot {
             width: 8px;
@@ -288,66 +403,110 @@
 
             border-radius: 50%;
 
-            background: var(--green);
+            background:
+                var(--green);
         }
+
 
         .server.offline {
-            background: var(--red-light);
-            color: var(--red);
-            border-color: #fecaca;
+            background:
+                var(--red-light);
+
+            color:
+                var(--red);
+
+            border-color:
+                #fecaca;
         }
+
 
         .server.offline .server-dot {
-            background: var(--red);
+            background:
+                var(--red);
         }
+
 
         .content {
-            width: min(1250px, calc(100% - 48px));
+            width:
+                min(
+                    1250px,
+                    calc(
+                        100% - 48px
+                    )
+                );
 
-            margin: 0 auto;
+            margin:
+                0 auto;
 
-            padding: 38px 0 60px;
+            padding:
+                38px 0 60px;
         }
 
-        /* HEADER */
+
+        /* =====================================================
+           PAGE HEADER
+        ===================================================== */
 
         .page-header {
-            margin-bottom: 28px;
+            margin-bottom:
+                28px;
         }
 
+
         .kicker {
-            color: var(--blue);
+            color:
+                var(--blue);
 
             font-size: 11px;
             font-weight: 900;
 
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            text-transform:
+                uppercase;
 
-            margin-bottom: 8px;
+            letter-spacing:
+                1px;
+
+            margin-bottom:
+                8px;
         }
+
 
         .page-header h1 {
             margin: 0;
 
-            font-size: clamp(30px, 4vw, 44px);
+            font-size:
+                clamp(
+                    30px,
+                    4vw,
+                    44px
+                );
 
-            letter-spacing: -.8px;
+            letter-spacing:
+                -.8px;
         }
+
 
         .page-header p {
-            margin: 9px 0 0;
+            margin:
+                9px 0 0;
 
-            color: var(--muted);
+            color:
+                var(--muted);
 
-            max-width: 760px;
+            max-width:
+                760px;
 
-            line-height: 1.6;
+            line-height:
+                1.6;
 
-            font-size: 14px;
+            font-size:
+                14px;
         }
 
-        /* DASHBOARD */
+
+        /* =====================================================
+           DASHBOARD
+        ===================================================== */
 
         .stats {
             display: grid;
@@ -355,442 +514,729 @@
             grid-template-columns:
                 repeat(
                     4,
-                    minmax(0, 1fr)
+                    minmax(
+                        0,
+                        1fr
+                    )
                 );
 
             gap: 16px;
 
-            margin-bottom: 26px;
+            margin-bottom:
+                26px;
         }
+
 
         .stat {
-            background: var(--card);
+            background:
+                var(--card);
 
-            border: 1px solid var(--border);
+            border:
+                1px solid
+                var(--border);
 
-            border-radius: var(--radius);
+            border-radius:
+                var(--radius);
 
-            padding: 20px;
+            padding:
+                20px;
 
-            box-shadow: var(--shadow);
+            box-shadow:
+                var(--shadow);
         }
+
 
         .stat-label {
-            color: var(--muted);
+            color:
+                var(--muted);
 
-            font-size: 12px;
-            font-weight: 700;
+            font-size:
+                12px;
+
+            font-weight:
+                700;
         }
+
 
         .stat-value {
-            margin-top: 8px;
+            margin-top:
+                8px;
 
-            font-size: 30px;
-            font-weight: 900;
+            font-size:
+                30px;
+
+            font-weight:
+                900;
         }
+
 
         .stat.blue .stat-value {
-            color: var(--blue);
+            color:
+                var(--blue);
         }
+
 
         .stat.green .stat-value {
-            color: var(--green);
+            color:
+                var(--green);
         }
+
 
         .stat.orange .stat-value {
-            color: var(--orange);
+            color:
+                var(--orange);
         }
+
 
         .stat.red .stat-value {
-            color: var(--red);
+            color:
+                var(--red);
         }
 
-        /* CARDS */
+
+        /* =====================================================
+           CARDS
+        ===================================================== */
 
         .section-card {
-            background: var(--card);
+            background:
+                var(--card);
 
-            border: 1px solid var(--border);
+            border:
+                1px solid
+                var(--border);
 
-            border-radius: var(--radius);
+            border-radius:
+                var(--radius);
 
-            box-shadow: var(--shadow);
+            box-shadow:
+                var(--shadow);
 
-            margin-bottom: 24px;
+            margin-bottom:
+                24px;
 
-            overflow: hidden;
+            overflow:
+                hidden;
         }
+
 
         .section-head {
-            padding: 20px 22px;
+            padding:
+                20px 22px;
 
-            border-bottom: 1px solid var(--border);
+            border-bottom:
+                1px solid
+                var(--border);
 
             display: flex;
-            justify-content: space-between;
-            align-items: center;
 
-            gap: 15px;
+            justify-content:
+                space-between;
+
+            align-items:
+                center;
+
+            gap:
+                15px;
         }
+
 
         .section-title {
             display: flex;
-            align-items: center;
 
-            gap: 12px;
+            align-items:
+                center;
+
+            gap:
+                12px;
         }
+
 
         .section-icon {
             width: 38px;
             height: 38px;
 
-            border-radius: 11px;
+            border-radius:
+                11px;
 
             display: flex;
-            align-items: center;
-            justify-content: center;
 
-            background: var(--blue-light);
+            align-items:
+                center;
 
-            font-size: 18px;
+            justify-content:
+                center;
+
+            background:
+                var(--blue-light);
+
+            font-size:
+                18px;
         }
+
 
         .section-icon.green {
-            background: var(--green-light);
+            background:
+                var(--green-light);
         }
+
 
         .section-icon.orange {
-            background: var(--orange-light);
+            background:
+                var(--orange-light);
         }
+
 
         .section-title h2 {
-            margin: 0;
-            font-size: 17px;
+            margin:
+                0;
+
+            font-size:
+                17px;
         }
+
 
         .section-title p {
-            margin: 3px 0 0;
+            margin:
+                3px 0 0;
 
-            color: var(--muted);
+            color:
+                var(--muted);
 
-            font-size: 11px;
+            font-size:
+                11px;
         }
+
 
         .refresh-button {
-            border: 1px solid var(--border);
+            border:
+                1px solid
+                var(--border);
 
-            background: white;
+            background:
+                white;
 
-            color: var(--text);
+            color:
+                var(--text);
 
-            border-radius: 9px;
+            border-radius:
+                9px;
 
-            padding: 9px 13px;
+            padding:
+                9px 13px;
 
-            font-size: 12px;
-            font-weight: 800;
+            font-size:
+                12px;
+
+            font-weight:
+                800;
         }
+
 
         .refresh-button:hover {
-            border-color: var(--blue);
-            color: var(--blue);
+            border-color:
+                var(--blue);
+
+            color:
+                var(--blue);
         }
 
-        /* TABLE */
+
+        /* =====================================================
+           TABLE
+        ===================================================== */
 
         .table-wrap {
             width: 100%;
-            overflow-x: auto;
+
+            overflow-x:
+                auto;
         }
+
 
         table {
             width: 100%;
-            border-collapse: collapse;
-            min-width: 760px;
+
+            border-collapse:
+                collapse;
+
+            min-width:
+                760px;
         }
+
 
         th {
-            background: #f8fafc;
+            background:
+                #f8fafc;
 
-            color: #64748b;
+            color:
+                #64748b;
 
-            text-align: left;
+            text-align:
+                left;
 
-            font-size: 10px;
+            font-size:
+                10px;
 
-            text-transform: uppercase;
-            letter-spacing: .5px;
+            text-transform:
+                uppercase;
 
-            padding: 12px 18px;
+            letter-spacing:
+                .5px;
 
-            border-bottom: 1px solid var(--border);
+            padding:
+                12px 18px;
 
-            white-space: nowrap;
+            border-bottom:
+                1px solid
+                var(--border);
+
+            white-space:
+                nowrap;
         }
+
 
         td {
-            padding: 14px 18px;
+            padding:
+                14px 18px;
 
-            border-bottom: 1px solid #eef2f7;
+            border-bottom:
+                1px solid
+                #eef2f7;
 
-            font-size: 12px;
+            font-size:
+                12px;
 
-            vertical-align: middle;
+            vertical-align:
+                middle;
         }
+
 
         tr:last-child td {
-            border-bottom: none;
+            border-bottom:
+                none;
         }
+
 
         .primary {
-            font-weight: 800;
+            font-weight:
+                800;
         }
+
 
         .secondary {
-            color: var(--muted);
-            font-size: 11px;
-            margin-top: 3px;
+            color:
+                var(--muted);
+
+            font-size:
+                11px;
+
+            margin-top:
+                3px;
         }
+
 
         .tag {
-            display: inline-flex;
-            align-items: center;
+            display:
+                inline-flex;
 
-            padding: 5px 8px;
+            align-items:
+                center;
 
-            border-radius: 7px;
+            padding:
+                5px 8px;
 
-            background: #f1f5f9;
+            border-radius:
+                7px;
 
-            font-family: monospace;
-            font-size: 10px;
+            background:
+                #f1f5f9;
 
-            color: #334155;
+            font-family:
+                monospace;
+
+            font-size:
+                10px;
+
+            color:
+                #334155;
         }
+
 
         .badge {
-            display: inline-flex;
+            display:
+                inline-flex;
 
-            align-items: center;
-            justify-content: center;
+            align-items:
+                center;
 
-            padding: 5px 9px;
+            justify-content:
+                center;
 
-            border-radius: 30px;
+            padding:
+                5px 9px;
 
-            font-size: 10px;
-            font-weight: 800;
+            border-radius:
+                30px;
 
-            white-space: nowrap;
+            font-size:
+                10px;
+
+            font-weight:
+                800;
+
+            white-space:
+                nowrap;
         }
+
 
         .badge.green {
-            color: #166534;
-            background: #dcfce7;
+            color:
+                #166534;
+
+            background:
+                #dcfce7;
         }
+
 
         .badge.red {
-            color: #991b1b;
-            background: #fee2e2;
+            color:
+                #991b1b;
+
+            background:
+                #fee2e2;
         }
+
 
         .badge.orange {
-            color: #92400e;
-            background: #fef3c7;
+            color:
+                #92400e;
+
+            background:
+                #fef3c7;
         }
+
 
         .badge.gray {
-            color: #475569;
-            background: #e2e8f0;
+            color:
+                #475569;
+
+            background:
+                #e2e8f0;
         }
+
 
         .action-button {
-            border: 1px solid #fecaca;
+            border:
+                1px solid
+                #fecaca;
 
-            background: #fff;
+            background:
+                #fff;
 
-            color: var(--red);
+            color:
+                var(--red);
 
-            padding: 7px 10px;
+            padding:
+                7px 10px;
 
-            border-radius: 8px;
+            border-radius:
+                8px;
 
-            font-size: 10px;
-            font-weight: 800;
+            font-size:
+                10px;
+
+            font-weight:
+                800;
         }
+
 
         .action-button:hover {
-            background: var(--red-light);
+            background:
+                var(--red-light);
         }
+
 
         .empty {
-            padding: 35px 20px;
+            padding:
+                35px 20px;
 
-            text-align: center;
+            text-align:
+                center;
 
-            color: var(--muted);
+            color:
+                var(--muted);
 
-            font-size: 13px;
+            font-size:
+                13px;
         }
+
 
         .loading {
-            padding: 30px;
+            padding:
+                30px;
 
-            text-align: center;
+            text-align:
+                center;
 
-            color: var(--muted);
+            color:
+                var(--muted);
 
-            font-size: 13px;
+            font-size:
+                13px;
         }
 
-        /* MESSAGE */
+
+        /* =====================================================
+           MESSAGE
+        ===================================================== */
 
         #mensagem {
-            display: none;
+            display:
+                none;
 
-            margin-bottom: 20px;
+            margin-bottom:
+                20px;
 
-            padding: 13px 16px;
+            padding:
+                13px 16px;
 
-            border-radius: 10px;
+            border-radius:
+                10px;
 
-            font-size: 12px;
-            font-weight: 700;
+            font-size:
+                12px;
+
+            font-weight:
+                700;
         }
+
 
         #mensagem.success {
-            display: block;
+            display:
+                block;
 
-            color: #166534;
+            color:
+                #166534;
 
-            background: #dcfce7;
+            background:
+                #dcfce7;
 
-            border: 1px solid #bbf7d0;
+            border:
+                1px solid
+                #bbf7d0;
         }
+
 
         #mensagem.error {
-            display: block;
+            display:
+                block;
 
-            color: #991b1b;
+            color:
+                #991b1b;
 
-            background: #fee2e2;
+            background:
+                #fee2e2;
 
-            border: 1px solid #fecaca;
+            border:
+                1px solid
+                #fecaca;
         }
 
-        /* RESPONSIVE */
 
-        @media (max-width: 1050px) {
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (
+            max-width: 1050px
+        ) {
+
             .stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-columns:
+                    repeat(
+                        2,
+                        minmax(
+                            0,
+                            1fr
+                        )
+                    );
             }
         }
 
-        @media (max-width: 800px) {
+
+        @media (
+            max-width: 800px
+        ) {
+
             .sidebar {
-                position: relative;
+                position:
+                    relative;
 
-                width: 100%;
-                height: auto;
+                width:
+                    100%;
 
-                min-height: auto;
+                height:
+                    auto;
+
+                min-height:
+                    auto;
             }
+
 
             .app {
-                display: block;
+                display:
+                    block;
             }
+
 
             .main {
-                margin-left: 0;
-                width: 100%;
+                margin-left:
+                    0;
+
+                width:
+                    100%;
             }
+
 
             .brand {
-                padding: 16px 18px;
+                padding:
+                    16px 18px;
             }
+
 
             .menu {
-                display: flex;
-                gap: 6px;
-                padding: 10px 12px 14px;
+                display:
+                    flex;
+
+                gap:
+                    6px;
+
+                padding:
+                    10px 12px 14px;
             }
+
 
             .menu-label {
-                display: none;
+                display:
+                    none;
             }
+
 
             .menu a {
-                flex: 1;
+                flex:
+                    1;
 
-                justify-content: center;
+                justify-content:
+                    center;
 
-                margin: 0;
+                margin:
+                    0;
 
-                padding: 11px 7px;
+                padding:
+                    11px 7px;
 
-                font-size: 11px;
+                font-size:
+                    11px;
             }
+
 
             .menu-icon {
-                font-size: 15px;
+                font-size:
+                    15px;
             }
+
 
             .sidebar-footer {
-                display: none;
+                display:
+                    none;
             }
+
 
             .topbar {
-                padding: 0 18px;
+                padding:
+                    0 18px;
             }
+
 
             .content {
-                width: calc(100% - 28px);
-                padding-top: 25px;
+                width:
+                    calc(
+                        100% - 28px
+                    );
+
+                padding-top:
+                    25px;
             }
         }
 
-        @media (max-width: 600px) {
+
+        @media (
+            max-width: 600px
+        ) {
+
             .stats {
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
+                grid-template-columns:
+                    1fr 1fr;
+
+                gap:
+                    10px;
             }
+
 
             .stat {
-                padding: 15px;
+                padding:
+                    15px;
             }
+
 
             .stat-value {
-                font-size: 25px;
+                font-size:
+                    25px;
             }
+
 
             .section-head {
-                padding: 16px;
+                padding:
+                    16px;
             }
+
 
             .section-title h2 {
-                font-size: 15px;
+                font-size:
+                    15px;
             }
+
 
             .refresh-button {
-                padding: 8px 10px;
+                padding:
+                    8px 10px;
             }
+
 
             .top-title span {
-                display: none;
+                display:
+                    none;
             }
 
+
             .page-header h1 {
-                font-size: 31px;
+                font-size:
+                    31px;
             }
         }
+
     </style>
 </head>
+
 
 <body>
 
 <div class="app">
 
-    <!-- SIDEBAR -->
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
 
     <aside class="sidebar">
 
@@ -801,6 +1247,7 @@
             </div>
 
             <div>
+
                 <div class="brand-title">
                     Inventário RFID
                 </div>
@@ -808,9 +1255,11 @@
                 <div class="brand-subtitle">
                     Gestão de equipamentos
                 </div>
+
             </div>
 
         </div>
+
 
         <nav class="menu">
 
@@ -818,22 +1267,48 @@
                 Sistema
             </div>
 
+
             <a href="/">
-                <span class="menu-icon">🔄</span>
-                <span>Operação</span>
+                <span class="menu-icon">
+                    🔄
+                </span>
+
+                <span>
+                    Operação
+                </span>
             </a>
+
 
             <a href="/cadastro">
-                <span class="menu-icon">📋</span>
-                <span>Cadastro</span>
+
+                <span class="menu-icon">
+                    📋
+                </span>
+
+                <span>
+                    Cadastro
+                </span>
+
             </a>
 
-            <a href="/controle" class="active">
-                <span class="menu-icon">📊</span>
-                <span>Controle</span>
+
+            <a
+                href="/controle"
+                class="active"
+            >
+
+                <span class="menu-icon">
+                    📊
+                </span>
+
+                <span>
+                    Controle
+                </span>
+
             </a>
 
         </nav>
+
 
         <div class="sidebar-footer">
 
@@ -854,7 +1329,10 @@
 
     </aside>
 
-    <!-- MAIN -->
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
 
     <main class="main">
 
@@ -872,6 +1350,7 @@
 
             </div>
 
+
             <div
                 id="serverStatus"
                 class="server"
@@ -886,6 +1365,7 @@
             </div>
 
         </header>
+
 
         <section class="content">
 
@@ -908,7 +1388,9 @@
 
             </div>
 
+
             <div id="mensagem"></div>
+
 
             <!-- DASHBOARD -->
 
@@ -929,6 +1411,7 @@
 
                 </div>
 
+
                 <div class="stat blue">
 
                     <div class="stat-label">
@@ -944,6 +1427,7 @@
 
                 </div>
 
+
                 <div class="stat green">
 
                     <div class="stat-label">
@@ -958,6 +1442,7 @@
                     </div>
 
                 </div>
+
 
                 <div class="stat orange">
 
@@ -975,6 +1460,7 @@
                 </div>
 
             </div>
+
 
             <!-- FUNCIONÁRIOS -->
 
@@ -1002,6 +1488,7 @@
 
                     </div>
 
+
                     <button
                         class="refresh-button"
                         type="button"
@@ -1011,6 +1498,7 @@
                     </button>
 
                 </div>
+
 
                 <div
                     id="funcionariosContainer"
@@ -1024,6 +1512,7 @@
                 </div>
 
             </section>
+
 
             <!-- EQUIPAMENTOS -->
 
@@ -1051,6 +1540,7 @@
 
                     </div>
 
+
                     <button
                         class="refresh-button"
                         type="button"
@@ -1060,6 +1550,7 @@
                     </button>
 
                 </div>
+
 
                 <div
                     id="equipamentosContainer"
@@ -1073,6 +1564,7 @@
                 </div>
 
             </section>
+
 
             <!-- EMPRÉSTIMOS -->
 
@@ -1100,6 +1592,7 @@
 
                     </div>
 
+
                     <button
                         class="refresh-button"
                         type="button"
@@ -1109,6 +1602,7 @@
                     </button>
 
                 </div>
+
 
                 <div
                     id="emprestimosContainer"
@@ -1129,6 +1623,7 @@
 
 </div>
 
+
 <script>
 
     /* =========================================================
@@ -1136,34 +1631,62 @@
     ========================================================= */
 
     const connectionDot =
-        document.getElementById("connectionDot");
+        document.getElementById(
+            "connectionDot"
+        );
+
 
     const connectionText =
-        document.getElementById("connectionText");
+        document.getElementById(
+            "connectionText"
+        );
+
 
     const serverStatus =
-        document.getElementById("serverStatus");
+        document.getElementById(
+            "serverStatus"
+        );
+
 
     const serverStatusText =
-        document.getElementById("serverStatusText");
+        document.getElementById(
+            "serverStatusText"
+        );
+
 
     const mensagem =
-        document.getElementById("mensagem");
+        document.getElementById(
+            "mensagem"
+        );
 
 
     /* =========================================================
        MENSAGEM
     ========================================================= */
 
-    function mostrarMensagem(texto, tipo) {
+    function mostrarMensagem(
+        texto,
+        tipo
+    ) {
 
-        mensagem.textContent = texto;
-        mensagem.className = tipo;
+        mensagem.textContent =
+            texto;
 
-        setTimeout(() => {
-            mensagem.className = "";
-            mensagem.textContent = "";
-        }, 5000);
+        mensagem.className =
+            tipo;
+
+        setTimeout(
+            () => {
+
+                mensagem.className =
+                    "";
+
+                mensagem.textContent =
+                    "";
+
+            },
+            5000
+        );
     }
 
 
@@ -1171,14 +1694,33 @@
        HTML SEGURO
     ========================================================= */
 
-    function escaparHTML(valor) {
+    function escaparHTML(
+        valor
+    ) {
 
-        return String(valor ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        return String(
+            valor ?? ""
+        )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
     }
 
 
@@ -1186,23 +1728,40 @@
        DATA
     ========================================================= */
 
-    function formatarData(valor) {
+    function formatarData(
+        valor
+    ) {
 
         if (!valor) {
+
             return "—";
         }
 
-        const data = new Date(valor);
 
-        if (Number.isNaN(data.getTime())) {
-            return escaparHTML(valor);
+        const data =
+            new Date(valor);
+
+
+        if (
+            Number.isNaN(
+                data.getTime()
+            )
+        ) {
+
+            return escaparHTML(
+                valor
+            );
         }
+
 
         return data.toLocaleString(
             "pt-BR",
             {
-                dateStyle: "short",
-                timeStyle: "short"
+                dateStyle:
+                    "short",
+
+                timeStyle:
+                    "short"
             }
         );
     }
@@ -1212,12 +1771,21 @@
        STATUS
     ========================================================= */
 
-    function badgeStatus(status) {
+    function badgeStatus(
+        status
+    ) {
 
         const texto =
-            String(status || "").toLowerCase();
+            String(
+                status ||
+                ""
+            ).toLowerCase();
 
-        if (texto === "disponivel") {
+
+        if (
+            texto ===
+            "disponivel"
+        ) {
 
             return `
                 <span class="badge green">
@@ -1226,7 +1794,11 @@
             `;
         }
 
-        if (texto === "emprestado") {
+
+        if (
+            texto ===
+            "emprestado"
+        ) {
 
             return `
                 <span class="badge orange">
@@ -1235,7 +1807,11 @@
             `;
         }
 
-        if (texto === "devolvido") {
+
+        if (
+            texto ===
+            "devolvido"
+        ) {
 
             return `
                 <span class="badge green">
@@ -1244,7 +1820,11 @@
             `;
         }
 
-        if (texto === "pendente") {
+
+        if (
+            texto ===
+            "pendente"
+        ) {
 
             return `
                 <span class="badge orange">
@@ -1253,9 +1833,12 @@
             `;
         }
 
+
         return `
             <span class="badge gray">
-                ${escaparHTML(status || "—")}
+                ${escaparHTML(
+                    status || "—"
+                )}
             </span>
         `;
     }
@@ -1271,39 +1854,64 @@
 
             const resposta =
                 await fetch(
-                    "/health?t=" + Date.now(),
+                    "/health?t=" +
+                    Date.now(),
                     {
-                        cache: "no-store"
+                        cache:
+                            "no-store"
                     }
                 );
 
+
             if (!resposta.ok) {
-                throw new Error("Servidor offline");
+
+                throw new Error(
+                    "Servidor offline"
+                );
             }
 
-            connectionDot.classList.remove("offline");
+
+            connectionDot.classList.remove(
+                "offline"
+            );
+
 
             connectionText.textContent =
                 "Servidor conectado";
 
-            serverStatus.classList.remove("offline");
+
+            serverStatus.classList.remove(
+                "offline"
+            );
+
 
             serverStatusText.textContent =
                 "Servidor online";
 
+
         } catch (erro) {
 
-            connectionDot.classList.add("offline");
+            connectionDot.classList.add(
+                "offline"
+            );
+
 
             connectionText.textContent =
                 "Servidor offline";
 
-            serverStatus.classList.add("offline");
+
+            serverStatus.classList.add(
+                "offline"
+            );
+
 
             serverStatusText.textContent =
                 "Servidor offline";
 
-            console.error(erro);
+
+            console.error(
+                erro
+            );
         }
     }
 
@@ -1316,213 +1924,65 @@
 
         try {
 
-            /*
-             * Primeiro tenta utilizar o endpoint próprio
-             * do dashboard.
-             */
-
             const resposta =
                 await fetch(
-                    "/api/dashboard?t=" + Date.now(),
+                    "/api/dashboard?t=" +
+                    Date.now(),
                     {
-                        cache: "no-store"
+                        cache:
+                            "no-store"
                     }
                 );
+
 
             const dados =
                 await resposta.json();
 
+
             if (
-                resposta.ok &&
-                dados.sucesso
+                !resposta.ok ||
+                !dados.sucesso
             ) {
 
-                document.getElementById(
-                    "totalFuncionarios"
-                ).textContent =
-                    dados.funcionarios ?? 0;
-
-                document.getElementById(
-                    "totalEquipamentos"
-                ).textContent =
-                    dados.equipamentos ?? 0;
-
-                document.getElementById(
-                    "totalDisponiveis"
-                ).textContent =
-                    dados.disponiveis ?? 0;
-
-                document.getElementById(
-                    "totalEmprestados"
-                ).textContent =
-                    dados.emprestados ?? 0;
-
-                return;
+                throw new Error(
+                    dados.mensagem ||
+                    "Erro ao carregar dashboard."
+                );
             }
-
-            /*
-             * Se o endpoint dashboard não responder,
-             * o sistema calcula os números pelos dados
-             * reais das tabelas.
-             */
-
-            await calcularDashboardAlternativo();
-
-        } catch (erro) {
-
-            console.error(
-                "Erro no dashboard:",
-                erro
-            );
-
-            await calcularDashboardAlternativo();
-        }
-    }
-
-
-    /* =========================================================
-       DASHBOARD ALTERNATIVO
-    ========================================================= */
-
-    async function calcularDashboardAlternativo() {
-
-        try {
-
-            const [
-                respostaFuncionarios,
-                respostaEquipamentos,
-                respostaEmprestimos
-            ] = await Promise.all([
-
-                fetch(
-                    "/api/funcionarios?t=" + Date.now(),
-                    {
-                        cache: "no-store"
-                    }
-                ),
-
-                fetch(
-                    "/api/equipamentos?t=" + Date.now(),
-                    {
-                        cache: "no-store"
-                    }
-                ),
-
-                fetch(
-                    "/api/emprestimos?t=" + Date.now(),
-                    {
-                        cache: "no-store"
-                    }
-                )
-            ]);
-
-
-            const funcionariosDados =
-                await respostaFuncionarios.json();
-
-            const equipamentosDados =
-                await respostaEquipamentos.json();
-
-            const emprestimosDados =
-                await respostaEmprestimos.json();
-
-
-            const funcionarios =
-                funcionariosDados.funcionarios || [];
-
-            const equipamentos =
-                equipamentosDados.equipamentos || [];
-
-            const emprestimos =
-                emprestimosDados.emprestimos || [];
-
-
-            const funcionariosAtivos =
-                funcionarios.filter(
-                    funcionario =>
-                        funcionario.ativo !== false
-                ).length;
-
-
-            const equipamentosAtivos =
-                equipamentos.filter(
-                    equipamento =>
-                        equipamento.ativo !== false
-                );
-
-
-            const disponiveis =
-                equipamentosAtivos.filter(
-                    equipamento =>
-                        String(
-                            equipamento.status || ""
-                        ).toLowerCase() === "disponivel"
-                ).length;
-
-
-            const emprestados =
-                equipamentosAtivos.filter(
-                    equipamento =>
-                        String(
-                            equipamento.status || ""
-                        ).toLowerCase() === "emprestado"
-                ).length;
-
-
-            /*
-             * Caso o status do equipamento ainda não esteja
-             * atualizado, também verificamos os empréstimos ativos.
-             */
-
-            const emprestimosAtivos =
-                emprestimos.filter(
-                    emprestimo =>
-                        String(
-                            emprestimo.status || ""
-                        ).toLowerCase() === "emprestado"
-                        &&
-                        !emprestimo.data_devolucao
-                ).length;
-
-
-            const totalEmprestados =
-                Math.max(
-                    emprestados,
-                    emprestimosAtivos
-                );
 
 
             document.getElementById(
                 "totalFuncionarios"
             ).textContent =
-                funcionariosAtivos;
+                dados.funcionarios ??
+                0;
 
 
             document.getElementById(
                 "totalEquipamentos"
             ).textContent =
-                equipamentosAtivos.length;
+                dados.equipamentos ??
+                0;
 
 
             document.getElementById(
                 "totalDisponiveis"
             ).textContent =
-                Math.max(
-                    equipamentosAtivos.length -
-                    totalEmprestados,
-                    0
-                );
+                dados.disponiveis ??
+                0;
 
 
             document.getElementById(
                 "totalEmprestados"
             ).textContent =
-                totalEmprestados;
+                dados.emprestados ??
+                0;
+
 
         } catch (erro) {
 
             console.error(
-                "Erro no cálculo alternativo:",
+                "Erro ao carregar dashboard:",
                 erro
             );
         }
@@ -1540,18 +2000,23 @@
                 "funcionariosContainer"
             );
 
+
         try {
 
             const resposta =
                 await fetch(
-                    "/api/funcionarios?t=" + Date.now(),
+                    "/api/funcionarios?t=" +
+                    Date.now(),
                     {
-                        cache: "no-store"
+                        cache:
+                            "no-store"
                     }
                 );
 
+
             const dados =
                 await resposta.json();
+
 
             if (
                 !resposta.ok ||
@@ -1564,16 +2029,24 @@
                 );
             }
 
+
             const lista =
-                dados.funcionarios || [];
+                dados.funcionarios ||
+                [];
 
 
-            if (lista.length === 0) {
+            if (
+                lista.length === 0
+            ) {
 
                 container.innerHTML = `
+
                     <div class="empty">
+
                         Nenhum funcionário cadastrado.
+
                     </div>
+
                 `;
 
                 return;
@@ -1616,6 +2089,7 @@
 
                     </thead>
 
+
                     <tbody>
 
                         ${lista.map(
@@ -1624,6 +2098,7 @@
                                 const ativo =
                                     funcionario.ativo !== false;
 
+
                                 return `
 
                                     <tr>
@@ -1631,54 +2106,49 @@
                                         <td>
 
                                             <div class="primary">
+
                                                 ${escaparHTML(
                                                     funcionario.nome
                                                 )}
+
                                             </div>
 
                                         </td>
 
-                                        <td>
-
-                                            ${escaparHTML(
-                                                funcionario.matricula || "—"
-                                            )}
-
-                                        </td>
 
                                         <td>
 
                                             ${escaparHTML(
-                                                funcionario.setor || "—"
+                                                funcionario.matricula ||
+                                                "—"
                                             )}
 
                                         </td>
+
+
+                                        <td>
+
+                                            ${escaparHTML(
+                                                funcionario.setor ||
+                                                "—"
+                                            )}
+
+                                        </td>
+
 
                                         <td>
 
                                             <span class="tag">
+
                                                 ${escaparHTML(
-                                                    funcionario.uid_tag_pessoal || "—"
+                                                    funcionario.uid_tag_pessoal ||
+                                                    "—"
                                                 )}
+
                                             </span>
 
                                         </td>
 
-                                        <td>
-
-                                            ${
-                                                ativo
-                                                ?
-                                                `<span class="badge green">
-                                                    Ativo
-                                                </span>`
-                                                :
-                                                `<span class="badge gray">
-                                                    Inativo
-                                                </span>`
-                                            }
-
-                                        </td>
 
                                         <td>
 
@@ -1686,13 +2156,38 @@
                                                 ativo
                                                 ?
                                                 `
+                                                    <span class="badge green">
+                                                        Ativo
+                                                    </span>
+                                                `
+                                                :
+                                                `
+                                                    <span class="badge gray">
+                                                        Inativo
+                                                    </span>
+                                                `
+                                            }
+
+                                        </td>
+
+
+                                        <td>
+
+                                            ${
+                                                ativo
+                                                ?
+                                                `
+
                                                     <button
                                                         class="action-button"
                                                         type="button"
                                                         onclick="desativarFuncionario(${Number(funcionario.id)})"
                                                     >
+
                                                         Desativar
+
                                                     </button>
+
                                                 `
                                                 :
                                                 "—"
@@ -1703,6 +2198,7 @@
                                     </tr>
 
                                 `;
+
                             }
                         ).join("")}
 
@@ -1712,13 +2208,19 @@
 
             `;
 
+
         } catch (erro) {
 
             container.innerHTML = `
+
                 <div class="empty">
+
                     Não foi possível carregar os funcionários.
+
                 </div>
+
             `;
+
 
             console.error(
                 "Erro funcionários:",
@@ -1739,18 +2241,23 @@
                 "equipamentosContainer"
             );
 
+
         try {
 
             const resposta =
                 await fetch(
-                    "/api/equipamentos?t=" + Date.now(),
+                    "/api/equipamentos?t=" +
+                    Date.now(),
                     {
-                        cache: "no-store"
+                        cache:
+                            "no-store"
                     }
                 );
 
+
             const dados =
                 await resposta.json();
+
 
             if (
                 !resposta.ok ||
@@ -1763,16 +2270,24 @@
                 );
             }
 
+
             const lista =
-                dados.equipamentos || [];
+                dados.equipamentos ||
+                [];
 
 
-            if (lista.length === 0) {
+            if (
+                lista.length === 0
+            ) {
 
                 container.innerHTML = `
+
                     <div class="empty">
+
                         Nenhum equipamento cadastrado.
+
                     </div>
+
                 `;
 
                 return;
@@ -1815,6 +2330,7 @@
 
                     </thead>
 
+
                     <tbody>
 
                         ${lista.map(
@@ -1823,6 +2339,7 @@
                                 const ativo =
                                     equipamento.ativo !== false;
 
+
                                 return `
 
                                     <tr>
@@ -1830,32 +2347,43 @@
                                         <td>
 
                                             <div class="primary">
+
                                                 ${escaparHTML(
                                                     equipamento.nome
                                                 )}
+
                                             </div>
 
                                         </td>
+
 
                                         <td>
 
                                             <div class="secondary">
+
                                                 ${escaparHTML(
-                                                    equipamento.descricao || "—"
+                                                    equipamento.descricao ||
+                                                    "—"
                                                 )}
+
                                             </div>
 
                                         </td>
 
+
                                         <td>
 
                                             <span class="tag">
+
                                                 ${escaparHTML(
-                                                    equipamento.uid_tag || "—"
+                                                    equipamento.uid_tag ||
+                                                    "—"
                                                 )}
+
                                             </span>
 
                                         </td>
+
 
                                         <td>
 
@@ -1865,21 +2393,6 @@
 
                                         </td>
 
-                                        <td>
-
-                                            ${
-                                                ativo
-                                                ?
-                                                `<span class="badge green">
-                                                    Ativo
-                                                </span>`
-                                                :
-                                                `<span class="badge gray">
-                                                    Inativo
-                                                </span>`
-                                            }
-
-                                        </td>
 
                                         <td>
 
@@ -1887,13 +2400,38 @@
                                                 ativo
                                                 ?
                                                 `
+                                                    <span class="badge green">
+                                                        Ativo
+                                                    </span>
+                                                `
+                                                :
+                                                `
+                                                    <span class="badge gray">
+                                                        Inativo
+                                                    </span>
+                                                `
+                                            }
+
+                                        </td>
+
+
+                                        <td>
+
+                                            ${
+                                                ativo
+                                                ?
+                                                `
+
                                                     <button
                                                         class="action-button"
                                                         type="button"
                                                         onclick="desativarEquipamento(${Number(equipamento.id)})"
                                                     >
+
                                                         Desativar
+
                                                     </button>
+
                                                 `
                                                 :
                                                 "—"
@@ -1904,6 +2442,7 @@
                                     </tr>
 
                                 `;
+
                             }
                         ).join("")}
 
@@ -1913,13 +2452,19 @@
 
             `;
 
+
         } catch (erro) {
 
             container.innerHTML = `
+
                 <div class="empty">
+
                     Não foi possível carregar os equipamentos.
+
                 </div>
+
             `;
+
 
             console.error(
                 "Erro equipamentos:",
@@ -1940,18 +2485,23 @@
                 "emprestimosContainer"
             );
 
+
         try {
 
             const resposta =
                 await fetch(
-                    "/api/emprestimos?t=" + Date.now(),
+                    "/api/emprestimos?t=" +
+                    Date.now(),
                     {
-                        cache: "no-store"
+                        cache:
+                            "no-store"
                     }
                 );
 
+
             const dados =
                 await resposta.json();
+
 
             if (
                 !resposta.ok ||
@@ -1964,35 +2514,47 @@
                 );
             }
 
+
             let lista =
-                dados.emprestimos || [];
+                dados.emprestimos ||
+                [];
 
 
             /*
-             * Empréstimos ativos ficam primeiro.
-             * Depois vêm os devolvidos mais recentes.
+             * Empréstimos ativos primeiro.
+             * Devolvidos depois, do mais recente
+             * para o mais antigo.
              */
 
             lista.sort(
-                (a, b) => {
+                (
+                    a,
+                    b
+                ) => {
 
                     const statusA =
                         String(
-                            a.status || ""
+                            a.status ||
+                            ""
                         ).toLowerCase();
+
 
                     const statusB =
                         String(
-                            b.status || ""
+                            b.status ||
+                            ""
                         ).toLowerCase();
 
 
                     const ativoA =
-                        statusA === "emprestado" &&
+                        statusA ===
+                            "emprestado" &&
                         !a.data_devolucao;
 
+
                     const ativoB =
-                        statusB === "emprestado" &&
+                        statusB ===
+                            "emprestado" &&
                         !b.data_devolucao;
 
 
@@ -2000,38 +2562,51 @@
                         ativoA &&
                         !ativoB
                     ) {
+
                         return -1;
                     }
+
 
                     if (
                         !ativoA &&
                         ativoB
                     ) {
+
                         return 1;
                     }
 
 
                     const dataA =
                         new Date(
-                            a.data_retirada || 0
+                            a.data_retirada ||
+                            0
                         ).getTime();
+
 
                     const dataB =
                         new Date(
-                            b.data_retirada || 0
+                            b.data_retirada ||
+                            0
                         ).getTime();
+
 
                     return dataB - dataA;
                 }
             );
 
 
-            if (lista.length === 0) {
+            if (
+                lista.length === 0
+            ) {
 
                 container.innerHTML = `
+
                     <div class="empty">
+
                         Nenhum empréstimo registrado.
+
                     </div>
+
                 `;
 
                 return;
@@ -2070,16 +2645,18 @@
 
                     </thead>
 
+
                     <tbody>
 
                         ${lista.map(
                             emprestimo => {
 
                                 const funcionario =
-                                    emprestimo.funcionario || {};
+                                    emprestimo.funcionario;
+
 
                                 const equipamento =
-                                    emprestimo.equipamento || {};
+                                    emprestimo.equipamento;
 
 
                                 return `
@@ -2089,16 +2666,22 @@
                                         <td>
 
                                             <div class="primary">
+
                                                 ${escaparHTML(
-                                                    funcionario.nome ||
+                                                    funcionario?.nome ||
                                                     "Funcionário não encontrado"
                                                 )}
+
                                             </div>
 
+
                                             <div class="secondary">
+
                                                 ${escaparHTML(
-                                                    funcionario.matricula || ""
+                                                    funcionario?.matricula ||
+                                                    ""
                                                 )}
+
                                             </div>
 
                                         </td>
@@ -2107,10 +2690,12 @@
                                         <td>
 
                                             <div class="primary">
+
                                                 ${escaparHTML(
-                                                    equipamento.nome ||
+                                                    equipamento?.nome ||
                                                     "Equipamento não encontrado"
                                                 )}
+
                                             </div>
 
                                         </td>
@@ -2127,15 +2712,9 @@
 
                                         <td>
 
-                                            ${
+                                            ${formatarData(
                                                 emprestimo.data_devolucao
-                                                ?
-                                                formatarData(
-                                                    emprestimo.data_devolucao
-                                                )
-                                                :
-                                                "—"
-                                            }
+                                            )}
 
                                         </td>
 
@@ -2151,6 +2730,7 @@
                                     </tr>
 
                                 `;
+
                             }
                         ).join("")}
 
@@ -2160,13 +2740,19 @@
 
             `;
 
+
         } catch (erro) {
 
             container.innerHTML = `
+
                 <div class="empty">
+
                     Não foi possível carregar os empréstimos.
+
                 </div>
+
             `;
+
 
             console.error(
                 "Erro empréstimos:",
@@ -2180,16 +2766,21 @@
        DESATIVAR FUNCIONÁRIO
     ========================================================= */
 
-    async function desativarFuncionario(id) {
+    async function desativarFuncionario(
+        id
+    ) {
 
         const confirmar =
             window.confirm(
                 "Deseja realmente desativar este funcionário?"
             );
 
+
         if (!confirmar) {
+
             return;
         }
+
 
         try {
 
@@ -2197,12 +2788,15 @@
                 await fetch(
                     `/api/funcionarios/${id}`,
                     {
-                        method: "DELETE"
+                        method:
+                            "DELETE"
                     }
                 );
 
+
             const dados =
                 await resposta.json();
+
 
             if (
                 !resposta.ok ||
@@ -2215,12 +2809,15 @@
                 );
             }
 
+
             mostrarMensagem(
                 "Funcionário desativado com sucesso.",
                 "success"
             );
 
+
             await carregarTudo();
+
 
         } catch (erro) {
 
@@ -2237,16 +2834,21 @@
        DESATIVAR EQUIPAMENTO
     ========================================================= */
 
-    async function desativarEquipamento(id) {
+    async function desativarEquipamento(
+        id
+    ) {
 
         const confirmar =
             window.confirm(
                 "Deseja realmente desativar este equipamento?"
             );
 
+
         if (!confirmar) {
+
             return;
         }
+
 
         try {
 
@@ -2254,12 +2856,15 @@
                 await fetch(
                     `/api/equipamentos/${id}`,
                     {
-                        method: "DELETE"
+                        method:
+                            "DELETE"
                     }
                 );
 
+
             const dados =
                 await resposta.json();
+
 
             if (
                 !resposta.ok ||
@@ -2272,12 +2877,15 @@
                 );
             }
 
+
             mostrarMensagem(
                 "Equipamento desativado com sucesso.",
                 "success"
             );
 
+
             await carregarTudo();
+
 
         } catch (erro) {
 
@@ -2297,11 +2905,17 @@
     async function carregarTudo() {
 
         await Promise.all([
+
             verificarServidor(),
+
             carregarDashboard(),
+
             carregarFuncionarios(),
+
             carregarEquipamentos(),
+
             carregarEmprestimos()
+
         ]);
     }
 
@@ -2314,9 +2928,17 @@
 
 
     /*
-     * Atualiza automaticamente a cada 3 segundos.
-     * Isso faz o controle refletir rapidamente
-     * uma retirada ou devolução feita pelo RFID.
+     * Atualiza o controle a cada 3 segundos.
+     *
+     * Isso faz com que:
+     *
+     * RETIRADA:
+     * disponível -> emprestado
+     *
+     * DEVOLUÇÃO:
+     * emprestado -> disponível
+     *
+     * e o histórico seja atualizado.
      */
 
     setInterval(
@@ -2327,4 +2949,5 @@
 </script>
 
 </body>
+
 </html>
