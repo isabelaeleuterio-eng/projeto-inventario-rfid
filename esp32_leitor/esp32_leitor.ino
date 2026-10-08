@@ -1,317 +1,1668 @@
+/*
+  ESP32 + RC522 + INVENTÁRIO RFID
+
+  REDES:
+  - Heloisa
+  - eduroam (WPA2 Enterprise / PEAP)
+
+  RC522:
+  SDA/SS = GPIO 5
+  RST    = GPIO 22
+
+  TRAVA:
+  GPIO 4
+
+  SERVIDOR:
+  Render
+
+  FUNCIONAMENTO:
+  1. ESP32 conecta no Wi-Fi.
+  2. ESP32 avisa o servidor que está online.
+  3. RC522 lê a tag.
+  4. ESP32 envia o UID para o servidor.
+  5. Servidor decide retirada/devolução.
+  6. Servidor cria comando para a trava quando necessário.
+  7. ESP32 consulta o comando.
+  8. GPIO 4 libera a trava por 5 segundos.
+  9. ESP32 confirma o comando ao servidor.
+
+  IMPORTANTE:
+  NÃO ligue trava/solenoide diretamente no GPIO 4.
+  Use relé, MOSFET, transistor/driver e fonte adequada.
+*/
+
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <SPI.h>
 #include <MFRC522.h>
+
 #include "segredos.h"
 
-// ---------------- RC522 ----------------
-#define SS_PIN  5
+
+// ============================================================
+// RC522
+// ============================================================
+
+#define SS_PIN 5
 #define RST_PIN 22
+
 MFRC522 rfid(SS_PIN, RST_PIN);
 
-// ---------------- FECHADURA (relé) ----------------
-#define PIN_RELE 26
-const bool RELE_ATIVO_EM_LOW = true;          // a maioria dos módulos de relé liga com sinal LOW
-const unsigned long TEMPO_ABERTO_MS = 5000;   // tempo que a fechadura fica recuada
-bool releLigado = false;
-unsigned long fechaEm = 0;
 
-// ---------------- Tempos ----------------
-const unsigned long HTTP_TIMEOUT_RFID_MS = 40000;  // Render pode demorar para acordar
-const unsigned long HTTP_TIMEOUT_PING_MS = 10000;
-const unsigned long INTERVALO_PING       = 20000;
-const unsigned long ANTI_DUPLICACAO_MS   = 2000;
-const int MAX_FALHAS_WIFI = 3;
+// ============================================================
+// TRAVA
+// ============================================================
+
+#define TRAVA_PIN 4
+
+/*
+  true:
+    LOW  = trava liberada
+    HIGH = estado normal
+
+  false:
+    HIGH = trava liberada
+    LOW  = estado normal
+*/
+
+const bool TRAVA_ATIVA_LOW = true;
+
+const unsigned long TEMPO_TRAVA_PADRAO = 5000;
+
+bool travaAtiva = false;
+
+unsigned long travaDesligaEm = 0;
+
+
+// ============================================================
+// SERVIDOR
+// ============================================================
+
+const unsigned long HTTP_TIMEOUT_RFID = 40000;
+
+const unsigned long HTTP_TIMEOUT_COMANDO = 10000;
+
+
+// ============================================================
+// CONTROLE RFID
+// ============================================================
 
 String ultimoUID = "";
+
 unsigned long ultimaLeitura = 0;
+
+const unsigned long TEMPO_ANTI_DUPLICACAO = 2000;
+
+
+// ============================================================
+// PING DO SERVIDOR
+// ============================================================
+
 unsigned long ultimoPing = 0;
-unsigned long ultimaTentativaWiFi = 0;
-int falhasWiFi = 0;
 
-// ===============================================================
-// FECHADURA
-// ===============================================================
-void fechadura(bool abrir) {
-  digitalWrite(PIN_RELE, (abrir == RELE_ATIVO_EM_LOW) ? LOW : HIGH);
+const unsigned long INTERVALO_PING =
+  10UL * 60UL * 1000UL;
+
+
+// ============================================================
+// CONTROLE DAS REDES
+// ============================================================
+
+int redeAtual = -1;
+
+
+// ============================================================
+// CONTROLE DOS COMANDOS DA TRAVA
+// ============================================================
+
+unsigned long ultimaConsultaComando = 0;
+
+const unsigned long INTERVALO_COMANDO = 700;
+
+long ultimoComandoExecutado = 0;
+
+long ultimoComandoConfirmado = 0;
+
+unsigned long ultimaTentativaConfirmacao = 0;
+
+const unsigned long INTERVALO_RECONFIRMACAO = 2000;
+
+
+// ============================================================
+// TRAVA - ESTADO NORMAL
+// ============================================================
+
+void travaNormal() {
+
+  if (TRAVA_ATIVA_LOW) {
+
+    digitalWrite(
+      TRAVA_PIN,
+      HIGH
+    );
+
+  } else {
+
+    digitalWrite(
+      TRAVA_PIN,
+      LOW
+    );
+
+  }
+
+  travaAtiva = false;
+
+  travaDesligaEm = 0;
 }
 
-void abrirFechadura() {
-  fechadura(true);
-  releLigado = true;
-  fechaEm = millis() + TEMPO_ABERTO_MS;
-  Serial.printf("FECHADURA ABERTA por %lu ms\n", TEMPO_ABERTO_MS);
+
+// ============================================================
+// TRAVA - LIBERAR
+// ============================================================
+
+void liberarTrava(unsigned long tempoMs) {
+
+  if (tempoMs == 0) {
+
+    tempoMs =
+      TEMPO_TRAVA_PADRAO;
+  }
+
+
+  if (TRAVA_ATIVA_LOW) {
+
+    digitalWrite(
+      TRAVA_PIN,
+      LOW
+    );
+
+  } else {
+
+    digitalWrite(
+      TRAVA_PIN,
+      HIGH
+    );
+
+  }
+
+
+  travaAtiva = true;
+
+  travaDesligaEm =
+    millis() + tempoMs;
+
+
+  Serial.println();
+
+  Serial.println(
+    "=============================="
+  );
+
+  Serial.println(
+    "TRAVA LIBERADA"
+  );
+
+  Serial.print(
+    "GPIO: "
+  );
+
+  Serial.println(
+    TRAVA_PIN
+  );
+
+  Serial.print(
+    "Tempo: "
+  );
+
+  Serial.print(
+    tempoMs
+  );
+
+  Serial.println(
+    " ms"
+  );
+
+  Serial.println(
+    "=============================="
+  );
 }
 
-void atualizarFechadura() {
-  if (releLigado && (long)(millis() - fechaEm) >= 0) {
-    fechadura(false);
-    releLigado = false;
-    Serial.println("Fechadura travada.");
+
+// ============================================================
+// ATUALIZAR TRAVA
+// ============================================================
+
+void atualizarTrava() {
+
+  if (!travaAtiva) {
+
+    return;
+  }
+
+
+  if (
+    (long)(
+      millis() -
+      travaDesligaEm
+    ) >= 0
+  ) {
+
+    travaNormal();
+
+    Serial.println(
+      "Trava voltou ao estado normal."
+    );
   }
 }
 
-// ===============================================================
-// UTILIDADES
-// ===============================================================
+
+// ============================================================
+// CONVERTER UID
+// ============================================================
+
 String uidParaString() {
+
   String uid = "";
-  for (byte i = 0; i < rfid.uid.size; i++) {
-    if (rfid.uid.uidByte[i] < 0x10) uid += "0";
-    uid += String(rfid.uid.uidByte[i], HEX);
+
+
+  for (
+    byte i = 0;
+    i < rfid.uid.size;
+    i++
+  ) {
+
+    if (
+      rfid.uid.uidByte[i] < 0x10
+    ) {
+
+      uid += "0";
+    }
+
+    uid += String(
+      rfid.uid.uidByte[i],
+      HEX
+    );
   }
+
+
   uid.toUpperCase();
+
   return uid;
 }
 
-// ===============================================================
-// WI-FI: escolhe sozinho entre casa e eduroam
-// ===============================================================
-int procurarRede() {
-  Serial.println("Procurando redes conhecidas...");
-  int n = WiFi.scanNetworks();
-  int achada = -1;
 
-  for (int i = 0; i < NUM_REDES && achada < 0; i++) {
-    for (int j = 0; j < n; j++) {
-      if (WiFi.SSID(j) == REDES[i].ssid) {
-        achada = i;
-        break;
-      }
-    }
-  }
+// ============================================================
+// CONECTAR A UMA REDE
+// ============================================================
 
-  WiFi.scanDelete();
-  return achada;
-}
+bool conectarRede(const Rede& rede, int indice) {
 
-bool conectarWiFi() {
-  if (WiFi.status() == WL_CONNECTED) return true;
-
-  WiFi.mode(WIFI_STA);
-  WiFi.setSleep(false);
-
-  int idx = procurarRede();
-  if (idx < 0) {
-    Serial.println("Nenhuma rede conhecida por perto.");
-    return false;
-  }
-
-  const Rede& r = REDES[idx];
-  Serial.printf("Conectando em '%s' (%s)\n", r.ssid,
-                r.enterprise ? "WPA2-Enterprise" : "Wi-Fi comum");
-
-  WiFi.disconnect(true);
-  delay(500);
-
-  if (r.enterprise) {
-    WiFi.begin(r.ssid, WPA2_AUTH_PEAP, r.identidade, r.usuario, r.senha);
-  } else {
-    WiFi.begin(r.ssid, r.senha);
-  }
-
-  unsigned long inicio = millis();
-  unsigned long limite = r.enterprise ? 60000 : 20000;
-
-  while (WiFi.status() != WL_CONNECTED && millis() - inicio < limite) {
-    delay(500);
-    Serial.print(".");
-  }
   Serial.println();
 
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Falha ao conectar. Confira usuario e senha.");
+  Serial.println(
+    "===================================="
+  );
+
+  Serial.print(
+    "TENTANDO REDE: "
+  );
+
+  Serial.println(
+    rede.ssid
+  );
+
+  Serial.println(
+    "===================================="
+  );
+
+
+  WiFi.disconnect(true);
+
+  delay(500);
+
+  WiFi.mode(WIFI_STA);
+
+  WiFi.setSleep(false);
+
+
+  // ----------------------------------------------------------
+  // WI-FI COMUM
+  // ----------------------------------------------------------
+
+  if (!rede.enterprise) {
+
+    Serial.println(
+      "Tipo: Wi-Fi comum"
+    );
+
+    WiFi.begin(
+      rede.ssid,
+      rede.senha
+    );
+
+  }
+
+  // ----------------------------------------------------------
+  // EDUROAM / WPA2 ENTERPRISE
+  // ----------------------------------------------------------
+
+  else {
+
+    Serial.println(
+      "Tipo: WPA2 Enterprise / PEAP"
+    );
+
+    Serial.print(
+      "Identidade: "
+    );
+
+    Serial.println(
+      rede.identidade
+    );
+
+    Serial.print(
+      "Usuario: "
+    );
+
+    Serial.println(
+      rede.usuario
+    );
+
+
+    /*
+      WPA2 Enterprise / PEAP
+
+      Ordem:
+      SSID
+      método
+      identidade
+      usuário
+      senha
+    */
+
+    WiFi.begin(
+      rede.ssid,
+      WPA2_AUTH_PEAP,
+      rede.identidade,
+      rede.usuario,
+      rede.senha
+    );
+  }
+
+
+  unsigned long inicio =
+    millis();
+
+
+  while (
+    WiFi.status() != WL_CONNECTED
+    &&
+    millis() - inicio < 20000
+  ) {
+
+    delay(500);
+
+    Serial.print(".");
+  }
+
+
+  Serial.println();
+
+
+  if (
+    WiFi.status() != WL_CONNECTED
+  ) {
+
+    Serial.println(
+      "Falha ao conectar nesta rede."
+    );
+
     return false;
   }
 
-  Serial.printf("Conectado! IP: %s | sinal: %d dBm\n",
-                WiFi.localIP().toString().c_str(), WiFi.RSSI());
+
+  redeAtual = indice;
+
+
+  Serial.println();
+
+  Serial.println(
+    "************************************"
+  );
+
+  Serial.println(
+    "WI-FI CONECTADO!"
+  );
+
+  Serial.print(
+    "Rede: "
+  );
+
+  Serial.println(
+    rede.ssid
+  );
+
+  Serial.print(
+    "IP: "
+  );
+
+  Serial.println(
+    WiFi.localIP()
+  );
+
+  Serial.print(
+    "RSSI: "
+  );
+
+  Serial.println(
+    WiFi.RSSI()
+  );
+
+  Serial.println(
+    "************************************"
+  );
+
+
   return true;
 }
 
-// ===============================================================
-// HTTP
-// ===============================================================
-int postJSON(const char* caminho, const String& corpo,
-             unsigned long timeoutMs, String* resposta = nullptr) {
-  WiFiClientSecure client;
-  client.setInsecure();
 
-  HTTPClient http;
-  String url = String(SERVER_URL) + caminho;
+// ============================================================
+// CONECTAR WI-FI
+// ============================================================
 
-  if (!http.begin(client, url)) return -1;
+bool conectarWiFi() {
 
-  http.setTimeout(timeoutMs);
-  http.addHeader("Content-Type", "application/json");
+  if (
+    WiFi.status() == WL_CONNECTED
+  ) {
 
-  int codigo = http.POST(corpo);
-
-  if (codigo > 0) {
-    String r = http.getString();
-    if (resposta) *resposta = r;
-  } else {
-    Serial.printf("Erro HTTP: %s\n", http.errorToString(codigo).c_str());
+    return true;
   }
 
-  http.end();
-  return codigo;
+
+  Serial.println();
+
+  Serial.println(
+    "===================================="
+  );
+
+  Serial.println(
+    "PROCURANDO REDES CONFIGURADAS"
+  );
+
+  Serial.println(
+    "===================================="
+  );
+
+
+  /*
+    Primeiro fazemos uma varredura.
+
+    Isso evita ficar esperando 20 segundos
+    por uma rede que nem está disponível.
+  */
+
+  int quantidadeRedes =
+    WiFi.scanNetworks(
+      false,
+      true
+    );
+
+
+  Serial.print(
+    "Redes encontradas: "
+  );
+
+  Serial.println(
+    quantidadeRedes
+  );
+
+
+  // ----------------------------------------------------------
+  // TENTAR REDES NA ORDEM DO secrets.h
+  // ----------------------------------------------------------
+
+  for (
+    int i = 0;
+    i < NUM_REDES;
+    i++
+  ) {
+
+    bool encontrada = false;
+
+
+    for (
+      int j = 0;
+      j < quantidadeRedes;
+      j++
+    ) {
+
+      if (
+        WiFi.SSID(j) ==
+        String(REDES[i].ssid)
+      ) {
+
+        encontrada = true;
+
+        Serial.print(
+          "Rede encontrada: "
+        );
+
+        Serial.println(
+          REDES[i].ssid
+        );
+
+        break;
+      }
+    }
+
+
+    if (!encontrada) {
+
+      Serial.print(
+        "Rede não encontrada: "
+      );
+
+      Serial.println(
+        REDES[i].ssid
+      );
+
+      continue;
+    }
+
+
+    if (
+      conectarRede(
+        REDES[i],
+        i
+      )
+    ) {
+
+      WiFi.scanDelete();
+
+      return true;
+    }
+  }
+
+
+  WiFi.scanDelete();
+
+
+  // ----------------------------------------------------------
+  // SEGUNDA TENTATIVA
+  // ----------------------------------------------------------
+
+  Serial.println();
+
+  Serial.println(
+    "Nenhuma conexão foi estabelecida."
+  );
+
+  Serial.println(
+    "Tentando as redes diretamente..."
+  );
+
+
+  for (
+    int i = 0;
+    i < NUM_REDES;
+    i++
+  ) {
+
+    if (
+      conectarRede(
+        REDES[i],
+        i
+      )
+    ) {
+
+      return true;
+    }
+  }
+
+
+  Serial.println();
+
+  Serial.println(
+    "ERRO: Wi-Fi não conectado."
+  );
+
+  return false;
 }
 
-bool testarServidor() {
+
+// ============================================================
+// AVISAR SERVIDOR ONLINE
+// ============================================================
+
+bool avisarOnline() {
+
+  if (!conectarWiFi()) {
+
+    return false;
+  }
+
+
   WiFiClientSecure client;
+
   client.setInsecure();
 
-  HTTPClient http;
-  if (!http.begin(client, String(SERVER_URL) + "/health")) return false;
 
-  http.setTimeout(HTTP_TIMEOUT_RFID_MS);
-  int codigo = http.GET();
-  Serial.printf("Servidor /health: %d\n", codigo);
+  HTTPClient http;
+
+
+  String url =
+    String(SERVER_URL) +
+    "/api/esp32/online";
+
+
+  if (
+    !http.begin(
+      client,
+      url
+    )
+  ) {
+
+    Serial.println(
+      "Erro ao iniciar HTTPS online."
+    );
+
+    return false;
+  }
+
+
+  http.setTimeout(
+    HTTP_TIMEOUT_RFID
+  );
+
+
+  http.addHeader(
+    "Content-Type",
+    "application/json"
+  );
+
+
+  String body =
+    String("{\"ip\":\"") +
+    WiFi.localIP().toString() +
+    "\"}";
+
+
+  int codigo =
+    http.POST(body);
+
+
+  Serial.print(
+    "Online HTTP: "
+  );
+
+  Serial.println(
+    codigo
+  );
+
+
   http.end();
 
-  return codigo == 200;
+
+  if (codigo > 0) {
+
+    ultimoPing =
+      millis();
+
+    return true;
+  }
+
+
+  return false;
 }
 
-void avisarOnline() {
-  String corpo = String("{\"ip\":\"") + WiFi.localIP().toString() + "\"}";
-  int codigo = postJSON("/api/esp32/online", corpo, HTTP_TIMEOUT_PING_MS);
-  Serial.printf("Ping do servidor: %d\n", codigo);
-  ultimoPing = millis();
-}
 
-void enviarRFID(const String& uid) {
+// ============================================================
+// ENVIAR RFID
+// ============================================================
+
+bool tentarEnviarRFID(
+  const String& uid
+) {
+
   if (!conectarWiFi()) {
-    Serial.println("Sem Wi-Fi. Tag nao enviada.");
+
+    return false;
+  }
+
+
+  WiFiClientSecure client;
+
+  client.setInsecure();
+
+
+  HTTPClient http;
+
+
+  String url =
+    String(SERVER_URL) +
+    "/api/esp32/rfid";
+
+
+  if (
+    !http.begin(
+      client,
+      url
+    )
+  ) {
+
+    Serial.println(
+      "ERRO ao iniciar HTTPS RFID."
+    );
+
+    return false;
+  }
+
+
+  http.setTimeout(
+    HTTP_TIMEOUT_RFID
+  );
+
+
+  http.addHeader(
+    "Content-Type",
+    "application/json"
+  );
+
+
+  String body =
+    String("{\"uid\":\"") +
+    uid +
+    "\",\"leitor\":\"entrada\"}";
+
+
+  Serial.println();
+
+  Serial.println(
+    "ENVIANDO RFID:"
+  );
+
+  Serial.println(
+    body
+  );
+
+
+  int codigo =
+    http.POST(body);
+
+
+  Serial.print(
+    "HTTP RFID: "
+  );
+
+  Serial.println(
+    codigo
+  );
+
+
+  if (codigo > 0) {
+
+    String resposta =
+      http.getString();
+
+
+    Serial.println(
+      "Resposta:"
+    );
+
+    Serial.println(
+      resposta
+    );
+
+
+    http.end();
+
+    return true;
+  }
+
+
+  Serial.print(
+    "Erro HTTP: "
+  );
+
+  Serial.println(
+    http.errorToString(
+      codigo
+    )
+  );
+
+
+  http.end();
+
+  return false;
+}
+
+
+// ============================================================
+// ENVIAR RFID COM RETENTATIVA
+// ============================================================
+
+void enviarRFID(
+  const String& uid
+) {
+
+  if (!conectarWiFi()) {
+
+    Serial.println(
+      "Sem Wi-Fi. RFID não enviado."
+    );
+
     return;
   }
 
-  String corpo = String("{\"uid\":\"") + uid +
-                 "\",\"leitor\":\"entrada\",\"tipo\":\"rfid\"}";
-  String resposta;
-  int codigo = -1;
 
-  for (int tentativa = 1; tentativa <= 2; tentativa++) {
-    codigo = postJSON("/api/esp32/rfid", corpo, HTTP_TIMEOUT_RFID_MS, &resposta);
-    if (codigo > 0) break;  // qualquer resposta do servidor conta como entregue
+  bool sucesso =
+    tentarEnviarRFID(uid);
 
-    Serial.println("Falhou. Tentando de novo em 2 s...");
+
+  if (!sucesso) {
+
+    Serial.println(
+      "Tentando novamente em 2 segundos..."
+    );
+
+
     delay(2000);
-    if (WiFi.status() != WL_CONNECTED) conectarWiFi();
+
+
+    sucesso =
+      tentarEnviarRFID(uid);
   }
+
+
+  if (!sucesso) {
+
+    Serial.println(
+      "Falha definitiva no envio RFID."
+    );
+  }
+}
+
+
+// ============================================================
+// EXTRAIR STRING DO JSON
+// ============================================================
+
+String extrairStringJSON(
+  const String& json,
+  const String& chave
+) {
+
+  String procura =
+    String("\"") +
+    chave +
+    "\"";
+
+
+  int inicio =
+    json.indexOf(procura);
+
+
+  if (inicio < 0) {
+
+    return "";
+  }
+
+
+  inicio =
+    json.indexOf(
+      ':',
+      inicio
+    );
+
+
+  if (inicio < 0) {
+
+    return "";
+  }
+
+
+  inicio++;
+
+
+  while (
+    inicio < (int)json.length()
+    &&
+    (
+      json[inicio] == ' '
+      ||
+      json[inicio] == '"'
+    )
+  ) {
+
+    inicio++;
+  }
+
+
+  int fim =
+    json.indexOf(
+      '"',
+      inicio
+    );
+
+
+  if (fim < 0) {
+
+    return "";
+  }
+
+
+  return json.substring(
+    inicio,
+    fim
+  );
+}
+
+
+// ============================================================
+// EXTRAIR NÚMERO DO JSON
+// ============================================================
+
+long extrairLongJSON(
+  const String& json,
+  const String& chave
+) {
+
+  String procura =
+    String("\"") +
+    chave +
+    "\"";
+
+
+  int inicio =
+    json.indexOf(procura);
+
+
+  if (inicio < 0) {
+
+    return 0;
+  }
+
+
+  inicio =
+    json.indexOf(
+      ':',
+      inicio
+    );
+
+
+  if (inicio < 0) {
+
+    return 0;
+  }
+
+
+  inicio++;
+
+
+  while (
+    inicio < (int)json.length()
+    &&
+    (
+      json[inicio] == ' '
+      ||
+      json[inicio] == '"'
+    )
+  ) {
+
+    inicio++;
+  }
+
+
+  int fim = inicio;
+
+
+  while (
+    fim < (int)json.length()
+    &&
+    json[fim] >= '0'
+    &&
+    json[fim] <= '9'
+  ) {
+
+    fim++;
+  }
+
+
+  if (fim == inicio) {
+
+    return 0;
+  }
+
+
+  return json.substring(
+    inicio,
+    fim
+  ).toInt();
+}
+
+
+// ============================================================
+// CONFIRMAR COMANDO
+// ============================================================
+
+bool confirmarComando(
+  long id
+) {
+
+  if (!conectarWiFi()) {
+
+    return false;
+  }
+
+
+  WiFiClientSecure client;
+
+  client.setInsecure();
+
+
+  HTTPClient http;
+
+
+  String url =
+    String(SERVER_URL) +
+    "/api/esp32/comando/confirmar";
+
+
+  if (
+    !http.begin(
+      client,
+      url
+    )
+  ) {
+
+    return false;
+  }
+
+
+  http.setTimeout(
+    HTTP_TIMEOUT_COMANDO
+  );
+
+
+  http.addHeader(
+    "Content-Type",
+    "application/json"
+  );
+
+
+  String body =
+    String("{\"id\":") +
+    String(id) +
+    "}";
+
+
+  int codigo =
+    http.POST(body);
+
 
   if (codigo > 0) {
-    Serial.printf("HTTP %d | %s\n", codigo, resposta.c_str());
 
-    // O servidor autorizou a operação: libera a fechadura.
-    if (resposta.indexOf("\"tipo\":\"retirada_concluida\"") >= 0 ||
-        resposta.indexOf("\"tipo\":\"devolucao_concluida\"") >= 0 ||
-        resposta.indexOf("\"abrir\":true") >= 0) {
-      abrirFechadura();
+    Serial.print(
+      "Comando "
+    );
+
+    Serial.print(
+      id
+    );
+
+    Serial.println(
+      " confirmado no servidor."
+    );
+
+
+    http.end();
+
+    return true;
+  }
+
+
+  Serial.println(
+    "Não foi possível confirmar o comando."
+  );
+
+
+  http.end();
+
+  return false;
+}
+
+
+// ============================================================
+// CONSULTAR COMANDO DA TRAVA
+// ============================================================
+
+void consultarComando() {
+
+  if (
+    WiFi.status() != WL_CONNECTED
+  ) {
+
+    return;
+  }
+
+
+  WiFiClientSecure client;
+
+  client.setInsecure();
+
+
+  HTTPClient http;
+
+
+  String url =
+    String(SERVER_URL) +
+    "/api/esp32/comando";
+
+
+  if (
+    !http.begin(
+      client,
+      url
+    )
+  ) {
+
+    return;
+  }
+
+
+  http.setTimeout(
+    HTTP_TIMEOUT_COMANDO
+  );
+
+
+  int codigo =
+    http.GET();
+
+
+  if (codigo <= 0) {
+
+    http.end();
+
+    return;
+  }
+
+
+  String resposta =
+    http.getString();
+
+
+  http.end();
+
+
+  long id =
+    extrairLongJSON(
+      resposta,
+      "id"
+    );
+
+
+  String tipo =
+    extrairStringJSON(
+      resposta,
+      "tipo"
+    );
+
+
+  long tempo =
+    extrairLongJSON(
+      resposta,
+      "tempo_liberacao_ms"
+    );
+
+
+  if (id <= 0) {
+
+    return;
+  }
+
+
+  if (
+    tipo != "liberar_caixa"
+  ) {
+
+    return;
+  }
+
+
+  // ==========================================================
+  // NOVO COMANDO
+  // ==========================================================
+
+  if (
+    id != ultimoComandoExecutado
+  ) {
+
+    ultimoComandoExecutado =
+      id;
+
+
+    Serial.println();
+
+    Serial.println(
+      "=============================="
+    );
+
+    Serial.println(
+      "NOVO COMANDO DA TRAVA"
+    );
+
+    Serial.print(
+      "ID: "
+    );
+
+    Serial.println(
+      id
+    );
+
+    Serial.print(
+      "Tempo: "
+    );
+
+    Serial.println(
+      tempo
+    );
+
+    Serial.println(
+      "=============================="
+    );
+
+
+    if (tempo <= 0) {
+
+      tempo =
+        TEMPO_TRAVA_PADRAO;
     }
-  } else {
-    Serial.println("NAO FOI POSSIVEL ENVIAR A TAG.");
+
+
+    liberarTrava(
+      (unsigned long)tempo
+    );
+
+
+    if (
+      confirmarComando(id)
+    ) {
+
+      ultimoComandoConfirmado =
+        id;
+    }
+
+
+    ultimaTentativaConfirmacao =
+      millis();
   }
 
-  ultimoPing = millis();
-}
 
-// ===============================================================
-// RC522
-// ===============================================================
-void inicializarRC522() {
-  SPI.begin();
-  rfid.PCD_Init();
-  delay(100);
-  rfid.PCD_SetAntennaGain(MFRC522::RxGain_max);
+  // ==========================================================
+  // SE EXECUTOU MAS NÃO CONFIRMOU
+  // ==========================================================
 
-  byte versao = rfid.PCD_ReadRegister(MFRC522::VersionReg);
-  Serial.printf("Versao RC522: 0x%02X\n", versao);
+  else if (
+    id != ultimoComandoConfirmado
+    &&
+    millis() -
+    ultimaTentativaConfirmacao
+    >=
+    INTERVALO_RECONFIRMACAO
+  ) {
 
-  if (versao == 0x00 || versao == 0xFF) {
-    Serial.println("ATENCAO: RC522 nao detectado. Confira a ligacao e os 3.3V.");
-  } else {
-    Serial.println("RC522 OK.");
+    if (
+      confirmarComando(id)
+    ) {
+
+      ultimoComandoConfirmado =
+        id;
+    }
+
+
+    ultimaTentativaConfirmacao =
+      millis();
   }
 }
 
-// ===============================================================
-// SETUP / LOOP
-// ===============================================================
+
+// ============================================================
+// SETUP
+// ============================================================
+
 void setup() {
+
   Serial.begin(115200);
 
-  pinMode(PIN_RELE, OUTPUT);
-  fechadura(false);  // sempre começa travada
+  delay(1000);
 
-  delay(1500);
-  Serial.println("\n=== INVENTARIO RFID ===");
 
-  inicializarRC522();
+  Serial.println();
 
-  if (conectarWiFi()) {
-    testarServidor();
+  Serial.println(
+    "===================================="
+  );
+
+  Serial.println(
+    " INVENTÁRIO RFID"
+  );
+
+  Serial.println(
+    " ESP32 + RC522 + TRAVA"
+  );
+
+  Serial.println(
+    " TRAVA = GPIO 4"
+  );
+
+  Serial.println(
+    " ABERTURA = 5 SEGUNDOS"
+  );
+
+  Serial.println(
+    "===================================="
+  );
+
+
+  // ==========================================================
+  // TRAVA
+  // ==========================================================
+
+  pinMode(
+    TRAVA_PIN,
+    OUTPUT
+  );
+
+
+  travaNormal();
+
+
+  Serial.println(
+    "GPIO 4 configurado."
+  );
+
+
+  // ==========================================================
+  // SPI
+  // ==========================================================
+
+  SPI.begin();
+
+
+  // ==========================================================
+  // RC522
+  // ==========================================================
+
+  rfid.PCD_Init();
+
+  delay(100);
+
+
+  rfid.PCD_SetAntennaGain(
+    MFRC522::RxGain_max
+  );
+
+
+  byte versao =
+    rfid.PCD_ReadRegister(
+      MFRC522::VersionReg
+    );
+
+
+  Serial.print(
+    "Versão RC522: 0x"
+  );
+
+  Serial.println(
+    versao,
+    HEX
+  );
+
+
+  if (
+    versao == 0x00
+    ||
+    versao == 0xFF
+  ) {
+
+    Serial.println(
+      "ATENÇÃO: RC522 não detectado corretamente."
+    );
+
+  } else {
+
+    Serial.println(
+      "RC522 detectado corretamente."
+    );
+  }
+
+
+  // ==========================================================
+  // WI-FI
+  // ==========================================================
+
+  conectarWiFi();
+
+
+  delay(500);
+
+
+  // ==========================================================
+  // SERVIDOR
+  // ==========================================================
+
+  if (
+    WiFi.status() == WL_CONNECTED
+  ) {
+
     avisarOnline();
   }
 
-  Serial.println("Sistema pronto. Aproxime uma tag...");
-  Serial.println("(Teste da fechadura: digite 'a' no Monitor Serial e envie)");
+
+  Serial.println();
+
+  Serial.println(
+    "SISTEMA PRONTO."
+  );
+
+  Serial.println(
+    "Aproxime uma tag..."
+  );
 }
 
+
+// ============================================================
+// LOOP
+// ============================================================
+
 void loop() {
-  atualizarFechadura();
 
-  // Teste manual da fechadura pelo Monitor Serial
-  if (Serial.available()) {
-    char c = Serial.read();
-    if (c == 'a' || c == 'A') abrirFechadura();
-  }
+  // ----------------------------------------------------------
+  // ATUALIZAR TRAVA
+  // ----------------------------------------------------------
 
-  // Sem Wi-Fi: tenta de novo; depois de 3 falhas reinicia (limpa o estado da rede)
-  if (WiFi.status() != WL_CONNECTED) {
-    if (millis() - ultimaTentativaWiFi > 10000) {
-      ultimaTentativaWiFi = millis();
+  atualizarTrava();
 
-      if (conectarWiFi()) {
-        falhasWiFi = 0;
-        testarServidor();
-        avisarOnline();
-      } else if (++falhasWiFi >= MAX_FALHAS_WIFI) {
-        Serial.println("Reiniciando o ESP32...");
-        delay(500);
-        ESP.restart();
-      }
+
+  // ----------------------------------------------------------
+  // WI-FI
+  // ----------------------------------------------------------
+
+  if (
+    WiFi.status() != WL_CONNECTED
+  ) {
+
+    Serial.println();
+
+    Serial.println(
+      "Wi-Fi desconectado."
+    );
+
+    if (
+      conectarWiFi()
+    ) {
+
+      avisarOnline();
     }
-    delay(100);
+
+
+    delay(500);
+  }
+
+
+  // ----------------------------------------------------------
+  // PING
+  // ----------------------------------------------------------
+
+  if (
+    WiFi.status() == WL_CONNECTED
+    &&
+    millis() -
+    ultimoPing
+    >
+    INTERVALO_PING
+  ) {
+
+    avisarOnline();
+  }
+
+
+  // ----------------------------------------------------------
+  // CONSULTAR COMANDO DA TRAVA
+  // ----------------------------------------------------------
+
+  if (
+    WiFi.status() == WL_CONNECTED
+    &&
+    millis() -
+    ultimaConsultaComando
+    >=
+    INTERVALO_COMANDO
+  ) {
+
+    ultimaConsultaComando =
+      millis();
+
+
+    consultarComando();
+  }
+
+
+  // ----------------------------------------------------------
+  // RFID
+  // ----------------------------------------------------------
+
+  if (
+    !rfid.PICC_IsNewCardPresent()
+  ) {
+
+    delay(30);
+
     return;
   }
 
-  // Mantém o servidor acordado e o status "ESP32 online" no site
-  if (millis() - ultimoPing > INTERVALO_PING) avisarOnline();
 
-  if (!rfid.PICC_IsNewCardPresent() || !rfid.PICC_ReadCardSerial()) {
-    delay(50);
+  if (
+    !rfid.PICC_ReadCardSerial()
+  ) {
+
+    delay(30);
+
     return;
   }
 
-  String uid = uidParaString();
 
-  if (uid == ultimoUID && millis() - ultimaLeitura < ANTI_DUPLICACAO_MS) {
+  String uid =
+    uidParaString();
+
+
+  // ----------------------------------------------------------
+  // EVITAR DUPLICAÇÃO
+  // ----------------------------------------------------------
+
+  if (
+    uid == ultimoUID
+    &&
+    millis() -
+    ultimaLeitura
+    <
+    TEMPO_ANTI_DUPLICACAO
+  ) {
+
     rfid.PICC_HaltA();
+
     rfid.PCD_StopCrypto1();
+
     delay(100);
+
     return;
   }
 
-  ultimoUID = uid;
-  ultimaLeitura = millis();
 
-  Serial.printf("\nTAG: %s (%d bytes)\n", uid.c_str(), rfid.uid.size);
+  ultimoUID =
+    uid;
+
+  ultimaLeitura =
+    millis();
+
+
+  // ----------------------------------------------------------
+  // MOSTRAR TAG
+  // ----------------------------------------------------------
+
+  Serial.println();
+
+  Serial.println(
+    "=============================="
+  );
+
+  Serial.println(
+    "TAG DETECTADA"
+  );
+
+  Serial.print(
+    "UID: "
+  );
+
+  Serial.println(
+    uid
+  );
+
+  Serial.print(
+    "Tamanho: "
+  );
+
+  Serial.print(
+    rfid.uid.size
+  );
+
+  Serial.println(
+    " bytes"
+  );
+
+  Serial.println(
+    "=============================="
+  );
+
+
+  // ----------------------------------------------------------
+  // ENVIAR AO SERVIDOR
+  // ----------------------------------------------------------
 
   enviarRFID(uid);
 
+
+  // ----------------------------------------------------------
+  // ENCERRAR LEITURA RC522
+  // ----------------------------------------------------------
+
   rfid.PICC_HaltA();
+
   rfid.PCD_StopCrypto1();
+
+
   delay(150);
 }

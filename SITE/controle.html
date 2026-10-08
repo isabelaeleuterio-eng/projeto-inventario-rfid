@@ -2,2949 +2,1500 @@
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta charset="UTF-8">
 
-    <title>Controle | Inventário RFID</title>
+<meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+>
 
-    <style>
+<title>Controle | Inventário RFID</title>
 
-        :root {
-            --bg: #f4f7fb;
-            --card: #ffffff;
-            --border: #e2e8f0;
+<style>
 
-            --text: #172033;
-            --muted: #64748b;
+* {
+    box-sizing: border-box;
+}
 
-            --blue: #2563eb;
-            --blue-dark: #1d4ed8;
-            --blue-light: #eff6ff;
+body {
+    margin: 0;
 
-            --green: #16a34a;
-            --green-light: #f0fdf4;
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
-            --red: #dc2626;
-            --red-light: #fef2f2;
+    background: #f4f7fb;
 
-            --orange: #d97706;
-            --orange-light: #fffbeb;
+    color: #172033;
+}
 
-            --gray-light: #f8fafc;
+.app {
+    min-height: 100vh;
 
-            --shadow:
-                0 12px 35px rgba(
-                    15,
-                    23,
-                    42,
-                    .08
-                );
+    display: flex;
+}
 
-            --radius: 18px;
-        }
+.sidebar {
+    position: fixed;
 
+    left: 0;
+    top: 0;
+    bottom: 0;
 
-        * {
-            box-sizing: border-box;
-        }
+    width: 245px;
 
+    background: #101827;
 
-        html {
-            scroll-behavior: smooth;
-        }
+    color: white;
 
+    padding: 24px 14px;
+}
 
-        body {
-            margin: 0;
+.brand {
+    display: flex;
 
-            font-family:
-                Inter,
-                system-ui,
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                sans-serif;
+    gap: 12px;
 
-            background: var(--bg);
+    align-items: center;
 
-            color: var(--text);
-        }
+    padding:
+        0 8px 22px;
 
+    border-bottom:
+        1px solid
+        #ffffff14;
+}
 
-        button,
-        input,
-        select {
-            font: inherit;
-        }
+.brand-icon {
+    width: 44px;
+    height: 44px;
 
+    border-radius: 12px;
 
-        button {
-            cursor: pointer;
-        }
+    background: #2563eb;
 
+    display: grid;
 
-        /* =====================================================
-           LAYOUT
-        ===================================================== */
+    place-items: center;
+}
 
-        .app {
-            min-height: 100vh;
+.brand h1 {
+    font-size: 16px;
 
-            display: flex;
-        }
+    margin: 0;
+}
 
+.brand p {
+    font-size: 11px;
 
-        /* =====================================================
-           SIDEBAR
-        ===================================================== */
+    color: #94a3b8;
 
-        .sidebar {
-            position: fixed;
+    margin: 4px 0 0;
+}
 
-            left: 0;
-            top: 0;
-            bottom: 0;
+.menu {
+    padding-top: 22px;
+}
 
-            width: 245px;
+.menu a {
+    display: block;
 
-            background:
-                linear-gradient(
-                    180deg,
-                    #101827 0%,
-                    #182438 100%
-                );
+    color: #cbd5e1;
 
-            color: white;
+    text-decoration: none;
 
-            display: flex;
-            flex-direction: column;
+    padding: 12px;
 
-            z-index: 100;
-        }
+    border-radius: 10px;
 
+    margin-bottom: 5px;
 
-        .brand {
-            padding: 25px 21px;
+    font-weight: 700;
 
-            display: flex;
-            align-items: center;
+    font-size: 13px;
+}
 
-            gap: 12px;
+.menu a.active,
+.menu a:hover {
+    background: #2563eb;
 
-            border-bottom:
-                1px solid
-                rgba(
-                    255,
-                    255,
-                    255,
-                    .08
-                );
-        }
+    color: white;
+}
 
+.main {
+    margin-left: 245px;
 
-        .brand-icon {
-            width: 45px;
-            height: 45px;
+    width:
+        calc(100% - 245px);
 
-            border-radius: 13px;
+    min-height: 100vh;
+}
 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+.top {
+    height: 74px;
 
-            background:
-                linear-gradient(
-                    135deg,
-                    #3b82f6,
-                    #1d4ed8
-                );
+    background: white;
 
-            font-size: 22px;
+    border-bottom:
+        1px solid
+        #e2e8f0;
 
-            box-shadow:
-                0 8px 22px
-                rgba(
-                    37,
-                    99,
-                    235,
-                    .35
-                );
-        }
+    display: flex;
 
+    align-items: center;
 
-        .brand-title {
-            font-size: 16px;
-            font-weight: 800;
-        }
+    justify-content: space-between;
 
+    padding:
+        0 34px;
+}
 
-        .brand-subtitle {
-            margin-top: 3px;
+.top h2 {
+    margin: 0;
 
-            color: #94a3b8;
+    font-size: 18px;
+}
 
-            font-size: 11px;
-        }
+.top p {
+    margin:
+        4px 0 0;
 
+    color: #64748b;
 
-        .menu {
-            padding: 22px 12px;
-        }
+    font-size: 11px;
+}
 
+.content {
+    max-width: 1250px;
 
-        .menu-label {
-            padding: 0 12px 9px;
+    margin: auto;
 
-            color: #64748b;
+    padding:
+        30px 25px;
+}
 
-            font-size: 10px;
-            font-weight: 800;
+.cards {
+    display: grid;
 
-            text-transform: uppercase;
+    grid-template-columns:
+        repeat(4, 1fr);
 
-            letter-spacing: 1px;
-        }
+    gap: 15px;
+}
 
+.metric {
+    background: white;
 
-        .menu a {
-            display: flex;
-            align-items: center;
+    border:
+        1px solid
+        #e2e8f0;
 
-            gap: 12px;
+    border-radius: 15px;
 
-            padding: 13px 14px;
+    padding: 20px;
+}
 
-            margin-bottom: 6px;
+.metric span {
+    display: block;
 
-            border-radius: 12px;
+    color: #64748b;
 
-            color: #cbd5e1;
+    font-size: 11px;
 
-            text-decoration: none;
+    font-weight: 800;
 
-            font-size: 14px;
-            font-weight: 700;
+    text-transform:
+        uppercase;
+}
 
-            transition: .2s ease;
-        }
+.metric strong {
+    display: block;
 
+    font-size: 30px;
 
-        .menu a:hover {
-            background:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    .07
-                );
+    margin-top: 7px;
+}
 
-            color: white;
-        }
+.section {
+    background: white;
 
+    border:
+        1px solid
+        #e2e8f0;
 
-        .menu a.active {
-            background: #2563eb;
+    border-radius: 15px;
 
-            color: white;
+    margin-top: 20px;
 
-            box-shadow:
-                0 8px 20px
-                rgba(
-                    37,
-                    99,
-                    235,
-                    .28
-                );
-        }
+    overflow: hidden;
+}
 
+.section-head {
+    padding:
+        18px 20px;
 
-        .menu-icon {
-            width: 24px;
+    border-bottom:
+        1px solid
+        #e2e8f0;
 
-            text-align: center;
+    display: flex;
 
-            font-size: 17px;
-        }
+    justify-content:
+        space-between;
 
+    align-items: center;
+}
 
-        .sidebar-footer {
-            margin-top: auto;
+.section h3 {
+    margin: 0;
 
-            padding: 20px;
-        }
+    font-size: 16px;
+}
 
+.refresh {
+    border:
+        1px solid
+        #cbd5e1;
 
-        .connection {
-            display: flex;
-            align-items: center;
+    background: white;
 
-            gap: 9px;
+    padding:
+        9px 12px;
 
-            padding: 11px 13px;
+    border-radius: 8px;
 
-            border-radius: 10px;
+    font-weight: 800;
 
-            background:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    .06
-                );
+    cursor: pointer;
+}
 
-            color: #cbd5e1;
+.table {
+    overflow: auto;
+}
 
-            font-size: 11px;
-        }
+table {
+    width: 100%;
 
+    border-collapse:
+        collapse;
 
-        .connection-dot {
-            width: 8px;
-            height: 8px;
+    min-width: 700px;
+}
 
-            border-radius: 50%;
+th,
+td {
+    text-align: left;
 
-            background: #22c55e;
+    padding:
+        13px 16px;
 
-            flex-shrink: 0;
-        }
+    border-bottom:
+        1px solid
+        #eef2f7;
 
+    font-size: 12px;
+}
 
-        .connection-dot.offline {
-            background: #ef4444;
-        }
+th {
+    background: #f8fafc;
 
+    color: #64748b;
 
-        /* =====================================================
-           MAIN
-        ===================================================== */
+    text-transform:
+        uppercase;
 
-        .main {
-            margin-left: 245px;
+    font-size: 10px;
+}
 
-            width:
-                calc(
-                    100% - 245px
-                );
+.badge {
+    display: inline-block;
 
-            min-height: 100vh;
-        }
+    padding:
+        5px 9px;
 
+    border-radius: 20px;
 
-        .topbar {
-            height: 72px;
+    font-size: 10px;
 
-            background: white;
+    font-weight: 800;
+}
 
-            border-bottom:
-                1px solid
-                var(--border);
+.green {
+    background: #dcfce7;
 
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+    color: #166534;
+}
 
-            padding: 0 30px;
-        }
+.red {
+    background: #fee2e2;
 
+    color: #991b1b;
+}
 
-        .top-title {
-            display: flex;
-            flex-direction: column;
+.gray {
+    background: #e2e8f0;
 
-            gap: 3px;
-        }
+    color: #475569;
+}
 
+.orange {
+    background: #fef3c7;
 
-        .top-title strong {
-            font-size: 17px;
-        }
+    color: #92400e;
+}
 
+.action {
+    border:
+        1px solid
+        #fecaca;
 
-        .top-title span {
-            color: var(--muted);
+    background: white;
 
-            font-size: 12px;
-        }
+    color: #dc2626;
 
+    border-radius: 7px;
 
-        .server {
-            display: flex;
-            align-items: center;
+    padding:
+        7px 9px;
 
-            gap: 8px;
+    font-weight: 800;
 
-            padding: 8px 13px;
+    cursor: pointer;
+}
 
-            border-radius: 30px;
+.msg {
+    display: none;
 
-            background:
-                var(--green-light);
+    margin-bottom: 15px;
 
-            color:
-                var(--green);
+    padding: 12px;
 
-            font-size: 12px;
-            font-weight: 800;
+    border-radius: 9px;
 
-            border:
-                1px solid
-                #bbf7d0;
-        }
+    font-weight: 700;
+}
 
+.msg.show {
+    display: block;
+}
 
-        .server-dot {
-            width: 8px;
-            height: 8px;
+.msg.success {
+    background: #ecfdf3;
 
-            border-radius: 50%;
+    color: #15803d;
+}
 
-            background:
-                var(--green);
-        }
+.msg.error {
+    background: #fef2f2;
 
+    color: #b91c1c;
+}
 
-        .server.offline {
-            background:
-                var(--red-light);
+@media(max-width:850px) {
 
-            color:
-                var(--red);
+    .sidebar {
+        position: static;
 
-            border-color:
-                #fecaca;
-        }
+        width: 100%;
 
+        height: auto;
+    }
 
-        .server.offline .server-dot {
-            background:
-                var(--red);
-        }
+    .app {
+        display: block;
+    }
 
+    .main {
+        margin-left: 0;
 
-        .content {
-            width:
-                min(
-                    1250px,
-                    calc(
-                        100% - 48px
-                    )
-                );
+        width: 100%;
+    }
 
-            margin:
-                0 auto;
+    .menu {
+        display: flex;
 
-            padding:
-                38px 0 60px;
-        }
+        gap: 6px;
+    }
 
+    .menu a {
+        flex: 1;
 
-        /* =====================================================
-           PAGE HEADER
-        ===================================================== */
+        text-align: center;
+    }
 
-        .page-header {
-            margin-bottom:
-                28px;
-        }
+    .cards {
+        grid-template-columns:
+            repeat(
+                2,
+                1fr
+            );
+    }
 
+    .top {
+        padding:
+            0 16px;
+    }
 
-        .kicker {
-            color:
-                var(--blue);
+}
 
-            font-size: 11px;
-            font-weight: 900;
+@media(max-width:500px) {
 
-            text-transform:
-                uppercase;
+    .cards {
+        grid-template-columns:
+            1fr;
+    }
 
-            letter-spacing:
-                1px;
+}
 
-            margin-bottom:
-                8px;
-        }
+</style>
 
-
-        .page-header h1 {
-            margin: 0;
-
-            font-size:
-                clamp(
-                    30px,
-                    4vw,
-                    44px
-                );
-
-            letter-spacing:
-                -.8px;
-        }
-
-
-        .page-header p {
-            margin:
-                9px 0 0;
-
-            color:
-                var(--muted);
-
-            max-width:
-                760px;
-
-            line-height:
-                1.6;
-
-            font-size:
-                14px;
-        }
-
-
-        /* =====================================================
-           DASHBOARD
-        ===================================================== */
-
-        .stats {
-            display: grid;
-
-            grid-template-columns:
-                repeat(
-                    4,
-                    minmax(
-                        0,
-                        1fr
-                    )
-                );
-
-            gap: 16px;
-
-            margin-bottom:
-                26px;
-        }
-
-
-        .stat {
-            background:
-                var(--card);
-
-            border:
-                1px solid
-                var(--border);
-
-            border-radius:
-                var(--radius);
-
-            padding:
-                20px;
-
-            box-shadow:
-                var(--shadow);
-        }
-
-
-        .stat-label {
-            color:
-                var(--muted);
-
-            font-size:
-                12px;
-
-            font-weight:
-                700;
-        }
-
-
-        .stat-value {
-            margin-top:
-                8px;
-
-            font-size:
-                30px;
-
-            font-weight:
-                900;
-        }
-
-
-        .stat.blue .stat-value {
-            color:
-                var(--blue);
-        }
-
-
-        .stat.green .stat-value {
-            color:
-                var(--green);
-        }
-
-
-        .stat.orange .stat-value {
-            color:
-                var(--orange);
-        }
-
-
-        .stat.red .stat-value {
-            color:
-                var(--red);
-        }
-
-
-        /* =====================================================
-           CARDS
-        ===================================================== */
-
-        .section-card {
-            background:
-                var(--card);
-
-            border:
-                1px solid
-                var(--border);
-
-            border-radius:
-                var(--radius);
-
-            box-shadow:
-                var(--shadow);
-
-            margin-bottom:
-                24px;
-
-            overflow:
-                hidden;
-        }
-
-
-        .section-head {
-            padding:
-                20px 22px;
-
-            border-bottom:
-                1px solid
-                var(--border);
-
-            display: flex;
-
-            justify-content:
-                space-between;
-
-            align-items:
-                center;
-
-            gap:
-                15px;
-        }
-
-
-        .section-title {
-            display: flex;
-
-            align-items:
-                center;
-
-            gap:
-                12px;
-        }
-
-
-        .section-icon {
-            width: 38px;
-            height: 38px;
-
-            border-radius:
-                11px;
-
-            display: flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            background:
-                var(--blue-light);
-
-            font-size:
-                18px;
-        }
-
-
-        .section-icon.green {
-            background:
-                var(--green-light);
-        }
-
-
-        .section-icon.orange {
-            background:
-                var(--orange-light);
-        }
-
-
-        .section-title h2 {
-            margin:
-                0;
-
-            font-size:
-                17px;
-        }
-
-
-        .section-title p {
-            margin:
-                3px 0 0;
-
-            color:
-                var(--muted);
-
-            font-size:
-                11px;
-        }
-
-
-        .refresh-button {
-            border:
-                1px solid
-                var(--border);
-
-            background:
-                white;
-
-            color:
-                var(--text);
-
-            border-radius:
-                9px;
-
-            padding:
-                9px 13px;
-
-            font-size:
-                12px;
-
-            font-weight:
-                800;
-        }
-
-
-        .refresh-button:hover {
-            border-color:
-                var(--blue);
-
-            color:
-                var(--blue);
-        }
-
-
-        /* =====================================================
-           TABLE
-        ===================================================== */
-
-        .table-wrap {
-            width: 100%;
-
-            overflow-x:
-                auto;
-        }
-
-
-        table {
-            width: 100%;
-
-            border-collapse:
-                collapse;
-
-            min-width:
-                760px;
-        }
-
-
-        th {
-            background:
-                #f8fafc;
-
-            color:
-                #64748b;
-
-            text-align:
-                left;
-
-            font-size:
-                10px;
-
-            text-transform:
-                uppercase;
-
-            letter-spacing:
-                .5px;
-
-            padding:
-                12px 18px;
-
-            border-bottom:
-                1px solid
-                var(--border);
-
-            white-space:
-                nowrap;
-        }
-
-
-        td {
-            padding:
-                14px 18px;
-
-            border-bottom:
-                1px solid
-                #eef2f7;
-
-            font-size:
-                12px;
-
-            vertical-align:
-                middle;
-        }
-
-
-        tr:last-child td {
-            border-bottom:
-                none;
-        }
-
-
-        .primary {
-            font-weight:
-                800;
-        }
-
-
-        .secondary {
-            color:
-                var(--muted);
-
-            font-size:
-                11px;
-
-            margin-top:
-                3px;
-        }
-
-
-        .tag {
-            display:
-                inline-flex;
-
-            align-items:
-                center;
-
-            padding:
-                5px 8px;
-
-            border-radius:
-                7px;
-
-            background:
-                #f1f5f9;
-
-            font-family:
-                monospace;
-
-            font-size:
-                10px;
-
-            color:
-                #334155;
-        }
-
-
-        .badge {
-            display:
-                inline-flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            padding:
-                5px 9px;
-
-            border-radius:
-                30px;
-
-            font-size:
-                10px;
-
-            font-weight:
-                800;
-
-            white-space:
-                nowrap;
-        }
-
-
-        .badge.green {
-            color:
-                #166534;
-
-            background:
-                #dcfce7;
-        }
-
-
-        .badge.red {
-            color:
-                #991b1b;
-
-            background:
-                #fee2e2;
-        }
-
-
-        .badge.orange {
-            color:
-                #92400e;
-
-            background:
-                #fef3c7;
-        }
-
-
-        .badge.gray {
-            color:
-                #475569;
-
-            background:
-                #e2e8f0;
-        }
-
-
-        .action-button {
-            border:
-                1px solid
-                #fecaca;
-
-            background:
-                #fff;
-
-            color:
-                var(--red);
-
-            padding:
-                7px 10px;
-
-            border-radius:
-                8px;
-
-            font-size:
-                10px;
-
-            font-weight:
-                800;
-        }
-
-
-        .action-button:hover {
-            background:
-                var(--red-light);
-        }
-
-
-        .empty {
-            padding:
-                35px 20px;
-
-            text-align:
-                center;
-
-            color:
-                var(--muted);
-
-            font-size:
-                13px;
-        }
-
-
-        .loading {
-            padding:
-                30px;
-
-            text-align:
-                center;
-
-            color:
-                var(--muted);
-
-            font-size:
-                13px;
-        }
-
-
-        /* =====================================================
-           MESSAGE
-        ===================================================== */
-
-        #mensagem {
-            display:
-                none;
-
-            margin-bottom:
-                20px;
-
-            padding:
-                13px 16px;
-
-            border-radius:
-                10px;
-
-            font-size:
-                12px;
-
-            font-weight:
-                700;
-        }
-
-
-        #mensagem.success {
-            display:
-                block;
-
-            color:
-                #166534;
-
-            background:
-                #dcfce7;
-
-            border:
-                1px solid
-                #bbf7d0;
-        }
-
-
-        #mensagem.error {
-            display:
-                block;
-
-            color:
-                #991b1b;
-
-            background:
-                #fee2e2;
-
-            border:
-                1px solid
-                #fecaca;
-        }
-
-
-        /* =====================================================
-           RESPONSIVE
-        ===================================================== */
-
-        @media (
-            max-width: 1050px
-        ) {
-
-            .stats {
-                grid-template-columns:
-                    repeat(
-                        2,
-                        minmax(
-                            0,
-                            1fr
-                        )
-                    );
-            }
-        }
-
-
-        @media (
-            max-width: 800px
-        ) {
-
-            .sidebar {
-                position:
-                    relative;
-
-                width:
-                    100%;
-
-                height:
-                    auto;
-
-                min-height:
-                    auto;
-            }
-
-
-            .app {
-                display:
-                    block;
-            }
-
-
-            .main {
-                margin-left:
-                    0;
-
-                width:
-                    100%;
-            }
-
-
-            .brand {
-                padding:
-                    16px 18px;
-            }
-
-
-            .menu {
-                display:
-                    flex;
-
-                gap:
-                    6px;
-
-                padding:
-                    10px 12px 14px;
-            }
-
-
-            .menu-label {
-                display:
-                    none;
-            }
-
-
-            .menu a {
-                flex:
-                    1;
-
-                justify-content:
-                    center;
-
-                margin:
-                    0;
-
-                padding:
-                    11px 7px;
-
-                font-size:
-                    11px;
-            }
-
-
-            .menu-icon {
-                font-size:
-                    15px;
-            }
-
-
-            .sidebar-footer {
-                display:
-                    none;
-            }
-
-
-            .topbar {
-                padding:
-                    0 18px;
-            }
-
-
-            .content {
-                width:
-                    calc(
-                        100% - 28px
-                    );
-
-                padding-top:
-                    25px;
-            }
-        }
-
-
-        @media (
-            max-width: 600px
-        ) {
-
-            .stats {
-                grid-template-columns:
-                    1fr 1fr;
-
-                gap:
-                    10px;
-            }
-
-
-            .stat {
-                padding:
-                    15px;
-            }
-
-
-            .stat-value {
-                font-size:
-                    25px;
-            }
-
-
-            .section-head {
-                padding:
-                    16px;
-            }
-
-
-            .section-title h2 {
-                font-size:
-                    15px;
-            }
-
-
-            .refresh-button {
-                padding:
-                    8px 10px;
-            }
-
-
-            .top-title span {
-                display:
-                    none;
-            }
-
-
-            .page-header h1 {
-                font-size:
-                    31px;
-            }
-        }
-
-    </style>
 </head>
-
 
 <body>
 
 <div class="app">
 
-    <!-- =====================================================
-         SIDEBAR
-    ====================================================== -->
+<aside class="sidebar">
 
-    <aside class="sidebar">
+<div class="brand">
 
-        <div class="brand">
+<div class="brand-icon">
+🏷️
+</div>
 
-            <div class="brand-icon">
-                📦
-            </div>
+<div>
 
-            <div>
+<h1>
+Inventário RFID
+</h1>
 
-                <div class="brand-title">
-                    Inventário RFID
-                </div>
+<p>
+Controle
+</p>
 
-                <div class="brand-subtitle">
-                    Gestão de equipamentos
-                </div>
+</div>
 
-            </div>
+</div>
 
-        </div>
+<nav class="menu">
 
+<a href="/">
+🔄 Operação
+</a>
 
-        <nav class="menu">
+<a href="/cadastro">
+📝 Cadastro
+</a>
 
-            <div class="menu-label">
-                Sistema
-            </div>
+<a
+    class="active"
+    href="/controle"
+>
+📊 Controle
+</a>
 
+</nav>
 
-            <a href="/">
-                <span class="menu-icon">
-                    🔄
-                </span>
+</aside>
 
-                <span>
-                    Operação
-                </span>
-            </a>
 
+<main class="main">
 
-            <a href="/cadastro">
+<header class="top">
 
-                <span class="menu-icon">
-                    📋
-                </span>
+<div>
 
-                <span>
-                    Cadastro
-                </span>
+<h2>
+Controle do inventário
+</h2>
 
-            </a>
+<p>
+Atualização automática • sem Box/box_id
+</p>
 
+</div>
 
-            <a
-                href="/controle"
-                class="active"
-            >
+<span id="server">
+Verificando...
+</span>
 
-                <span class="menu-icon">
-                    📊
-                </span>
+</header>
 
-                <span>
-                    Controle
-                </span>
 
-            </a>
+<section class="content">
 
-        </nav>
 
+<div
+    id="msg"
+    class="msg"
+></div>
 
-        <div class="sidebar-footer">
 
-            <div class="connection">
+<div class="cards">
 
-                <span
-                    id="connectionDot"
-                    class="connection-dot"
-                ></span>
+<div class="metric">
 
-                <span id="connectionText">
-                    Verificando servidor...
-                </span>
+<span>
+Funcionários ativos
+</span>
 
-            </div>
+<strong id="mF">
+0
+</strong>
 
-        </div>
+</div>
 
-    </aside>
 
+<div class="metric">
 
-    <!-- =====================================================
-         MAIN
-    ====================================================== -->
+<span>
+Equipamentos
+</span>
 
-    <main class="main">
+<strong id="mE">
+0
+</strong>
 
-        <header class="topbar">
+</div>
 
-            <div class="top-title">
 
-                <strong>
-                    Controle
-                </strong>
+<div class="metric">
 
-                <span>
-                    Gerenciamento do inventário RFID.
-                </span>
+<span>
+Disponíveis
+</span>
 
-            </div>
+<strong id="mD">
+0
+</strong>
 
+</div>
 
-            <div
-                id="serverStatus"
-                class="server"
-            >
 
-                <span class="server-dot"></span>
+<div class="metric">
 
-                <span id="serverStatusText">
-                    Verificando...
-                </span>
+<span>
+Emprestados
+</span>
 
-            </div>
+<strong id="mL">
+0
+</strong>
 
-        </header>
+</div>
 
+</div>
 
-        <section class="content">
 
-            <!-- HEADER -->
+<!-- FUNCIONÁRIOS -->
 
-            <div class="page-header">
+<div class="section">
 
-                <div class="kicker">
-                    ● Administração
-                </div>
+<div class="section-head">
 
-                <h1>
-                    Controle
-                </h1>
+<h3>
+Funcionários
+</h3>
 
-                <p>
-                    Consulte funcionários, equipamentos
-                    e empréstimos registrados no sistema.
-                </p>
+<button
+    class="refresh"
+    onclick="carregarTudo()"
+>
+Atualizar
+</button>
 
-            </div>
+</div>
 
 
-            <div id="mensagem"></div>
+<div
+    id="func"
+    class="table"
+>
+Carregando...
+</div>
 
+</div>
 
-            <!-- DASHBOARD -->
 
-            <div class="stats">
+<!-- EQUIPAMENTOS -->
 
-                <div class="stat blue">
+<div class="section">
 
-                    <div class="stat-label">
-                        Funcionários ativos
-                    </div>
+<div class="section-head">
 
-                    <div
-                        id="totalFuncionarios"
-                        class="stat-value"
-                    >
-                        —
-                    </div>
+<h3>
+Equipamentos
+</h3>
 
-                </div>
+<button
+    class="refresh"
+    onclick="carregarTudo()"
+>
+Atualizar
+</button>
 
+</div>
 
-                <div class="stat blue">
 
-                    <div class="stat-label">
-                        Equipamentos
-                    </div>
+<div
+    id="equip"
+    class="table"
+>
+Carregando...
+</div>
 
-                    <div
-                        id="totalEquipamentos"
-                        class="stat-value"
-                    >
-                        —
-                    </div>
+</div>
 
-                </div>
 
+<!-- EMPRÉSTIMOS -->
 
-                <div class="stat green">
+<div class="section">
 
-                    <div class="stat-label">
-                        Equipamentos disponíveis
-                    </div>
+<div class="section-head">
 
-                    <div
-                        id="totalDisponiveis"
-                        class="stat-value"
-                    >
-                        —
-                    </div>
+<h3>
+Histórico de empréstimos
+</h3>
 
-                </div>
+<button
+    class="refresh"
+    onclick="carregarTudo()"
+>
+Atualizar
+</button>
 
+</div>
 
-                <div class="stat orange">
 
-                    <div class="stat-label">
-                        Equipamentos emprestados
-                    </div>
+<div
+    id="loans"
+    class="table"
+>
+Carregando...
+</div>
 
-                    <div
-                        id="totalEmprestados"
-                        class="stat-value"
-                    >
-                        —
-                    </div>
+</div>
 
-                </div>
 
-            </div>
+</section>
 
-
-            <!-- FUNCIONÁRIOS -->
-
-            <section class="section-card">
-
-                <div class="section-head">
-
-                    <div class="section-title">
-
-                        <div class="section-icon">
-                            👤
-                        </div>
-
-                        <div>
-
-                            <h2>
-                                Funcionários
-                            </h2>
-
-                            <p>
-                                Pessoas cadastradas no sistema.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        class="refresh-button"
-                        type="button"
-                        onclick="carregarTudo()"
-                    >
-                        ↻ Atualizar
-                    </button>
-
-                </div>
-
-
-                <div
-                    id="funcionariosContainer"
-                    class="table-wrap"
-                >
-
-                    <div class="loading">
-                        Carregando funcionários...
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- EQUIPAMENTOS -->
-
-            <section class="section-card">
-
-                <div class="section-head">
-
-                    <div class="section-title">
-
-                        <div class="section-icon green">
-                            🔧
-                        </div>
-
-                        <div>
-
-                            <h2>
-                                Equipamentos
-                            </h2>
-
-                            <p>
-                                Equipamentos disponíveis para empréstimo.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        class="refresh-button"
-                        type="button"
-                        onclick="carregarTudo()"
-                    >
-                        ↻ Atualizar
-                    </button>
-
-                </div>
-
-
-                <div
-                    id="equipamentosContainer"
-                    class="table-wrap"
-                >
-
-                    <div class="loading">
-                        Carregando equipamentos...
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- EMPRÉSTIMOS -->
-
-            <section class="section-card">
-
-                <div class="section-head">
-
-                    <div class="section-title">
-
-                        <div class="section-icon orange">
-                            📋
-                        </div>
-
-                        <div>
-
-                            <h2>
-                                Empréstimos
-                            </h2>
-
-                            <p>
-                                Histórico das retiradas e devoluções.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        class="refresh-button"
-                        type="button"
-                        onclick="carregarTudo()"
-                    >
-                        ↻ Atualizar
-                    </button>
-
-                </div>
-
-
-                <div
-                    id="emprestimosContainer"
-                    class="table-wrap"
-                >
-
-                    <div class="loading">
-                        Carregando empréstimos...
-                    </div>
-
-                </div>
-
-            </section>
-
-        </section>
-
-    </main>
+</main>
 
 </div>
 
 
 <script>
 
-    /* =========================================================
-       ELEMENTOS
-    ========================================================= */
-
-    const connectionDot =
-        document.getElementById(
-            "connectionDot"
-        );
+const $ =
+    id =>
+        document.getElementById(id);
 
 
-    const connectionText =
-        document.getElementById(
-            "connectionText"
-        );
+function esc(valor) {
+
+    return String(
+        valor ?? ""
+    ).replace(
+        /[&<>'"]/g,
+        c => ({
+
+            "&": "&amp;",
+
+            "<": "&lt;",
+
+            ">": "&gt;",
+
+            "'": "&#39;",
+
+            "\"": "&quot;"
+
+        }[c])
+    );
+
+}
 
 
-    const serverStatus =
-        document.getElementById(
-            "serverStatus"
-        );
+function dataFormatada(
+    valor
+) {
 
+    if (!valor) {
 
-    const serverStatusText =
-        document.getElementById(
-            "serverStatusText"
-        );
+        return "—";
 
-
-    const mensagem =
-        document.getElementById(
-            "mensagem"
-        );
-
-
-    /* =========================================================
-       MENSAGEM
-    ========================================================= */
-
-    function mostrarMensagem(
-        texto,
-        tipo
-    ) {
-
-        mensagem.textContent =
-            texto;
-
-        mensagem.className =
-            tipo;
-
-        setTimeout(
-            () => {
-
-                mensagem.className =
-                    "";
-
-                mensagem.textContent =
-                    "";
-
-            },
-            5000
-        );
     }
 
 
-    /* =========================================================
-       HTML SEGURO
-    ========================================================= */
+    const data =
+        new Date(valor);
 
-    function escaparHTML(
-        valor
+
+    if (
+        isNaN(
+            data.getTime()
+        )
     ) {
 
-        return String(
-            valor ?? ""
-        )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+        return esc(valor);
+
     }
 
 
-    /* =========================================================
-       DATA
-    ========================================================= */
+    return data.toLocaleString(
+        "pt-BR"
+    );
 
-    function formatarData(
-        valor
-    ) {
-
-        if (!valor) {
-
-            return "—";
-        }
+}
 
 
-        const data =
-            new Date(valor);
+function mensagem(
+    texto,
+    tipo = "success"
+) {
+
+    const elemento =
+        $("msg");
+
+    elemento.className =
+        "msg show " +
+        tipo;
+
+    elemento.textContent =
+        texto;
 
 
-        if (
-            Number.isNaN(
-                data.getTime()
+    setTimeout(
+        () => {
+
+            elemento.className =
+                "msg";
+
+        },
+        4000
+    );
+
+}
+
+
+// ============================================================
+// CARREGAR TUDO
+// ============================================================
+
+async function carregarTudo() {
+
+    try {
+
+        const [
+
+            healthResponse,
+
+            dashboardResponse,
+
+            funcionariosResponse,
+
+            equipamentosResponse,
+
+            emprestimosResponse
+
+        ] = await Promise.all([
+
+            fetch(
+                "/health?t=" +
+                Date.now()
+            ),
+
+            fetch(
+                "/api/dashboard?t=" +
+                Date.now()
+            ),
+
+            fetch(
+                "/api/funcionarios?t=" +
+                Date.now()
+            ),
+
+            fetch(
+                "/api/equipamentos?t=" +
+                Date.now()
+            ),
+
+            fetch(
+                "/api/emprestimos?t=" +
+                Date.now()
             )
-        ) {
-
-            return escaparHTML(
-                valor
-            );
-        }
-
-
-        return data.toLocaleString(
-            "pt-BR",
-            {
-                dateStyle:
-                    "short",
-
-                timeStyle:
-                    "short"
-            }
-        );
-    }
-
-
-    /* =========================================================
-       STATUS
-    ========================================================= */
-
-    function badgeStatus(
-        status
-    ) {
-
-        const texto =
-            String(
-                status ||
-                ""
-            ).toLowerCase();
-
-
-        if (
-            texto ===
-            "disponivel"
-        ) {
-
-            return `
-                <span class="badge green">
-                    Disponível
-                </span>
-            `;
-        }
-
-
-        if (
-            texto ===
-            "emprestado"
-        ) {
-
-            return `
-                <span class="badge orange">
-                    Emprestado
-                </span>
-            `;
-        }
-
-
-        if (
-            texto ===
-            "devolvido"
-        ) {
-
-            return `
-                <span class="badge green">
-                    Devolvido
-                </span>
-            `;
-        }
-
-
-        if (
-            texto ===
-            "pendente"
-        ) {
-
-            return `
-                <span class="badge orange">
-                    Pendente
-                </span>
-            `;
-        }
-
-
-        return `
-            <span class="badge gray">
-                ${escaparHTML(
-                    status || "—"
-                )}
-            </span>
-        `;
-    }
-
-
-    /* =========================================================
-       SERVIDOR
-    ========================================================= */
-
-    async function verificarServidor() {
-
-        try {
-
-            const resposta =
-                await fetch(
-                    "/health?t=" +
-                    Date.now(),
-                    {
-                        cache:
-                            "no-store"
-                    }
-                );
-
-
-            if (!resposta.ok) {
-
-                throw new Error(
-                    "Servidor offline"
-                );
-            }
-
-
-            connectionDot.classList.remove(
-                "offline"
-            );
-
-
-            connectionText.textContent =
-                "Servidor conectado";
-
-
-            serverStatus.classList.remove(
-                "offline"
-            );
-
-
-            serverStatusText.textContent =
-                "Servidor online";
-
-
-        } catch (erro) {
-
-            connectionDot.classList.add(
-                "offline"
-            );
-
-
-            connectionText.textContent =
-                "Servidor offline";
-
-
-            serverStatus.classList.add(
-                "offline"
-            );
-
-
-            serverStatusText.textContent =
-                "Servidor offline";
-
-
-            console.error(
-                erro
-            );
-        }
-    }
-
-
-    /* =========================================================
-       DASHBOARD
-    ========================================================= */
-
-    async function carregarDashboard() {
-
-        try {
-
-            const resposta =
-                await fetch(
-                    "/api/dashboard?t=" +
-                    Date.now(),
-                    {
-                        cache:
-                            "no-store"
-                    }
-                );
-
-
-            const dados =
-                await resposta.json();
-
-
-            if (
-                !resposta.ok ||
-                !dados.sucesso
-            ) {
-
-                throw new Error(
-                    dados.mensagem ||
-                    "Erro ao carregar dashboard."
-                );
-            }
-
-
-            document.getElementById(
-                "totalFuncionarios"
-            ).textContent =
-                dados.funcionarios ??
-                0;
-
-
-            document.getElementById(
-                "totalEquipamentos"
-            ).textContent =
-                dados.equipamentos ??
-                0;
-
-
-            document.getElementById(
-                "totalDisponiveis"
-            ).textContent =
-                dados.disponiveis ??
-                0;
-
-
-            document.getElementById(
-                "totalEmprestados"
-            ).textContent =
-                dados.emprestados ??
-                0;
-
-
-        } catch (erro) {
-
-            console.error(
-                "Erro ao carregar dashboard:",
-                erro
-            );
-        }
-    }
-
-
-    /* =========================================================
-       FUNCIONÁRIOS
-    ========================================================= */
-
-    async function carregarFuncionarios() {
-
-        const container =
-            document.getElementById(
-                "funcionariosContainer"
-            );
-
-
-        try {
-
-            const resposta =
-                await fetch(
-                    "/api/funcionarios?t=" +
-                    Date.now(),
-                    {
-                        cache:
-                            "no-store"
-                    }
-                );
-
-
-            const dados =
-                await resposta.json();
-
-
-            if (
-                !resposta.ok ||
-                !dados.sucesso
-            ) {
-
-                throw new Error(
-                    dados.mensagem ||
-                    "Erro ao carregar funcionários."
-                );
-            }
-
-
-            const lista =
-                dados.funcionarios ||
-                [];
-
-
-            if (
-                lista.length === 0
-            ) {
-
-                container.innerHTML = `
-
-                    <div class="empty">
-
-                        Nenhum funcionário cadastrado.
-
-                    </div>
-
-                `;
-
-                return;
-            }
-
-
-            container.innerHTML = `
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Funcionário
-                            </th>
-
-                            <th>
-                                Matrícula
-                            </th>
-
-                            <th>
-                                Setor
-                            </th>
-
-                            <th>
-                                RFID
-                            </th>
-
-                            <th>
-                                Situação
-                            </th>
-
-                            <th>
-                                Ação
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${lista.map(
-                            funcionario => {
-
-                                const ativo =
-                                    funcionario.ativo !== false;
-
-
-                                return `
-
-                                    <tr>
-
-                                        <td>
-
-                                            <div class="primary">
-
-                                                ${escaparHTML(
-                                                    funcionario.nome
-                                                )}
-
-                                            </div>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            ${escaparHTML(
-                                                funcionario.matricula ||
-                                                "—"
-                                            )}
-
-                                        </td>
-
-
-                                        <td>
-
-                                            ${escaparHTML(
-                                                funcionario.setor ||
-                                                "—"
-                                            )}
-
-                                        </td>
-
-
-                                        <td>
-
-                                            <span class="tag">
-
-                                                ${escaparHTML(
-                                                    funcionario.uid_tag_pessoal ||
-                                                    "—"
-                                                )}
-
-                                            </span>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            ${
-                                                ativo
-                                                ?
-                                                `
-                                                    <span class="badge green">
-                                                        Ativo
-                                                    </span>
-                                                `
-                                                :
-                                                `
-                                                    <span class="badge gray">
-                                                        Inativo
-                                                    </span>
-                                                `
-                                            }
-
-                                        </td>
-
-
-                                        <td>
-
-                                            ${
-                                                ativo
-                                                ?
-                                                `
-
-                                                    <button
-                                                        class="action-button"
-                                                        type="button"
-                                                        onclick="desativarFuncionario(${Number(funcionario.id)})"
-                                                    >
-
-                                                        Desativar
-
-                                                    </button>
-
-                                                `
-                                                :
-                                                "—"
-                                            }
-
-                                        </td>
-
-                                    </tr>
-
-                                `;
-
-                            }
-                        ).join("")}
-
-                    </tbody>
-
-                </table>
-
-            `;
-
-
-        } catch (erro) {
-
-            container.innerHTML = `
-
-                <div class="empty">
-
-                    Não foi possível carregar os funcionários.
-
-                </div>
-
-            `;
-
-
-            console.error(
-                "Erro funcionários:",
-                erro
-            );
-        }
-    }
-
-
-    /* =========================================================
-       EQUIPAMENTOS
-    ========================================================= */
-
-    async function carregarEquipamentos() {
-
-        const container =
-            document.getElementById(
-                "equipamentosContainer"
-            );
-
-
-        try {
-
-            const resposta =
-                await fetch(
-                    "/api/equipamentos?t=" +
-                    Date.now(),
-                    {
-                        cache:
-                            "no-store"
-                    }
-                );
-
-
-            const dados =
-                await resposta.json();
-
-
-            if (
-                !resposta.ok ||
-                !dados.sucesso
-            ) {
-
-                throw new Error(
-                    dados.mensagem ||
-                    "Erro ao carregar equipamentos."
-                );
-            }
-
-
-            const lista =
-                dados.equipamentos ||
-                [];
-
-
-            if (
-                lista.length === 0
-            ) {
-
-                container.innerHTML = `
-
-                    <div class="empty">
-
-                        Nenhum equipamento cadastrado.
-
-                    </div>
-
-                `;
-
-                return;
-            }
-
-
-            container.innerHTML = `
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Equipamento
-                            </th>
-
-                            <th>
-                                Descrição
-                            </th>
-
-                            <th>
-                                RFID
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                            <th>
-                                Situação
-                            </th>
-
-                            <th>
-                                Ação
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${lista.map(
-                            equipamento => {
-
-                                const ativo =
-                                    equipamento.ativo !== false;
-
-
-                                return `
-
-                                    <tr>
-
-                                        <td>
-
-                                            <div class="primary">
-
-                                                ${escaparHTML(
-                                                    equipamento.nome
-                                                )}
-
-                                            </div>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            <div class="secondary">
-
-                                                ${escaparHTML(
-                                                    equipamento.descricao ||
-                                                    "—"
-                                                )}
-
-                                            </div>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            <span class="tag">
-
-                                                ${escaparHTML(
-                                                    equipamento.uid_tag ||
-                                                    "—"
-                                                )}
-
-                                            </span>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            ${badgeStatus(
-                                                equipamento.status
-                                            )}
-
-                                        </td>
-
-
-                                        <td>
-
-                                            ${
-                                                ativo
-                                                ?
-                                                `
-                                                    <span class="badge green">
-                                                        Ativo
-                                                    </span>
-                                                `
-                                                :
-                                                `
-                                                    <span class="badge gray">
-                                                        Inativo
-                                                    </span>
-                                                `
-                                            }
-
-                                        </td>
-
-
-                                        <td>
-
-                                            ${
-                                                ativo
-                                                ?
-                                                `
-
-                                                    <button
-                                                        class="action-button"
-                                                        type="button"
-                                                        onclick="desativarEquipamento(${Number(equipamento.id)})"
-                                                    >
-
-                                                        Desativar
-
-                                                    </button>
-
-                                                `
-                                                :
-                                                "—"
-                                            }
-
-                                        </td>
-
-                                    </tr>
-
-                                `;
-
-                            }
-                        ).join("")}
-
-                    </tbody>
-
-                </table>
-
-            `;
-
-
-        } catch (erro) {
-
-            container.innerHTML = `
-
-                <div class="empty">
-
-                    Não foi possível carregar os equipamentos.
-
-                </div>
-
-            `;
-
-
-            console.error(
-                "Erro equipamentos:",
-                erro
-            );
-        }
-    }
-
-
-    /* =========================================================
-       EMPRÉSTIMOS
-    ========================================================= */
-
-    async function carregarEmprestimos() {
-
-        const container =
-            document.getElementById(
-                "emprestimosContainer"
-            );
-
-
-        try {
-
-            const resposta =
-                await fetch(
-                    "/api/emprestimos?t=" +
-                    Date.now(),
-                    {
-                        cache:
-                            "no-store"
-                    }
-                );
-
-
-            const dados =
-                await resposta.json();
-
-
-            if (
-                !resposta.ok ||
-                !dados.sucesso
-            ) {
-
-                throw new Error(
-                    dados.mensagem ||
-                    "Erro ao carregar empréstimos."
-                );
-            }
-
-
-            let lista =
-                dados.emprestimos ||
-                [];
-
-
-            /*
-             * Empréstimos ativos primeiro.
-             * Devolvidos depois, do mais recente
-             * para o mais antigo.
-             */
-
-            lista.sort(
-                (
-                    a,
-                    b
-                ) => {
-
-                    const statusA =
-                        String(
-                            a.status ||
-                            ""
-                        ).toLowerCase();
-
-
-                    const statusB =
-                        String(
-                            b.status ||
-                            ""
-                        ).toLowerCase();
-
-
-                    const ativoA =
-                        statusA ===
-                            "emprestado" &&
-                        !a.data_devolucao;
-
-
-                    const ativoB =
-                        statusB ===
-                            "emprestado" &&
-                        !b.data_devolucao;
-
-
-                    if (
-                        ativoA &&
-                        !ativoB
-                    ) {
-
-                        return -1;
-                    }
-
-
-                    if (
-                        !ativoA &&
-                        ativoB
-                    ) {
-
-                        return 1;
-                    }
-
-
-                    const dataA =
-                        new Date(
-                            a.data_retirada ||
-                            0
-                        ).getTime();
-
-
-                    const dataB =
-                        new Date(
-                            b.data_retirada ||
-                            0
-                        ).getTime();
-
-
-                    return dataB - dataA;
-                }
-            );
-
-
-            if (
-                lista.length === 0
-            ) {
-
-                container.innerHTML = `
-
-                    <div class="empty">
-
-                        Nenhum empréstimo registrado.
-
-                    </div>
-
-                `;
-
-                return;
-            }
-
-
-            container.innerHTML = `
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Funcionário
-                            </th>
-
-                            <th>
-                                Equipamento
-                            </th>
-
-                            <th>
-                                Retirada
-                            </th>
-
-                            <th>
-                                Devolução
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${lista.map(
-                            emprestimo => {
-
-                                const funcionario =
-                                    emprestimo.funcionario;
-
-
-                                const equipamento =
-                                    emprestimo.equipamento;
-
-
-                                return `
-
-                                    <tr>
-
-                                        <td>
-
-                                            <div class="primary">
-
-                                                ${escaparHTML(
-                                                    funcionario?.nome ||
-                                                    "Funcionário não encontrado"
-                                                )}
-
-                                            </div>
-
-
-                                            <div class="secondary">
-
-                                                ${escaparHTML(
-                                                    funcionario?.matricula ||
-                                                    ""
-                                                )}
-
-                                            </div>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            <div class="primary">
-
-                                                ${escaparHTML(
-                                                    equipamento?.nome ||
-                                                    "Equipamento não encontrado"
-                                                )}
-
-                                            </div>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            ${formatarData(
-                                                emprestimo.data_retirada
-                                            )}
-
-                                        </td>
-
-
-                                        <td>
-
-                                            ${formatarData(
-                                                emprestimo.data_devolucao
-                                            )}
-
-                                        </td>
-
-
-                                        <td>
-
-                                            ${badgeStatus(
-                                                emprestimo.status
-                                            )}
-
-                                        </td>
-
-                                    </tr>
-
-                                `;
-
-                            }
-                        ).join("")}
-
-                    </tbody>
-
-                </table>
-
-            `;
-
-
-        } catch (erro) {
-
-            container.innerHTML = `
-
-                <div class="empty">
-
-                    Não foi possível carregar os empréstimos.
-
-                </div>
-
-            `;
-
-
-            console.error(
-                "Erro empréstimos:",
-                erro
-            );
-        }
-    }
-
-
-    /* =========================================================
-       DESATIVAR FUNCIONÁRIO
-    ========================================================= */
-
-    async function desativarFuncionario(
-        id
-    ) {
-
-        const confirmar =
-            window.confirm(
-                "Deseja realmente desativar este funcionário?"
-            );
-
-
-        if (!confirmar) {
-
-            return;
-        }
-
-
-        try {
-
-            const resposta =
-                await fetch(
-                    `/api/funcionarios/${id}`,
-                    {
-                        method:
-                            "DELETE"
-                    }
-                );
-
-
-            const dados =
-                await resposta.json();
-
-
-            if (
-                !resposta.ok ||
-                !dados.sucesso
-            ) {
-
-                throw new Error(
-                    dados.mensagem ||
-                    "Não foi possível desativar o funcionário."
-                );
-            }
-
-
-            mostrarMensagem(
-                "Funcionário desativado com sucesso.",
-                "success"
-            );
-
-
-            await carregarTudo();
-
-
-        } catch (erro) {
-
-            mostrarMensagem(
-                erro.message ||
-                "Erro ao desativar funcionário.",
-                "error"
-            );
-        }
-    }
-
-
-    /* =========================================================
-       DESATIVAR EQUIPAMENTO
-    ========================================================= */
-
-    async function desativarEquipamento(
-        id
-    ) {
-
-        const confirmar =
-            window.confirm(
-                "Deseja realmente desativar este equipamento?"
-            );
-
-
-        if (!confirmar) {
-
-            return;
-        }
-
-
-        try {
-
-            const resposta =
-                await fetch(
-                    `/api/equipamentos/${id}`,
-                    {
-                        method:
-                            "DELETE"
-                    }
-                );
-
-
-            const dados =
-                await resposta.json();
-
-
-            if (
-                !resposta.ok ||
-                !dados.sucesso
-            ) {
-
-                throw new Error(
-                    dados.mensagem ||
-                    "Não foi possível desativar o equipamento."
-                );
-            }
-
-
-            mostrarMensagem(
-                "Equipamento desativado com sucesso.",
-                "success"
-            );
-
-
-            await carregarTudo();
-
-
-        } catch (erro) {
-
-            mostrarMensagem(
-                erro.message ||
-                "Erro ao desativar equipamento.",
-                "error"
-            );
-        }
-    }
-
-
-    /* =========================================================
-       CARREGAR TUDO
-    ========================================================= */
-
-    async function carregarTudo() {
-
-        await Promise.all([
-
-            verificarServidor(),
-
-            carregarDashboard(),
-
-            carregarFuncionarios(),
-
-            carregarEquipamentos(),
-
-            carregarEmprestimos()
 
         ]);
+
+
+        const health =
+            await healthResponse.json();
+
+        const dashboard =
+            await dashboardResponse.json();
+
+        const funcionarios =
+            await funcionariosResponse.json();
+
+        const equipamentos =
+            await equipamentosResponse.json();
+
+        const emprestimos =
+            await emprestimosResponse.json();
+
+
+        $("server")
+            .textContent =
+            health.sucesso
+                ?
+                "🟢 Servidor online"
+                :
+                "🔴 Servidor offline";
+
+
+        if (
+            dashboard.sucesso
+        ) {
+
+            $("mF")
+                .textContent =
+                dashboard.funcionarios;
+
+            $("mE")
+                .textContent =
+                dashboard.equipamentos;
+
+            $("mD")
+                .textContent =
+                dashboard.disponiveis;
+
+            $("mL")
+                .textContent =
+                dashboard.emprestados;
+
+        }
+
+
+        renderFuncionarios(
+            funcionarios.funcionarios ||
+            []
+        );
+
+
+        renderEquipamentos(
+            equipamentos.equipamentos ||
+            []
+        );
+
+
+        renderEmprestimos(
+            emprestimos.emprestimos ||
+            []
+        );
+
+    } catch (erro) {
+
+        $("server")
+            .textContent =
+            "🔴 Erro de conexão";
+
+    }
+
+}
+
+
+// ============================================================
+// FUNCIONÁRIOS
+// ============================================================
+
+function renderFuncionarios(
+    lista
+) {
+
+    if (
+        lista.length === 0
+    ) {
+
+        $("func")
+            .innerHTML =
+            "Nenhum funcionário.";
+
+        return;
+
     }
 
 
-    /* =========================================================
-       INICIALIZAÇÃO
-    ========================================================= */
+    $("func")
+        .innerHTML = `
+
+        <table>
+
+            <tr>
+
+                <th>
+                    Nome
+                </th>
+
+                <th>
+                    Matrícula
+                </th>
+
+                <th>
+                    UID
+                </th>
+
+                <th>
+                    Status
+                </th>
+
+                <th>
+                    Ação
+                </th>
+
+            </tr>
+
+            ${
+                lista
+                .map(
+                    funcionario => `
+
+                    <tr>
+
+                        <td>
+
+                            <b>
+                                ${esc(
+                                    funcionario.nome
+                                )}
+                            </b>
+
+                        </td>
+
+                        <td>
+                            ${esc(
+                                funcionario.matricula
+                            )}
+                        </td>
+
+                        <td>
+                            ${esc(
+                                funcionario.uid_tag_pessoal
+                            )}
+                        </td>
+
+                        <td>
+
+                            <span
+                                class="
+                                    badge
+                                    ${
+                                        funcionario.ativo
+                                        ?
+                                        "green"
+                                        :
+                                        "gray"
+                                    }
+                                "
+                            >
+
+                                ${
+                                    funcionario.ativo
+                                    ?
+                                    "ATIVO"
+                                    :
+                                    "INATIVO"
+                                }
+
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            ${
+                                funcionario.ativo
+                                ?
+
+                                `
+                                <button
+                                    class="action"
+                                    onclick="
+                                        desativarFuncionario(
+                                            ${funcionario.id}
+                                        )
+                                    "
+                                >
+                                    Desativar
+                                </button>
+                                `
+
+                                :
+
+                                "—"
+                            }
+
+                        </td>
+
+                    </tr>
+
+                `
+                )
+                .join("")
+            }
+
+        </table>
+
+    `;
+
+}
+
+
+// ============================================================
+// EQUIPAMENTOS
+// ============================================================
+
+function renderEquipamentos(
+    lista
+) {
+
+    if (
+        lista.length === 0
+    ) {
+
+        $("equip")
+            .innerHTML =
+            "Nenhum equipamento.";
+
+        return;
+
+    }
+
+
+    $("equip")
+        .innerHTML = `
+
+        <table>
+
+            <tr>
+
+                <th>
+                    Nome
+                </th>
+
+                <th>
+                    UID
+                </th>
+
+                <th>
+                    Status
+                </th>
+
+                <th>
+                    Ação
+                </th>
+
+            </tr>
+
+            ${
+                lista
+                .map(
+                    equipamento => {
+
+                        const status =
+                            String(
+                                equipamento.status ||
+                                ""
+                            ).toLowerCase();
+
+
+                        let classe =
+                            "orange";
+
+
+                        if (
+                            status ===
+                            "disponivel"
+                        ) {
+
+                            classe =
+                                "green";
+
+                        }
+
+
+                        if (
+                            status ===
+                            "emprestado"
+                        ) {
+
+                            classe =
+                                "red";
+
+                        }
+
+
+                        return `
+
+                            <tr>
+
+                                <td>
+
+                                    <b>
+                                        ${esc(
+                                            equipamento.nome
+                                        )}
+                                    </b>
+
+                                </td>
+
+                                <td>
+                                    ${esc(
+                                        equipamento.uid_tag
+                                    )}
+                                </td>
+
+                                <td>
+
+                                    <span
+                                        class="
+                                            badge
+                                            ${classe}
+                                        "
+                                    >
+
+                                        ${esc(
+                                            equipamento.status
+                                        )}
+
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    ${
+                                        equipamento.ativo
+                                        ?
+
+                                        `
+                                        <button
+                                            class="action"
+                                            onclick="
+                                                desativarEquipamento(
+                                                    ${equipamento.id}
+                                                )
+                                            "
+                                        >
+                                            Desativar
+                                        </button>
+                                        `
+
+                                        :
+
+                                        "—"
+                                    }
+
+                                </td>
+
+                            </tr>
+
+                        `;
+
+                    }
+                )
+                .join("")
+            }
+
+        </table>
+
+    `;
+
+}
+
+
+// ============================================================
+// EMPRÉSTIMOS
+// ============================================================
+
+function renderEmprestimos(
+    lista
+) {
+
+    if (
+        lista.length === 0
+    ) {
+
+        $("loans")
+            .innerHTML =
+            "Nenhum empréstimo registrado.";
+
+        return;
+
+    }
+
+
+    $("loans")
+        .innerHTML = `
+
+        <table>
+
+            <tr>
+
+                <th>
+                    Funcionário
+                </th>
+
+                <th>
+                    Equipamento
+                </th>
+
+                <th>
+                    Retirada
+                </th>
+
+                <th>
+                    Devolução
+                </th>
+
+                <th>
+                    Status
+                </th>
+
+            </tr>
+
+            ${
+                lista
+                .map(
+                    emprestimo => {
+
+                        const ativo =
+                            String(
+                                emprestimo.status ||
+                                ""
+                            ).toLowerCase()
+                            ===
+                            "emprestado"
+                            &&
+                            !emprestimo.data_devolucao;
+
+
+                        return `
+
+                            <tr>
+
+                                <td>
+
+                                    <b>
+                                        ${esc(
+                                            emprestimo
+                                                .funcionario
+                                                ?.nome ||
+                                            "—"
+                                        )}
+                                    </b>
+
+                                    <div
+                                        style="
+                                            color:#64748b
+                                        "
+                                    >
+
+                                        ${esc(
+                                            emprestimo
+                                                .funcionario
+                                                ?.matricula ||
+                                            ""
+                                        )}
+
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+
+                                    ${esc(
+                                        emprestimo
+                                            .equipamento
+                                            ?.nome ||
+                                        "—"
+                                    )}
+
+                                </td>
+
+
+                                <td>
+
+                                    ${dataFormatada(
+                                        emprestimo
+                                            .data_retirada
+                                    )}
+
+                                </td>
+
+
+                                <td>
+
+                                    ${dataFormatada(
+                                        emprestimo
+                                            .data_devolucao
+                                    )}
+
+                                </td>
+
+
+                                <td>
+
+                                    <span
+                                        class="
+                                            badge
+                                            ${
+                                                ativo
+                                                ?
+                                                "red"
+                                                :
+                                                "green"
+                                            }
+                                        "
+                                    >
+
+                                        ${
+                                            ativo
+                                            ?
+                                            "EMPRESTADO"
+                                            :
+                                            "DEVOLVIDO"
+                                        }
+
+                                    </span>
+
+                                </td>
+
+                            </tr>
+
+                        `;
+
+                    }
+                )
+                .join("")
+            }
+
+        </table>
+
+    `;
+
+}
+
+
+// ============================================================
+// DESATIVAR FUNCIONÁRIO
+// ============================================================
+
+async function desativarFuncionario(
+    id
+) {
+
+    if (
+        !confirm(
+            "Desativar funcionário?"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const resposta =
+        await fetch(
+            "/api/funcionarios/" +
+            id,
+            {
+                method:
+                    "DELETE"
+            }
+        );
+
+
+    const dados =
+        await resposta.json();
+
+
+    mensagem(
+        dados.mensagem,
+        dados.sucesso
+            ?
+            "success"
+            :
+            "error"
+    );
+
 
     carregarTudo();
 
+}
 
-    /*
-     * Atualiza o controle a cada 3 segundos.
-     *
-     * Isso faz com que:
-     *
-     * RETIRADA:
-     * disponível -> emprestado
-     *
-     * DEVOLUÇÃO:
-     * emprestado -> disponível
-     *
-     * e o histórico seja atualizado.
-     */
 
-    setInterval(
-        carregarTudo,
-        3000
+// ============================================================
+// DESATIVAR EQUIPAMENTO
+// ============================================================
+
+async function desativarEquipamento(
+    id
+) {
+
+    if (
+        !confirm(
+            "Desativar equipamento?"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const resposta =
+        await fetch(
+            "/api/equipamentos/" +
+            id,
+            {
+                method:
+                    "DELETE"
+            }
+        );
+
+
+    const dados =
+        await resposta.json();
+
+
+    mensagem(
+        dados.mensagem,
+        dados.sucesso
+            ?
+            "success"
+            :
+            "error"
     );
+
+
+    carregarTudo();
+
+}
+
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+
+carregarTudo();
+
+setInterval(
+    carregarTudo,
+    3000
+);
 
 </script>
 
