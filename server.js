@@ -331,33 +331,31 @@ app.post("/api/esp32/rfid", async (req, res) => {
             return res.status(201).json({ sucesso: true, ...ev, emprestimo: ins.data });
         }
 
-        /* ---------- DEVOLUÇÃO: confirmar com a tag pessoal ---------- */
-        if (fluxo.modo === "aguardando_tag_pessoal") {
+        /* ---------- DEVOLUÇÃO: confirmação final com a tag pessoal ---------- */
+        if (fluxo.modo === "aguardando_confirmacao_devolucao") {
             const equipamento = fluxo.equipamento;
             const emprestimo = fluxo.emprestimo;
             const tomador = fluxo.funcionario;
-
             const pessoa = await buscarFuncionarioPorUID(u);
 
             if (!pessoa) {
-                const eEquip = await buscarEquipamentoPorUID(u);
+                const equipamentoLido = await buscarEquipamentoPorUID(u);
                 const ev = publicar({
                     uid: u,
-                    tipo: eEquip ? "tag_pessoal_esperada" : "tag_nao_cadastrada",
-                    mensagem: eEquip
-                        ? "Agora passe a SUA tag pessoal para confirmar a devolução."
-                        : "Tag não cadastrada. Passe a sua tag pessoal.",
-                    equipamento: resumoEquip(equipamento)
+                    tipo: equipamentoLido ? "tag_pessoal_esperada" : "tag_nao_cadastrada",
+                    mensagem: equipamentoLido
+                        ? "A caixa foi liberada. Para finalizar, passe a sua tag pessoal novamente."
+                        : "Tag não cadastrada. Passe a mesma tag pessoal que iniciou a devolução.",
+                    funcionario: resumoFunc(tomador), equipamento: resumoEquip(equipamento)
                 });
-                return res.status(eEquip ? 409 : 404).json({ sucesso: false, ...ev });
+                return res.status(equipamentoLido ? 409 : 404).json({ sucesso: false, ...ev });
             }
 
-            if (EXIGIR_MESMO_FUNCIONARIO && Number(pessoa.id) !== Number(emprestimo.funcionario_id)) {
+            if (Number(pessoa.id) !== Number(emprestimo.funcionario_id)) {
                 const ev = publicar({
                     uid: u, tipo: "funcionario_incorreto",
-                    mensagem: `Este equipamento está com ${tomador?.nome || "outro funcionário"}. Só quem retirou pode devolver.`,
-                    funcionario: resumoFunc(pessoa),
-                    equipamento: resumoEquip(equipamento)
+                    mensagem: `A devolução foi iniciada por ${tomador?.nome || "outro funcionário"}. Passe a tag pessoal dessa pessoa para confirmar.`,
+                    funcionario: resumoFunc(pessoa), equipamento: resumoEquip(equipamento)
                 });
                 return res.status(409).json({ sucesso: false, ...ev });
             }
@@ -366,27 +364,44 @@ app.post("/api/esp32/rfid", async (req, res) => {
                 .update({ data_devolucao: agora(), status: "Devolvido" })
                 .eq("id", emprestimo.id).is("data_devolucao", null)
                 .select().maybeSingle();
-
             if (dev.error) throw dev.error;
-
             if (!dev.data) {
                 limparFluxo();
-                const ev = publicar({ uid: u, tipo: "operacao_conflito", modo: "idle", mensagem: "Essa devolução já foi registrada." });
+                const ev = publicar({ uid: u, tipo: "operacao_conflito", modo: "idle", mensagem: "Essa devolução já foi registrada ou o empréstimo não está mais aberto." });
                 return res.status(409).json({ sucesso: false, ...ev });
             }
 
             const up = await supabase.from("equipamentos").update({ status: "disponivel" }).eq("id", equipamento.id);
             if (up.error) throw up.error;
-
             limparFluxo();
             const ev = publicar({
                 uid: u, tipo: "devolucao_concluida", modo: "idle",
-                mensagem: `${equipamento.nome} foi DEVOLVIDO por ${pessoa.nome}.`,
-                funcionario: resumoFunc(pessoa),
-                equipamento: resumoEquip(equipamento),
-                abrir: true
+                mensagem: `${equipamento.nome} foi devolvido por ${pessoa.nome}.`,
+                funcionario: resumoFunc(pessoa), equipamento: resumoEquip(equipamento), abrir: false
             });
             return res.json({ sucesso: true, ...ev, emprestimo: dev.data });
+        }
+
+        /* ---------- DEVOLUÇÃO: validação da tag do equipamento ---------- */
+        if (fluxo.modo === "aguardando_tag_equipamento_devolucao") {
+            const equipamentoEsperado = fluxo.equipamento;
+            const equipamentoLido = await buscarEquipamentoPorUID(u);
+            if (!equipamentoLido) {
+                const ev = publicar({ uid: u, tipo: "tag_nao_cadastrada", mensagem: "Tag não cadastrada. Passe a tag do equipamento emprestado.", funcionario: resumoFunc(fluxo.funcionario), equipamento: resumoEquip(equipamentoEsperado) });
+                return res.status(404).json({ sucesso: false, ...ev });
+            }
+            if (Number(equipamentoLido.id) !== Number(equipamentoEsperado.id)) {
+                const ev = publicar({ uid: u, tipo: "objeto_incorreto", mensagem: `Equipamento incorreto. A devolução esperada é de "${equipamentoEsperado.nome}".`, funcionario: resumoFunc(fluxo.funcionario), equipamento: resumoEquip(equipamentoEsperado), equipamentoRecebido: resumoEquip(equipamentoLido), equipamentoEsperado: resumoEquip(equipamentoEsperado) });
+                return res.status(409).json({ sucesso: false, ...ev });
+            }
+            fluxo.modo = "aguardando_confirmacao_devolucao";
+            fluxo.expiraEm = Date.now() + TEMPO_FLUXO_MS;
+            const ev = publicar({
+                uid: u, tipo: "devolucao_item_validado", modo: fluxo.modo,
+                mensagem: `Equipamento "${equipamentoEsperado.nome}" validado. A caixa será liberada. Depois, passe novamente sua tag pessoal para registrar a devolução.`,
+                funcionario: resumoFunc(fluxo.funcionario), equipamento: resumoEquip(equipamentoEsperado), abrir: true
+            });
+            return res.json({ sucesso: true, ...ev });
         }
 
         /* ---------- SEM OPERAÇÃO EM ANDAMENTO ---------- */
@@ -398,12 +413,28 @@ app.post("/api/esp32/rfid", async (req, res) => {
         }
 
         if (ex.categoria === "funcionario") {
+            const funcionario = ex.registro;
+            const aberto = await emprestimoAbertoDoFuncionario(funcionario.id);
+            if (aberto) {
+                const rEquip = await supabase.from("equipamentos").select("*").eq("id", aberto.equipamento_id).eq("ativo", true).maybeSingle();
+                if (rEquip.error) throw rEquip.error;
+                if (!rEquip.data) throw new Error("O equipamento deste empréstimo não foi encontrado.");
+                fluxo = { modo: "aguardando_tag_equipamento_devolucao", funcionario, equipamento: rEquip.data, emprestimo: aberto, expiraEm: Date.now() + TEMPO_FLUXO_MS };
+                const ev = publicar({
+                    uid: u, tipo: "devolucao_pessoa_identificada", modo: fluxo.modo,
+                    mensagem: `Olá, ${funcionario.nome}. Você precisa devolver: ${rEquip.data.nome}. Passe a tag desse equipamento no leitor.`,
+                    funcionario: resumoFunc(funcionario), equipamento: resumoEquip(rEquip.data)
+                });
+                return res.json({ sucesso: true, ...ev });
+            }
+            fluxo = { modo: "aguardando_selecao_retirada", funcionario, equipamento: null, emprestimo: null, expiraEm: Date.now() + TEMPO_FLUXO_MS };
+            const disponiveis = await listarEquipamentos();
             const ev = publicar({
-                uid: u, tipo: "tag_pessoal_sem_item", modo: "idle",
-                mensagem: "Para devolver, passe primeiro a tag do item. Para retirar, escolha o item na tela.",
-                funcionario: resumoFunc(ex.registro)
+                uid: u, tipo: "tag_pessoal_identificada", modo: fluxo.modo,
+                mensagem: `Olá, ${funcionario.nome}. Escolha no site o equipamento que deseja retirar.`,
+                funcionario: resumoFunc(funcionario), equipamentos: disponiveis.filter(e => status(e.status) === "disponivel") .map(resumoEquip)
             });
-            return res.status(409).json({ sucesso: false, ...ev });
+            return res.json({ sucesso: true, ...ev });
         }
 
         /* Tag de equipamento */
@@ -419,25 +450,12 @@ app.post("/api/esp32/rfid", async (req, res) => {
             return res.status(409).json({ sucesso: false, ...ev });
         }
 
-        /* Item emprestado: começa a devolução. */
-        const f = await supabase.from("funcionarios").select("*").eq("id", aberto.funcionario_id).maybeSingle();
-        if (f.error) throw f.error;
-
-        fluxo = {
-            modo: "aguardando_tag_pessoal",
-            funcionario: f.data || null,
-            equipamento,
-            emprestimo: aberto,
-            expiraEm: Date.now() + TEMPO_FLUXO_MS
-        };
-
         const ev = publicar({
-            uid: u, tipo: "devolucao_iniciada", modo: "aguardando_tag_pessoal",
-            mensagem: `Devolvendo "${equipamento.nome}". Agora passe a sua tag pessoal para confirmar.`,
-            funcionario: resumoFunc(f.data),
+            uid: u, tipo: "tag_item_sem_pessoa", modo: "idle",
+            mensagem: `Para devolver "${equipamento.nome}", passe primeiro a sua tag pessoal.`,
             equipamento: resumoEquip(equipamento)
         });
-        return res.json({ sucesso: true, ...ev });
+        return res.status(409).json({ sucesso: false, ...ev });
     } catch (e) {
         /* Mostra o erro real do banco na tela, para não ficar "silencioso". */
         publicar({ tipo: "erro_servidor", modo: fluxo.modo, mensagem: "Não foi possível gravar no banco: " + erroMsg(e) });
@@ -480,11 +498,16 @@ app.post("/api/rfid/selecionar", async (req, res) => {
             return res.status(400).json({ sucesso: false, erro: "Escolha o funcionário e o equipamento." });
         }
 
-        if (fluxo.modo !== "idle") {
+        if (fluxo.modo !== "idle" && fluxo.modo !== "aguardando_selecao_retirada") {
             return res.status(409).json({ sucesso: false, tipo: "operacao_conflito", erro: "Já existe uma operação em andamento. Aguarde ou toque em Cancelar." });
         }
+        if (fluxo.modo === "aguardando_selecao_retirada" && Number(fluxo.funcionario?.id) !== fid) {
+            return res.status(409).json({ sucesso: false, tipo: "funcionario_incorreto", erro: "A tag pessoal lida pertence a outro funcionário. Passe sua própria tag antes de selecionar." });
+        }
 
-        const f = await supabase.from("funcionarios").select("*").eq("id", fid).eq("ativo", true).maybeSingle();
+        const f = fluxo.modo === "aguardando_selecao_retirada"
+            ? { data: fluxo.funcionario, error: null }
+            : await supabase.from("funcionarios").select("*").eq("id", fid).eq("ativo", true).maybeSingle();
         if (f.error) throw f.error;
         if (!f.data) return res.status(404).json({ sucesso: false, erro: "Funcionário não encontrado." });
 
