@@ -54,8 +54,6 @@ let rfidEvent = { ...eventoOciosoBase };
 let fluxo = fluxoVazio();
 let cadastroRFID = { ativo: false, tipo: null, expiraEm: 0 };
 let ultimaLeitura = { uid: null, momento: 0 };
-let comandoTrava = null;
-let proximoComandoTrava = 1;
 
 function fluxoVazio() {
     return { modo: "idle", funcionario: null, equipamento: null, emprestimo: null, expiraEm: 0 };
@@ -67,9 +65,28 @@ const uid = (v) => texto(v).toUpperCase().replace(/[^A-Z0-9]/g, "");
 const status = (v) => texto(v).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const erroMsg = e => e?.message || String(e);
 
+function mensagemAmigavel(erro) {
+    const msg = erroMsg(erro);
+    const codigo = erro?.code || erro?.cause?.code || "";
+    const textoErro = msg.toLowerCase();
+
+    if (codigo === "23505" || textoErro.includes("duplicate key") || textoErro.includes("unique constraint")) {
+        if (textoErro.includes("matricula")) return "Esta matrícula já está cadastrada. Confira o número informado.";
+        if (textoErro.includes("uid_tag_pessoal") || textoErro.includes("funcionarios_uid")) return "Esta tag pessoal já está vinculada a outro funcionário.";
+        if (textoErro.includes("uid_tag") || textoErro.includes("equipamentos_uid")) return "Esta tag já está vinculada a outro cadastro.";
+        return "Já existe um cadastro com esses dados. Confira as informações e tente novamente.";
+    }
+    if (textoErro.includes("timeout") || textoErro.includes("aborted")) return "O banco de dados demorou para responder. Aguarde alguns segundos e tente novamente.";
+    if (textoErro.includes("foreign key") || codigo === "23503") return "Não foi possível concluir porque este registro está relacionado a outras movimentações.";
+    if (textoErro.includes("check constraint") || codigo === "23514") return "Alguma informação está fora do formato permitido. Confira os campos e tente novamente.";
+    return "Não foi possível concluir a operação agora. Confira os dados e tente novamente.";
+}
+
 function erroResposta(res, erro, codigo = 500) {
-    console.error("ERRO:", erro);
-    return res.status(codigo).json({ sucesso: false, erro: erroMsg(erro), mensagem: erroMsg(erro) });
+    console.error("ERRO INTERNO:", erro);
+    const amigavel = mensagemAmigavel(erro);
+    const statusHttp = codigo >= 400 && codigo < 500 ? codigo : 500;
+    return res.status(statusHttp).json({ sucesso: false, erro: amigavel, mensagem: amigavel });
 }
 
 function publicar(d) {
@@ -88,16 +105,6 @@ function publicar(d) {
         abrir: d.abrir === true,
         momento: Date.now()
     };
-    if (d.abrir === true) {
-        comandoTrava = {
-            id: proximoComandoTrava++,
-            tipo: "liberar_caixa",
-            tempo_liberacao_ms: 5000,
-            criadoEm: Date.now(),
-            confirmado: false
-        };
-        console.log(`COMANDO TRAVA criado | id=${comandoTrava.id}`);
-    }
     return rfidEvent;
 }
 
@@ -228,30 +235,6 @@ app.post("/api/esp32/online", (req, res) => {
     res.json({ sucesso: true, mensagem: "ESP32 conectado ao servidor", horario: esp32.ultimoContato });
 });
 
-/* Comandos da trava consultados pelo firmware ESP32. */
-app.get("/api/esp32/comando", (req, res) => {
-    if (!comandoTrava || comandoTrava.confirmado) {
-        return res.json({ sucesso: true, id: 0, tipo: "nenhum", tempo_liberacao_ms: 0 });
-    }
-    res.set("Cache-Control", "no-store");
-    return res.json({
-        sucesso: true,
-        id: comandoTrava.id,
-        tipo: comandoTrava.tipo,
-        tempo_liberacao_ms: comandoTrava.tempo_liberacao_ms
-    });
-});
-
-app.post("/api/esp32/comando/confirmar", (req, res) => {
-    const id = Number(req.body?.id);
-    if (!comandoTrava || !Number.isInteger(id) || id !== comandoTrava.id) {
-        return res.status(404).json({ sucesso: false, mensagem: "Comando não encontrado ou já substituído." });
-    }
-    comandoTrava.confirmado = true;
-    console.log(`COMANDO TRAVA confirmado | id=${id}`);
-    return res.json({ sucesso: true, mensagem: "Comando confirmado." });
-});
-
 /* ÚNICO ponto de entrada das tags. */
 app.post("/api/esp32/rfid", async (req, res) => {
     try {
@@ -367,73 +350,53 @@ app.post("/api/esp32/rfid", async (req, res) => {
             return res.status(201).json({ sucesso: true, ...ev, emprestimo: ins.data });
         }
 
-        /* ---------- DEVOLUÇÃO: validar equipamento e concluir sem segunda tag pessoal ---------- */
+        /* ---------- DEVOLUÇÃO: validação da tag do equipamento ---------- */
         if (fluxo.modo === "aguardando_tag_equipamento_devolucao") {
             const equipamentoEsperado = fluxo.equipamento;
             const equipamentoLido = await buscarEquipamentoPorUID(u);
-
             if (!equipamentoLido) {
-                const ev = publicar({
-                    uid: u, tipo: "tag_nao_cadastrada",
-                    mensagem: "Essa tag não pertence a um equipamento cadastrado. Passe a tag do equipamento que está emprestado.",
-                    funcionario: resumoFunc(fluxo.funcionario),
-                    equipamento: resumoEquip(equipamentoEsperado)
-                });
+                const ev = publicar({ uid: u, tipo: "tag_nao_cadastrada", mensagem: "Tag não cadastrada. Passe a tag do equipamento emprestado.", funcionario: resumoFunc(fluxo.funcionario), equipamento: resumoEquip(equipamentoEsperado) });
                 return res.status(404).json({ sucesso: false, ...ev });
             }
-
             if (Number(equipamentoLido.id) !== Number(equipamentoEsperado.id)) {
-                const ev = publicar({
-                    uid: u, tipo: "objeto_incorreto",
-                    mensagem: `Equipamento incorreto. Para concluir, passe "${equipamentoEsperado.nome}".`,
-                    funcionario: resumoFunc(fluxo.funcionario),
-                    equipamento: resumoEquip(equipamentoEsperado),
-                    equipamentoRecebido: resumoEquip(equipamentoLido),
-                    equipamentoEsperado: resumoEquip(equipamentoEsperado)
-                });
+                const ev = publicar({ uid: u, tipo: "objeto_incorreto", mensagem: `Equipamento incorreto. A devolução esperada é de "${equipamentoEsperado.nome}".`, funcionario: resumoFunc(fluxo.funcionario), equipamento: resumoEquip(equipamentoEsperado), equipamentoRecebido: resumoEquip(equipamentoLido), equipamentoEsperado: resumoEquip(equipamentoEsperado) });
                 return res.status(409).json({ sucesso: false, ...ev });
             }
-
-            // Revalidar o empréstimo aberto antes de atualizar os dados.
-            const aberto = await emprestimoAbertoDoEquipamento(equipamentoLido.id);
-            if (!aberto || Number(aberto.id) !== Number(fluxo.emprestimo?.id)) {
+            const emprestimo = fluxo.emprestimo;
+            const funcionario = fluxo.funcionario;
+            if (!emprestimo?.id) {
                 limparFluxo();
-                const ev = publicar({
-                    uid: u, tipo: "operacao_conflito", modo: "idle",
-                    mensagem: "Este empréstimo já foi encerrado ou mudou. Atualize o painel antes de tentar novamente."
-                });
+                const ev = publicar({ uid: u, tipo: "operacao_conflito", modo: "idle", mensagem: "Não foi possível localizar o empréstimo em aberto. Atualize o painel e tente novamente." });
                 return res.status(409).json({ sucesso: false, ...ev });
             }
 
-            const dev = await supabase.from("emprestimos")
+            const devolucao = await supabase.from("emprestimos")
                 .update({ data_devolucao: agora(), status: "Devolvido" })
-                .eq("id", aberto.id).is("data_devolucao", null)
+                .eq("id", emprestimo.id).is("data_devolucao", null)
                 .select().maybeSingle();
-
-            if (dev.error) throw dev.error;
-            if (!dev.data) {
+            if (devolucao.error) throw devolucao.error;
+            if (!devolucao.data) {
                 limparFluxo();
-                const ev = publicar({
-                    uid: u, tipo: "operacao_conflito", modo: "idle",
-                    mensagem: "A devolução já foi registrada. Atualize o painel para conferir."
-                });
+                const ev = publicar({ uid: u, tipo: "operacao_conflito", modo: "idle", mensagem: "Esta devolução já foi registrada. Atualize o painel para conferir o estado atual." });
                 return res.status(409).json({ sucesso: false, ...ev });
             }
 
             const atualizacao = await supabase.from("equipamentos")
-                .update({ status: "disponivel" }).eq("id", equipamentoLido.id);
-            if (atualizacao.error) throw atualizacao.error;
+                .update({ status: "disponivel" }).eq("id", equipamentoEsperado.id);
+            if (atualizacao.error) {
+                console.error("Falha ao atualizar status do equipamento após devolução:", atualizacao.error);
+                limparFluxo();
+                const ev = publicar({ uid: u, tipo: "erro_servidor", modo: "idle", mensagem: "A devolução foi registrada, mas não foi possível atualizar o status do equipamento. Confira o Painel." });
+                return res.status(500).json({ sucesso: false, ...ev });
+            }
 
-            const pessoa = fluxo.funcionario;
             limparFluxo();
             const ev = publicar({
                 uid: u, tipo: "devolucao_concluida", modo: "idle",
-                mensagem: `${equipamentoLido.nome} foi devolvido com sucesso. A caixa será liberada.`,
-                funcionario: resumoFunc(pessoa),
-                equipamento: resumoEquip(equipamentoLido),
-                abrir: true
+                mensagem: `${equipamentoEsperado.nome} foi devolvido com sucesso.`,
+                funcionario: resumoFunc(funcionario), equipamento: resumoEquip(equipamentoEsperado), abrir: true
             });
-            return res.json({ sucesso: true, ...ev, emprestimo: dev.data });
+            return res.json({ sucesso: true, ...ev, emprestimo: devolucao.data });
         }
 
         /* ---------- SEM OPERAÇÃO EM ANDAMENTO ---------- */

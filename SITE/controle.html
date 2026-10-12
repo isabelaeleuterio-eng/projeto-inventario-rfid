@@ -22,14 +22,6 @@
   </div>
 
   <section class="card" style="margin-bottom:20px">
-    <div class="card-h"><h2>Funcionários cadastrados</h2><span class="sub" id="contFuncionarios"></span></div>
-    <div class="scroll"><table class="tbl"><thead><tr><th>Nome</th><th>Matrícula</th><th>Setor</th><th></th></tr></thead><tbody id="tbFuncionarios"><tr><td class="empty" colspan="4">Carregando…</td></tr></tbody></table></div>
-  </section>
-  <section class="card" style="margin-bottom:20px">
-    <div class="card-h"><h2>Equipamentos cadastrados</h2><span class="sub" id="contEquipamentos"></span></div>
-    <div class="scroll"><table class="tbl"><thead><tr><th>Equipamento</th><th>Tag RFID</th><th>Status</th><th></th></tr></thead><tbody id="tbEquipamentos"><tr><td class="empty" colspan="4">Carregando…</td></tr></tbody></table></div>
-  </section>
-  <section class="card" style="margin-bottom:20px">
     <div class="card-h"><h2>Em uso agora</h2></div>
     <div class="scroll"><table class="tbl">
       <thead><tr><th>Equipamento</th><th>Funcionário</th><th>Retirada</th><th></th></tr></thead>
@@ -52,21 +44,11 @@ montarTopo("pn"); iniciarPills();
 
 async function carregar() {
   try {
-    const [d, h, f, eq] = await Promise.all([api("/api/dashboard"), api("/api/emprestimos"), api("/api/funcionarios"), api("/api/equipamentos")]);
+    const [d, h] = await Promise.all([api("/api/dashboard"), api("/api/emprestimos")]);
     $("#stF").textContent = d.funcionarios ?? 0;
     $("#stE").textContent = d.equipamentos ?? 0;
     $("#stD").textContent = d.disponiveis ?? 0;
     $("#stU").textContent = d.emprestimos ?? 0;
-
-    const funcionarios = f.funcionarios || [];
-    const equipamentos = eq.equipamentos || [];
-    $("#contFuncionarios").textContent = `${funcionarios.length} cadastrado(s)`;
-    $("#contEquipamentos").textContent = `${equipamentos.length} cadastrado(s)`;
-    $("#tbFuncionarios").innerHTML = funcionarios.length ? funcionarios.map(x => `<tr><td><b>${esc(x.nome)}</b></td><td>${esc(x.matricula || "—")}</td><td>${esc(x.setor || "—")}</td><td style="text-align:right"><button class="btn btn-sm btn-danger" data-del-f="${x.id}" data-nome="${esc(x.nome)}">Excluir</button></td></tr>`).join("") : `<tr><td class="empty" colspan="4">Nenhum funcionário cadastrado.</td></tr>`;
-    $("#tbEquipamentos").innerHTML = equipamentos.length ? equipamentos.map(x => {
-      const disp = String(x.status || "").toLowerCase() === "disponivel";
-      return `<tr><td><b>${esc(x.nome)}</b>${x.descricao ? `<div class="sub" style="font-size:13px">${esc(x.descricao)}</div>` : ""}</td><td class="mono">${esc(x.uid_tag || "—")}</td><td><span class="badge ${disp ? "good" : "warn"}">${disp ? "Disponível" : "Emprestado"}</span></td><td style="text-align:right"><button class="btn btn-sm btn-danger" data-del-e="${x.id}" data-nome="${esc(x.nome)}">Excluir</button></td></tr>`;
-    }).join("") : `<tr><td class="empty" colspan="4">Nenhum equipamento cadastrado.</td></tr>`;
 
     const todos = h.emprestimos || [];
     const abertos = todos.filter(e => !e.data_devolucao);
@@ -90,14 +72,8 @@ async function carregar() {
 
 document.addEventListener("click", async ev => {
   const dv = ev.target.closest("[data-dev]"), ap = ev.target.closest("[data-apagar]");
-  const df = ev.target.closest("[data-del-f]"), de = ev.target.closest("[data-del-e]");
   try {
-    if (df || de) {
-      const alvo = df || de;
-      if (!confirm(`Excluir "${alvo.dataset.nome}" do cadastro? O histórico de empréstimos será preservado.`)) return;
-      await api((df ? "/api/funcionarios/" : "/api/equipamentos/") + (df ? df.dataset.delF : de.dataset.delE), { method: "DELETE" });
-      aviso("#aviso", "good", "Registro desativado com sucesso.");
-    } else if (dv) {
+    if (dv) {
       if (!confirm("Registrar a devolução deste equipamento manualmente?")) return;
       await api(`/api/emprestimos/${dv.dataset.dev}/devolver`, { method: "PUT", body: {} });
       aviso("#aviso", "good", "Devolução registrada.");

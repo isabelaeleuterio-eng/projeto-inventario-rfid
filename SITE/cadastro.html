@@ -1,72 +1,114 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Cadastro | Inventário RFID</title><link rel="stylesheet" href="/estilo.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadastro | Inventário RFID</title>
+<link rel="stylesheet" href="/estilo.css">
 </head>
 <body>
 <main class="wrap">
-  <div class="page-head"><h1>Cadastro</h1><div class="sub">Cadastre funcionários e equipamentos. A tag é lida diretamente no leitor RFID.</div></div>
-  <div class="grid2">
-    <section class="card"><div class="card-h"><h2>Novo funcionário</h2></div><div class="card-b">
-      <div id="avF" aria-live="polite"></div>
-      <div class="field"><label for="fNome">Nome completo</label><input id="fNome" placeholder="Ex.: Maria Silva" autocomplete="off"></div>
-      <div class="row2"><div class="field"><label for="fMat">Matrícula</label><input id="fMat" placeholder="Ex.: 2026001" autocomplete="off"></div><div class="field"><label for="fSetor">Setor (opcional)</label><input id="fSetor" placeholder="Ex.: Manutenção" autocomplete="off"></div></div>
-      <div class="field"><label for="fTag">Tag pessoal (crachá)</label><div class="taginput"><input id="fTag" class="mono" placeholder="Clique em Ler tag" autocomplete="off" readonly><button class="btn" id="btnLerF" type="button">Ler tag</button></div><div class="hint" id="hintF">Clique em “Ler tag” e aproxime o crachá do leitor.</div></div>
-      <button class="btn btn-primary" id="btnSalvarF" type="button" style="width:100%">Cadastrar funcionário</button>
-    </div></section>
-    <section class="card"><div class="card-h"><h2>Novo equipamento</h2></div><div class="card-b">
-      <div id="avE" aria-live="polite"></div>
-      <div class="field"><label for="eNome">Nome do equipamento</label><input id="eNome" placeholder="Ex.: Furadeira" autocomplete="off"></div>
-      <div class="field"><label for="eDesc">Descrição (opcional)</label><input id="eDesc" placeholder="Ex.: Furadeira de impacto" autocomplete="off"></div>
-      <div class="field"><label for="eTag">Tag RFID do equipamento</label><div class="taginput"><input id="eTag" class="mono" placeholder="Clique em Ler tag" autocomplete="off" readonly><button class="btn" id="btnLerE" type="button">Ler tag</button></div><div class="hint" id="hintE">Clique em “Ler tag” e aproxime a tag do equipamento.</div></div>
-      <button class="btn btn-primary" id="btnSalvarE" type="button" style="width:100%">Cadastrar equipamento</button>
-    </div></section>
+  <div class="page-head">
+    <h1>Cadastro</h1>
+    <div class="sub">Cadastre pessoas e equipamentos. A tag é lida direto no leitor RFID.</div>
   </div>
-  <p class="sub" style="margin-top:18px">As listas e as opções de gerenciamento ficam no <a href="/controle"><b>Painel de controle</b></a>.</p>
+
+  <div class="grid2">
+    <!-- FUNCIONÁRIO -->
+    <section class="card">
+      <div class="card-h"><h2>Novo funcionário</h2></div>
+      <div class="card-b">
+        <div id="avF"></div>
+        <div class="field"><label for="fNome">Nome</label><input id="fNome" placeholder="Ex: Isabela Eleutério" autocomplete="off"></div>
+        <div class="row2">
+          <div class="field"><label for="fMat">Matrícula</label><input id="fMat" placeholder="Ex: SP3217485" autocomplete="off"></div>
+          <div class="field"><label for="fSetor">Setor (opcional)</label><input id="fSetor" placeholder="Ex: Manutenção" autocomplete="off"></div>
+        </div>
+        <div class="field"><label for="fTag">Tag pessoal (crachá)</label>
+          <div class="taginput"><input id="fTag" class="mono" placeholder="Passe a tag no leitor" autocomplete="off"><button class="btn" id="btnLerF" type="button">Ler tag</button></div>
+          <div class="hint" id="hintF">Clique em "Ler tag" e aproxime o crachá do leitor.</div>
+        </div>
+        <button class="btn btn-primary" id="btnSalvarF" type="button" style="width:100%">Cadastrar funcionário</button>
+      </div>
+    </section>
+
+    <!-- EQUIPAMENTO -->
+    <section class="card">
+      <div class="card-h"><h2>Novo equipamento</h2></div>
+      <div class="card-b">
+        <div id="avE"></div>
+        <div class="field"><label for="eNome">Nome</label><input id="eNome" placeholder="Ex: Martelo" autocomplete="off"></div>
+        <div class="field"><label for="eDesc">Descrição (opcional)</label><input id="eDesc" placeholder="Ex: Martelo de borracha 500 g" autocomplete="off"></div>
+        <div class="field"><label for="eTag">Tag do equipamento</label>
+          <div class="taginput"><input id="eTag" class="mono" placeholder="Passe a tag no leitor" autocomplete="off"><button class="btn" id="btnLerE" type="button">Ler tag</button></div>
+          <div class="hint" id="hintE">Clique em "Ler tag" e aproxime a tag do equipamento do leitor.</div>
+        </div>
+        <button class="btn btn-primary" id="btnSalvarE" type="button" style="width:100%">Cadastrar equipamento</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="card" style="margin-top:20px;padding:18px 22px">
+    <strong>Gerenciamento de registros</strong>
+    <p class="sub" style="margin:6px 0 0">Para consultar, editar ou desativar funcionários e equipamentos, acesse a aba <a href="/controle" style="color:var(--primary);font-weight:700;text-decoration:underline">Painel</a>.</p>
+  </div>
 </main>
-<script src="/app.js"></script><script>
+
+<script src="/app.js"></script>
+<script>
 montarTopo("cad"); iniciarPills();
-const espera = ms => new Promise(resolve => setTimeout(resolve, ms));
-async function lerTag(tipo,input,botao,hint,avisoId){
-  botao.disabled=true;botao.textContent="Aguardando…";input.value="";hint.textContent="Aproxime a tag do leitor em até 30 segundos.";
-  try{
-    const estadoInicial=await api("/api/status");
-    let ultimo=estadoInicial.rfid?.id||0;
-    await api("/api/rfid/cadastro/iniciar",{method:"POST",body:{tipo}});
-    const limite=Date.now()+30000;let concluida=false;
-    while(Date.now()<limite){
-      await espera(450);
-      const d=await api("/api/status");const ev=d.rfid||{};
-      if(!ev.id||ev.id===ultimo)continue;
-      ultimo=ev.id;
-      if(ev.tipo==="cadastro_tag"&&ev.modo==="cadastro"){
-        input.value=ev.uid||"";hint.textContent="Tag lida com sucesso.";concluida=true;break;
-      }
-      if(ev.tipo==="tag_ja_cadastrada"){
-        hint.textContent=ev.mensagem||"Esta tag já está cadastrada.";aviso(avisoId,"bad",hint.textContent);concluida=true;break;
-      }
+const dorme = ms => new Promise(r => setTimeout(r, ms));
+
+/* ---------- leitura de tag pelo leitor ---------- */
+async function lerTag(tipo, input, btn, hint) {
+  btn.disabled = true; btn.textContent = "Aguardando…";
+  hint.textContent = "Aproxime a tag do leitor agora (até 30 segundos).";
+  try {
+    let base = (await api("/api/status")).rfid.id;
+    await api("/api/rfid/cadastro/iniciar", { method: "POST", body: { tipo } });
+    const limite = Date.now() + 30000;
+    let achou = false;
+    while (Date.now() < limite) {
+      await dorme(900);
+      const ev = (await api("/api/status")).rfid;
+      if (ev.id === base) continue;
+      base = ev.id;
+      if (ev.tipo === "cadastro_tag") { input.value = ev.uid; hint.textContent = "Tag lida com sucesso."; achou = true; break; }
+      if (ev.tipo === "tag_ja_cadastrada") { hint.textContent = ev.mensagem; achou = true; break; }
     }
-    if(!concluida){hint.textContent="Não recebemos uma tag dentro do prazo. Tente novamente.";}
-  }catch(e){hint.textContent="Não foi possível ler a tag agora.";aviso(avisoId,"bad",e.message);}
-  finally{botao.disabled=false;botao.textContent="Ler tag";}
+    if (!achou) hint.textContent = "Tempo esgotado. Clique em \"Ler tag\" e tente de novo.";
+  } catch (e) { hint.textContent = e.message || "Não foi possível ler a tag. Tente novamente."; }
+  btn.disabled = false; btn.textContent = "Ler tag";
 }
-$("#btnLerF").onclick=()=>lerTag("funcionario",$("#fTag"),$("#btnLerF"),$("#hintF"),"#avF");
-$("#btnLerE").onclick=()=>lerTag("equipamento",$("#eTag"),$("#btnLerE"),$("#hintE"),"#avE");
-$("#btnSalvarF").onclick=async()=>{
- const nome=$("#fNome").value.trim(),matricula=$("#fMat").value.trim(),tag=$("#fTag").value.trim();
- if(!nome||!matricula||!tag)return aviso("#avF","bad","Preencha nome, matrícula e leia a tag pessoal.");
- const b=$("#btnSalvarF");b.disabled=true;
- try{await api("/api/funcionarios",{method:"POST",body:{nome,matricula,setor:$("#fSetor").value.trim(),uid_tag_pessoal:tag}});
- aviso("#avF","good","Funcionário cadastrado com sucesso.");["#fNome","#fMat","#fSetor","#fTag"].forEach(x=>$(x).value="");$("#hintF").textContent="Cadastro concluído. Para outro funcionário, leia uma nova tag.";
- }catch(e){aviso("#avF","bad",e.message);}finally{b.disabled=false;}
+$("#btnLerF").onclick = () => lerTag("funcionario", $("#fTag"), $("#btnLerF"), $("#hintF"));
+$("#btnLerE").onclick = () => lerTag("equipamento", $("#eTag"), $("#btnLerE"), $("#hintE"));
+
+/* ---------- salvar ---------- */
+$("#btnSalvarF").onclick = async () => {
+  const nome = $("#fNome").value.trim(), matricula = $("#fMat").value.trim(), tag = $("#fTag").value.trim();
+  if (!nome || !matricula || !tag) return aviso("#avF", "bad", "Preencha nome, matrícula e a tag.");
+  try {
+    await api("/api/funcionarios", { method: "POST", body: { nome, matricula, setor: $("#fSetor").value.trim(), uid_tag_pessoal: tag } });
+    aviso("#avF", "good", `${nome} cadastrado.`);
+    ["#fNome", "#fMat", "#fSetor", "#fTag"].forEach(s => $(s).value = "");
+    $("#hintF").textContent = 'Clique em "Ler tag" e aproxime o crachá do leitor.';
+    carregar();
+  } catch (e) { aviso("#avF", "bad", e.message || "Não foi possível cadastrar. Confira os dados e tente novamente.", 0); }
 };
-$("#btnSalvarE").onclick=async()=>{
- const nome=$("#eNome").value.trim(),tag=$("#eTag").value.trim();
- if(!nome||!tag)return aviso("#avE","bad","Preencha o nome e leia a tag do equipamento.");
- const b=$("#btnSalvarE");b.disabled=true;
- try{await api("/api/equipamentos",{method:"POST",body:{nome,descricao:$("#eDesc").value.trim(),uid_tag:tag}});
- aviso("#avE","good","Equipamento cadastrado com sucesso.");["#eNome","#eDesc","#eTag"].forEach(x=>$(x).value="");$("#hintE").textContent="Cadastro concluído. Para outro equipamento, leia uma nova tag.";
- }catch(e){aviso("#avE","bad",e.message);}finally{b.disabled=false;}
+$("#btnSalvarE").onclick = async () => {
+  const nome = $("#eNome").value.trim(), tag = $("#eTag").value.trim();
+  if (!nome || !tag) return aviso("#avE", "bad", "Preencha o nome e a tag.");
+  try {
+    await api("/api/equipamentos", { method: "POST", body: { nome, descricao: $("#eDesc").value.trim(), uid_tag: tag } });
+    aviso("#avE", "good", `${nome} cadastrado.`);
+    ["#eNome", "#eDesc", "#eTag"].forEach(s => $(s).value = "");
+    $("#hintE").textContent = 'Clique em "Ler tag" e aproxime a tag do equipamento do leitor.';
+    carregar();
+  } catch (e) { aviso("#avE", "bad", e.message || "Não foi possível cadastrar. Confira os dados e tente novamente.", 0); }
 };
-</script></body></html>
+
+/* As listas e ações de gerenciamento ficam exclusivamente no Painel. */
+function carregar() {}
+</script>
+</body>
+</html>
