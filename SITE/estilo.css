@@ -150,3 +150,89 @@ h2{font-size:19px;letter-spacing:-.01em;margin:0}
 .panel-empty{padding:26px;text-align:center;color:var(--muted)}
 .panel-tag{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;overflow-wrap:anywhere}
 @media(max-width:560px){.topbar-in{gap:10px;padding:10px 14px}.brand{font-size:16px}.nav{order:3;width:100%;margin-left:0;overflow-x:auto}.nav a{white-space:nowrap;flex:1;text-align:center;padding:9px 10px}.pills{margin-left:auto}.stat{padding:16px}.stat .v{font-size:30px}.stat-button .stat-open{right:14px;top:14px}}
+
+/* ===== CORREÇÃO DO LAYOUT DA OPERAÇÃO ===== */
+
+/* Dois cartões lado a lado em telas grandes */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    align-items: stretch;
+}
+
+/* Cartões de retirada e devolução */
+.choice {
+    width: 100%;
+    min-width: 0;
+    min-height: 220px;
+    padding: 30px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 12px;
+}
+
+/* Ícones maiores e centralizados */
+.choice .ico {
+    width: 60px;
+    height: 60px;
+    flex: 0 0 60px;
+    display: grid;
+    place-items: center;
+    border-radius: 18px;
+    background: var(--primary-l);
+    color: var(--primary);
+    font-size: 30px;
+    line-height: 1;
+}
+
+/* Ícone verde para devolução */
+.choice .ico.green {
+    background: var(--good-l);
+    color: var(--good);
+}
+
+/* Títulos e descrições dos cartões */
+.choice h2 {
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.3;
+}
+
+.choice p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* Efeito ao passar o mouse */
+.choice:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+}
+
+/* Evita que elementos ultrapassem a largura */
+.grid > * {
+    min-width: 0;
+}
+
+/* Ajuste para celulares e tablets estreitos */
+@media (max-width: 720px) {
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .choice {
+        min-height: auto;
+        padding: 24px;
+    }
+}
