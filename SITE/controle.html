@@ -3,88 +3,164 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f6fb">
 <title>Painel | Inventário RFID</title>
 <link rel="stylesheet" href="/estilo.css">
 </head>
 <body>
 <main class="wrap">
   <div class="page-head">
-    <h1>Painel</h1>
-    <div class="sub">Quem está com o quê e o histórico de movimentações.</div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px">
+      <img src="/logo.png" alt="Logo Inventário RFID" width="54" height="54" style="object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:15px;padding:4px">
+      <div><h1>Painel de gerenciamento</h1><div class="sub">Consulte os cadastros, acompanhe os empréstimos e confira o histórico.</div></div>
+    </div>
   </div>
-  <div id="aviso"></div>
+  <div id="aviso" aria-live="polite"></div>
 
-  <div class="stats">
-    <div class="card stat"><div class="l">Funcionários</div><div class="v" id="stF">—</div></div>
-    <div class="card stat"><div class="l">Equipamentos</div><div class="v b" id="stE">—</div></div>
-    <div class="card stat"><div class="l">Disponíveis</div><div class="v g" id="stD">—</div></div>
-    <div class="card stat"><div class="l">Fora da caixa</div><div class="v w" id="stU">—</div></div>
+  <div class="stats" aria-label="Indicadores do inventário">
+    <button type="button" class="card stat stat-button" data-painel="funcionarios" aria-expanded="false" aria-controls="lista-funcionarios"><span class="stat-open" aria-hidden="true">⌄</span><div class="l">Funcionários</div><div class="v" id="stF">—</div><div class="hint">Clique para ver os cadastrados</div></button>
+    <button type="button" class="card stat stat-button" data-painel="equipamentos" aria-expanded="false" aria-controls="lista-equipamentos"><span class="stat-open" aria-hidden="true">⌄</span><div class="l">Equipamentos</div><div class="v b" id="stE">—</div><div class="hint">Clique para ver todos os itens</div></button>
+    <button type="button" class="card stat stat-button" data-painel="disponiveis" aria-expanded="false" aria-controls="lista-disponiveis"><span class="stat-open" aria-hidden="true">⌄</span><div class="l">Disponíveis</div><div class="v g" id="stD">—</div><div class="hint">Clique para ver o que pode ser retirado</div></button>
+    <button type="button" class="card stat stat-button" data-painel="fora" aria-expanded="false" aria-controls="lista-fora"><span class="stat-open" aria-hidden="true">⌄</span><div class="l">Fora da caixa</div><div class="v w" id="stU">—</div><div class="hint">Clique para ver os empréstimos abertos</div></button>
   </div>
+
+  <section id="lista-funcionarios" class="card panel-list" data-lista="funcionarios" hidden>
+    <div class="card-h"><div><h2>Funcionários cadastrados</h2><p>Funcionários ativos que podem ser identificados pelo sistema.</p></div><span class="panel-count" id="contF">—</span></div>
+    <div class="panel-toolbar"><input id="buscaF" type="search" placeholder="Buscar por nome, matrícula ou tag…" aria-label="Buscar funcionários"></div>
+    <div class="scroll"><table class="tbl"><thead><tr><th>Funcionário</th><th>Matrícula</th><th>Tag RFID</th><th>Ação</th></tr></thead><tbody id="tbF"><tr><td class="empty" colspan="4">Carregando…</td></tr></tbody></table></div>
+  </section>
+
+  <section id="lista-equipamentos" class="card panel-list" data-lista="equipamentos" hidden>
+    <div class="card-h"><div><h2>Todos os equipamentos</h2><p>Identificação e situação atual de cada item.</p></div><span class="panel-count" id="contE">—</span></div>
+    <div class="panel-toolbar"><input id="buscaE" type="search" placeholder="Buscar por nome, descrição ou tag…" aria-label="Buscar equipamentos"></div>
+    <div class="scroll"><table class="tbl"><thead><tr><th>Equipamento</th><th>Tag RFID</th><th>Situação</th><th>Ação</th></tr></thead><tbody id="tbE"><tr><td class="empty" colspan="4">Carregando…</td></tr></tbody></table></div>
+  </section>
+
+  <section id="lista-disponiveis" class="card panel-list" data-lista="disponiveis" hidden>
+    <div class="card-h"><div><h2>Equipamentos disponíveis</h2><p>Itens liberados para uma nova retirada.</p></div><span class="panel-count" id="contD">—</span></div>
+    <div class="scroll"><table class="tbl"><thead><tr><th>Equipamento</th><th>Tag RFID</th><th>Situação</th></tr></thead><tbody id="tbD"><tr><td class="empty" colspan="3">Carregando…</td></tr></tbody></table></div>
+  </section>
+
+  <section id="lista-fora" class="card panel-list" data-lista="fora" hidden>
+    <div class="card-h"><div><h2>Equipamentos fora da caixa</h2><p>Itens com empréstimo ainda em aberto.</p></div><span class="panel-count" id="contU">—</span></div>
+    <div class="scroll"><table class="tbl"><thead><tr><th>Equipamento</th><th>Responsável</th><th>Retirada</th><th>Ação</th></tr></thead><tbody id="tbU"><tr><td class="empty" colspan="4">Carregando…</td></tr></tbody></table></div>
+  </section>
 
   <section class="card" style="margin-bottom:20px">
-    <div class="card-h"><h2>Em uso agora</h2></div>
-    <div class="scroll"><table class="tbl">
-      <thead><tr><th>Equipamento</th><th>Funcionário</th><th>Retirada</th><th></th></tr></thead>
-      <tbody id="tbUso"><tr><td class="empty" colspan="4">Carregando…</td></tr></tbody>
-    </table></div>
+    <div class="card-h"><div><h2>Em uso agora</h2><div class="sub">Visão rápida dos empréstimos em andamento.</div></div><span class="panel-count" id="contUso"></span></div>
+    <div class="scroll"><table class="tbl"><thead><tr><th>Equipamento</th><th>Funcionário</th><th>Retirada</th><th>Ação</th></tr></thead><tbody id="tbUso"><tr><td class="empty" colspan="4">Carregando…</td></tr></tbody></table></div>
   </section>
 
   <section class="card">
-    <div class="card-h"><h2>Histórico</h2><span class="sub" id="contH"></span></div>
-    <div class="scroll"><table class="tbl">
-      <thead><tr><th>Funcionário</th><th>Equipamento</th><th>Retirada</th><th>Devolução</th><th></th></tr></thead>
-      <tbody id="tbH"><tr><td class="empty" colspan="5">Carregando…</td></tr></tbody>
-    </table></div>
+    <div class="card-h"><div><h2>Histórico de movimentações</h2><div class="sub">Retiradas e devoluções registradas pelo sistema.</div></div><span class="panel-count" id="contH"></span></div>
+    <div class="scroll"><table class="tbl"><thead><tr><th>Funcionário</th><th>Equipamento</th><th>Retirada</th><th>Devolução</th><th>Ação</th></tr></thead><tbody id="tbH"><tr><td class="empty" colspan="5">Carregando…</td></tr></tbody></table></div>
   </section>
+  <div class="foot">Inventário RFID · Painel conectado aos dados do sistema</div>
 </main>
 
 <script src="/app.js"></script>
 <script>
 montarTopo("pn"); iniciarPills();
+let funcionarios = [], equipamentos = [], emprestimos = [];
+const normalizar = v => String(v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const statusEquip = e => normalizar(e?.status || "");
+const disponivel = e => statusEquip(e).includes("disponivel");
+const emAberto = e => !e.data_devolucao;
+const tdVazia = (colspan, texto) => `<tr><td class="empty" colspan="${colspan}">${esc(texto)}</td></tr>`;
+const nomeEquip = e => e?.equipamento?.nome || "—";
+const nomeFunc = e => e?.funcionario?.nome || "—";
 
+function mostrarLista(chave) {
+  const alvo = document.querySelector(`[data-lista="${chave}"]`);
+  const jaAberta = alvo && !alvo.hidden;
+  document.querySelectorAll("[data-lista]").forEach(sec => sec.hidden = true);
+  document.querySelectorAll("[data-painel]").forEach(btn => btn.setAttribute("aria-expanded", "false"));
+  if (alvo && !jaAberta) {
+    alvo.hidden = false;
+    const botao = document.querySelector(`[data-painel="${chave}"]`);
+    if (botao) botao.setAttribute("aria-expanded", "true");
+    alvo.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+document.querySelectorAll("[data-painel]").forEach(btn => btn.addEventListener("click", () => mostrarLista(btn.dataset.painel)));
+
+function renderFuncionarios() {
+  const q = normalizar($("#buscaF").value);
+  const lista = funcionarios.filter(f => normalizar([f.nome, f.matricula, f.uid_tag_pessoal, f.uid_rfid].join(" ")).includes(q));
+  $("#contF").textContent = `${lista.length} de ${funcionarios.length}`;
+  $("#tbF").innerHTML = lista.length ? lista.map(f => `<tr><td><b>${esc(f.nome || "—")}</b></td><td>${esc(f.matricula || "—")}</td><td class="panel-tag">${esc(f.uid_tag_pessoal || f.uid_rfid || "—")}</td><td><div class="row-actions"><button class="btn btn-sm btn-danger" data-del-f="${esc(f.id)}" data-nome="${esc(f.nome || "funcionário")}">Desativar</button></div></td></tr>`).join("") : tdVazia(4, q ? "Nenhum funcionário corresponde à busca." : "Nenhum funcionário cadastrado.");
+}
+function linhaEquipamento(e, acao=true) {
+  const livre = disponivel(e);
+  const situacao = livre ? '<span class="badge good">Disponível</span>' : `<span class="badge warn">${esc(e.status || "Em uso")}</span>`;
+  return `<tr><td><b>${esc(e.nome || "—")}</b>${e.descricao ? `<div class="sub" style="font-size:13px">${esc(e.descricao)}</div>` : ""}</td><td class="panel-tag">${esc(e.uid_tag || e.uid_rfid || "—")}</td><td>${situacao}</td>${acao ? `<td><div class="row-actions"><button class="btn btn-sm btn-danger" data-del-e="${esc(e.id)}" data-nome="${esc(e.nome || "equipamento")}">Desativar</button></div></td>` : ""}</tr>`;
+}
+function renderEquipamentos() {
+  const q = normalizar($("#buscaE").value);
+  const lista = equipamentos.filter(e => normalizar([e.nome, e.descricao, e.uid_tag, e.uid_rfid, e.status].join(" ")).includes(q));
+  $("#contE").textContent = `${lista.length} de ${equipamentos.length}`;
+  $("#tbE").innerHTML = lista.length ? lista.map(e => linhaEquipamento(e)).join("") : tdVazia(4, q ? "Nenhum equipamento corresponde à busca." : "Nenhum equipamento cadastrado.");
+  const livres = equipamentos.filter(disponivel);
+  $("#contD").textContent = `${livres.length} disponível(is)`;
+  $("#tbD").innerHTML = livres.length ? livres.map(e => linhaEquipamento(e, false)).join("") : tdVazia(3, "Não há equipamentos disponíveis no momento.");
+}
+function renderEmprestimos() {
+  const abertos = emprestimos.filter(emAberto);
+  $("#contU").textContent = `${abertos.length} em aberto`;
+  $("#contUso").textContent = `${abertos.length} equipamento(s)`;
+  const linhasAbertas = abertos.length ? abertos.map(e => `<tr><td><b>${esc(nomeEquip(e))}</b></td><td>${esc(nomeFunc(e))}</td><td class="mono">${fmtData(e.data_retirada)}</td><td><div class="row-actions"><button class="btn btn-sm" data-dev="${esc(e.id)}">Registrar devolução manual</button></div></td></tr>`).join("") : tdVazia(4, "Nenhum equipamento emprestado no momento.");
+  $("#tbU").innerHTML = linhasAbertas;
+  $("#tbUso").innerHTML = linhasAbertas;
+  const hist = emprestimos.slice(0, 100);
+  $("#contH").textContent = hist.length ? `${hist.length} movimentação(ões) recentes` : "Sem movimentações";
+  $("#tbH").innerHTML = hist.length ? hist.map(e => `<tr><td>${esc(nomeFunc(e))}</td><td>${esc(nomeEquip(e))}</td><td class="mono">${fmtData(e.data_retirada)}</td><td>${e.data_devolucao ? fmtData(e.data_devolucao) : '<span class="badge warn">Em aberto</span>'}</td><td>${e.data_devolucao ? `<button class="btn btn-sm btn-ghost" data-apagar="${esc(e.id)}">Apagar histórico</button>` : '<span class="sub">Em andamento</span>'}</td></tr>`).join("") : tdVazia(5, "Nenhuma movimentação registrada ainda.");
+}
 async function carregar() {
   try {
-    const [d, h] = await Promise.all([api("/api/dashboard"), api("/api/emprestimos")]);
-    $("#stF").textContent = d.funcionarios ?? 0;
-    $("#stE").textContent = d.equipamentos ?? 0;
-    $("#stD").textContent = d.disponiveis ?? 0;
-    $("#stU").textContent = d.emprestimos ?? 0;
-
-    const todos = h.emprestimos || [];
-    const abertos = todos.filter(e => !e.data_devolucao);
-
-    $("#tbUso").innerHTML = abertos.length ? abertos.map(e => `
-      <tr><td><b>${esc(e.equipamento?.nome || "—")}</b></td><td>${esc(e.funcionario?.nome || "—")}</td>
-      <td class="mono">${fmtData(e.data_retirada)}</td>
-      <td style="text-align:right"><button class="btn btn-sm" data-dev="${e.id}">Registrar devolução</button></td></tr>`).join("")
-      : `<tr><td class="empty" colspan="4">Nenhum equipamento fora da caixa.</td></tr>`;
-
-    const hist = todos.slice(0, 50);
-    $("#contH").textContent = todos.length > 50 ? "últimas 50 de " + todos.length : (todos.length ? todos.length + " movimentação(ões)" : "");
-    $("#tbH").innerHTML = hist.length ? hist.map(e => `
-      <tr><td>${esc(e.funcionario?.nome || "—")}</td><td>${esc(e.equipamento?.nome || "—")}</td>
-      <td class="mono">${fmtData(e.data_retirada)}</td>
-      <td>${e.data_devolucao ? `<span class="mono">${fmtData(e.data_devolucao)}</span>` : '<span class="badge warn">em aberto</span>'}</td>
-      <td style="text-align:right">${e.data_devolucao ? `<button class="btn btn-sm btn-ghost" data-apagar="${e.id}">Apagar</button>` : ""}</td></tr>`).join("")
-      : `<tr><td class="empty" colspan="5">Nenhuma movimentação ainda.</td></tr>`;
-  } catch (e) { aviso("#aviso", "bad", "Erro ao carregar o painel: " + e.message, 0); }
+    const [d, f, e, h] = await Promise.all([api("/api/dashboard"), api("/api/funcionarios"), api("/api/equipamentos"), api("/api/emprestimos")]);
+    funcionarios = f.funcionarios || [];
+    equipamentos = e.equipamentos || [];
+    emprestimos = h.emprestimos || [];
+    $("#stF").textContent = d.funcionarios ?? funcionarios.length;
+    $("#stE").textContent = d.equipamentos ?? equipamentos.length;
+    $("#stD").textContent = d.disponiveis ?? equipamentos.filter(disponivel).length;
+    $("#stU").textContent = d.emprestimos ?? d.emprestados ?? emprestimos.filter(emAberto).length;
+    renderFuncionarios(); renderEquipamentos(); renderEmprestimos();
+    aviso("#aviso", "", "", 0);
+  } catch (e) {
+    aviso("#aviso", "bad", "Não foi possível atualizar o Painel. Verifique a conexão e tente novamente.", 0);
+    console.error("Falha ao carregar Painel:", e);
+  }
 }
-
+$("#buscaF").addEventListener("input", renderFuncionarios);
+$("#buscaE").addEventListener("input", renderEquipamentos);
 document.addEventListener("click", async ev => {
-  const dv = ev.target.closest("[data-dev]"), ap = ev.target.closest("[data-apagar]");
+  const bf = ev.target.closest("[data-del-f]"), be = ev.target.closest("[data-del-e]"), dv = ev.target.closest("[data-dev]"), ap = ev.target.closest("[data-apagar]");
   try {
-    if (dv) {
-      if (!confirm("Registrar a devolução deste equipamento manualmente?")) return;
-      await api(`/api/emprestimos/${dv.dataset.dev}/devolver`, { method: "PUT", body: {} });
-      aviso("#aviso", "good", "Devolução registrada.");
+    if (bf) {
+      if (!confirm(`Desativar o cadastro de ${bf.dataset.nome}? O histórico será preservado.`)) return;
+      await api(`/api/funcionarios/${encodeURIComponent(bf.dataset.delF)}`, { method: "DELETE" });
+      aviso("#aviso", "good", "Funcionário desativado. O histórico foi preservado.");
+    } else if (be) {
+      if (!confirm(`Desativar o equipamento ${be.dataset.nome}? O histórico será preservado.`)) return;
+      await api(`/api/equipamentos/${encodeURIComponent(be.dataset.delE)}`, { method: "DELETE" });
+      aviso("#aviso", "good", "Equipamento desativado. O histórico foi preservado.");
+    } else if (dv) {
+      if (!confirm("Registrar a devolução manual deste equipamento? Use esta ação somente se a devolução física já aconteceu.")) return;
+      await api(`/api/emprestimos/${encodeURIComponent(dv.dataset.dev)}/devolver`, { method: "PUT", body: {} });
+      aviso("#aviso", "good", "Devolução registrada com sucesso.");
     } else if (ap) {
-      if (!confirm("Apagar esta movimentação do histórico?")) return;
-      await api(`/api/emprestimos/${ap.dataset.apagar}`, { method: "DELETE" });
+      if (!confirm("Apagar esta movimentação já devolvida do histórico? Esta ação não pode ser desfeita.")) return;
+      await api(`/api/emprestimos/${encodeURIComponent(ap.dataset.apagar)}`, { method: "DELETE" });
+      aviso("#aviso", "good", "Movimentação removida do histórico.");
     } else return;
-    carregar();
-  } catch (e) { aviso("#aviso", "bad", e.message); }
+    await carregar();
+  } catch (e) {
+    aviso("#aviso", "bad", e.message || "Não foi possível concluir a ação. Tente novamente.", 0);
+  }
 });
-carregar(); setInterval(carregar, 10000);
+carregar();
+setInterval(carregar, 15000);
 </script>
 </body>
 </html>

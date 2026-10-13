@@ -10,7 +10,7 @@
 <main class="wrap">
   <div class="page-head">
     <h1>Cadastro</h1>
-    <div class="sub">Cadastre pessoas e equipamentos. A tag é lida direto no leitor RFID.</div>
+    <div class="sub">Cadastre funcionários e equipamentos. As listas e os indicadores ficam no Painel. A tag é lida diretamente no leitor RFID.</div>
   </div>
 
   <div class="grid2">
@@ -47,11 +47,6 @@
       </div>
     </section>
   </div>
-
-  <div class="card" style="margin-top:20px;padding:18px 22px">
-    <strong>Gerenciamento de registros</strong>
-    <p class="sub" style="margin:6px 0 0">Para consultar, editar ou desativar funcionários e equipamentos, acesse a aba <a href="/controle" style="color:var(--primary);font-weight:700;text-decoration:underline">Painel</a>.</p>
-  </div>
 </main>
 
 <script src="/app.js"></script>
@@ -77,7 +72,7 @@ async function lerTag(tipo, input, btn, hint) {
       if (ev.tipo === "tag_ja_cadastrada") { hint.textContent = ev.mensagem; achou = true; break; }
     }
     if (!achou) hint.textContent = "Tempo esgotado. Clique em \"Ler tag\" e tente de novo.";
-  } catch (e) { hint.textContent = e.message || "Não foi possível ler a tag. Tente novamente."; }
+  } catch (e) { hint.textContent = "Erro ao falar com o servidor: " + e.message; }
   btn.disabled = false; btn.textContent = "Ler tag";
 }
 $("#btnLerF").onclick = () => lerTag("funcionario", $("#fTag"), $("#btnLerF"), $("#hintF"));
@@ -92,8 +87,7 @@ $("#btnSalvarF").onclick = async () => {
     aviso("#avF", "good", `${nome} cadastrado.`);
     ["#fNome", "#fMat", "#fSetor", "#fTag"].forEach(s => $(s).value = "");
     $("#hintF").textContent = 'Clique em "Ler tag" e aproxime o crachá do leitor.';
-    carregar();
-  } catch (e) { aviso("#avF", "bad", e.message || "Não foi possível cadastrar. Confira os dados e tente novamente.", 0); }
+  } catch (e) { aviso("#avF", "bad", mensagemCadastro(e, "funcionario")); }
 };
 $("#btnSalvarE").onclick = async () => {
   const nome = $("#eNome").value.trim(), tag = $("#eTag").value.trim();
@@ -103,12 +97,27 @@ $("#btnSalvarE").onclick = async () => {
     aviso("#avE", "good", `${nome} cadastrado.`);
     ["#eNome", "#eDesc", "#eTag"].forEach(s => $(s).value = "");
     $("#hintE").textContent = 'Clique em "Ler tag" e aproxime a tag do equipamento do leitor.';
-    carregar();
-  } catch (e) { aviso("#avE", "bad", e.message || "Não foi possível cadastrar. Confira os dados e tente novamente.", 0); }
+  } catch (e) { aviso("#avE", "bad", mensagemCadastro(e, "equipamento")); }
 };
 
-/* As listas e ações de gerenciamento ficam exclusivamente no Painel. */
-function carregar() {}
+/* ---------- mensagens amigáveis ---------- */
+function mensagemCadastro(erro, tipo) {
+  const texto = String(erro?.message || "").toLowerCase();
+  const dados = String(erro?.dados?.details || erro?.dados?.message || "").toLowerCase();
+  const completo = texto + " " + dados;
+  if (completo.includes("idx_funcionarios_matricula_ativo") || (completo.includes("matricula") && (completo.includes("duplicate") || completo.includes("unique")))) {
+    return "Já existe um funcionário ativo com essa matrícula. Confira o número informado ou consulte o Painel.";
+  }
+  if (completo.includes("duplicate") || completo.includes("unique") || completo.includes("já está cadastrada") || completo.includes("ja esta cadastrada")) {
+    return "Essa tag ou identificação já está cadastrada. Confira a tag e tente novamente.";
+  }
+  if (erro?.status === 400 || erro?.status === 409) {
+    return erro.message || "Não foi possível concluir o cadastro. Confira os dados e tente novamente.";
+  }
+  return tipo === "funcionario"
+    ? "Não foi possível cadastrar o funcionário agora. Confira os dados e tente novamente."
+    : "Não foi possível cadastrar o equipamento agora. Confira os dados e tente novamente.";
+}
 </script>
 </body>
 </html>

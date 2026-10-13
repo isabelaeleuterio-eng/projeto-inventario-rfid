@@ -130,27 +130,23 @@ h2{font-size:19px;letter-spacing:-.01em;margin:0}
 .stat .v.g{color:var(--good)}.stat .v.b{color:var(--primary)}.stat .v.w{color:var(--warn)}
 .foot{margin-top:30px;text-align:center;color:var(--muted);font-size:13px}
 
-/* Ajustes da tela de operação para compartilhar o mesmo padrão visual */
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
-.section{margin-top:20px}.section[hidden],[hidden]{display:none!important}
-.hero{margin-bottom:22px}.eyebrow{color:var(--primary);font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase}
-.choice{padding:30px;text-align:left;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:12px;transition:.15s}
-.choice:hover{transform:translateY(-2px);border-color:var(--primary)}
-.choice .ico{width:52px;height:52px;display:grid;place-items:center;border-radius:15px;background:var(--primary-l);color:var(--primary);font-size:25px;margin-bottom:4px}
-.choice .ico.green{background:var(--good-l);color:var(--good)}
-.card-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}
-.card-body{padding:22px}.pickgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:15px}
-.pick.selected{border-color:var(--primary);background:var(--primary-l)}
-.notice{padding:13px 15px;border-radius:12px;margin-bottom:16px;line-height:1.45}
-.notice:empty{display:none}.notice.bad{background:var(--bad-l);color:#7f1d1d;border:1px solid #f5c2c2}
-.notice.warn{background:var(--warn-l);color:#7c4a03;border:1px solid #f6d9a6}
-.notice.good{background:var(--good-l);color:#14532d;border:1px solid #b8e6c8}
-.tablewrap{overflow:auto}.tablewrap table{min-width:520px}.wait{text-align:center;padding:50px 24px}
-.pulse{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;background:var(--primary-l);color:var(--primary);font-size:38px;margin:0 auto 20px}
-.summary{max-width:500px;margin:20px auto;text-align:left;background:var(--bg);border-radius:12px;padding:15px}
-.summary div{display:flex;justify-content:space-between;gap:15px;padding:8px 0;border-bottom:1px solid var(--line)}
-.summary div:last-child{border:0}.summary span{color:var(--muted)}
-.steps{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
-.step{padding:8px 11px;border-radius:9px;background:#e9edf4;color:#718096;font-size:12px;font-weight:750}
-.step.on{background:var(--primary-l);color:var(--primary-d)}.step.done{background:var(--good-l);color:#187545}
-@media(max-width:650px){.grid{grid-template-columns:1fr}.topbar-in{padding:12px 14px}.nav{margin-left:0}.pills{margin-left:0}.choice{padding:23px}}
+
+/* Identidade visual oficial e cartões interativos do Painel */
+.brand-mark{overflow:hidden;background:#fff;border:1px solid var(--line);box-shadow:0 3px 10px rgba(15,23,42,.08)}
+.brand-mark img{display:block;width:100%;height:100%;object-fit:contain;padding:2px}
+.stat-button{appearance:none;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;position:relative;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+.stat-button:hover{transform:translateY(-2px);border-color:#c7d2fe;box-shadow:0 10px 26px rgba(37,65,160,.10)}
+.stat-button:focus-visible{outline:3px solid #9db2ff;outline-offset:3px}
+.stat-button[aria-expanded="true"]{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-l)}
+.stat-button .stat-open{position:absolute;right:18px;top:18px;color:var(--muted);font-size:18px;transition:transform .18s ease}
+.stat-button[aria-expanded="true"] .stat-open{transform:rotate(180deg);color:var(--primary)}
+.panel-list{margin:0 0 22px;overflow:hidden;scroll-margin-top:100px}
+.panel-list[hidden]{display:none}
+.panel-list .card-h p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.panel-list .panel-count{font-size:13px;color:var(--muted);font-weight:600}
+.row-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.panel-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--line)}
+.panel-toolbar input{flex:1;min-width:180px;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+.panel-empty{padding:26px;text-align:center;color:var(--muted)}
+.panel-tag{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;overflow-wrap:anywhere}
+@media(max-width:560px){.topbar-in{gap:10px;padding:10px 14px}.brand{font-size:16px}.nav{order:3;width:100%;margin-left:0;overflow-x:auto}.nav a{white-space:nowrap;flex:1;text-align:center;padding:9px 10px}.pills{margin-left:auto}.stat{padding:16px}.stat .v{font-size:30px}.stat-button .stat-open{right:14px;top:14px}}

@@ -17,18 +17,7 @@ async function api(caminho, opcoes = {}) {
   let d = {};
   try { d = await r.json(); } catch (e) { }
   if (!r.ok || d.sucesso === false) {
-    const mensagensConhecidas = {
-      400: "Confira os campos preenchidos e tente novamente.",
-      401: "Sua sessão não foi autorizada. Atualize a página.",
-      404: "O registro ou recurso solicitado não foi encontrado.",
-      409: "Esta informação já existe ou a operação entrou em conflito com o estado atual.",
-      500: "Ocorreu um erro interno. Tente novamente em instantes.",
-      503: "O serviço está temporariamente indisponível. Tente novamente em instantes."
-    };
-    const textoServidor = String(d.erro || d.mensagem || "");
-    const tecnico = /duplicate key|unique constraint|postgres|supabase|stack|exception|relation .* does not exist/i.test(textoServidor);
-    const mensagem = tecnico ? (mensagensConhecidas[r.status] || "Não foi possível concluir a operação. Confira os dados e tente novamente.") : (textoServidor || mensagensConhecidas[r.status] || `Não foi possível concluir (código ${r.status}).`);
-    const err = new Error(mensagem);
+    const err = new Error(d.erro || d.mensagem || `Erro ${r.status}`);
     err.dados = d; err.status = r.status;
     throw err;
   }
@@ -40,7 +29,7 @@ const ICONES = {
   ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   sai: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg>',
   volta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>',
-  logo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/><path d="M12 12v3"/></svg>'
+  logo: '<img src="/logo.png" alt="" width="30" height="30" loading="eager">'
 };
 
 function montarTopo(ativa) {
