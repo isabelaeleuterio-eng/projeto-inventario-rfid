@@ -1,3 +1,5 @@
+
+
 /*
   ESP32 + RC522 + INVENTÁRIO RFID
 
@@ -79,9 +81,9 @@ unsigned long travaDesligaEm = 0;
 // SERVIDOR
 // ============================================================
 
-const unsigned long HTTP_TIMEOUT_RFID = 40000;
+const unsigned long HTTP_TIMEOUT_RFID = 7000;
 
-const unsigned long HTTP_TIMEOUT_COMANDO = 10000;
+const unsigned long HTTP_TIMEOUT_COMANDO = 3500;
 
 
 // ============================================================
@@ -92,7 +94,7 @@ String ultimoUID = "";
 
 unsigned long ultimaLeitura = 0;
 
-const unsigned long TEMPO_ANTI_DUPLICACAO = 2000;
+const unsigned long TEMPO_ANTI_DUPLICACAO = 1300;
 
 
 // ============================================================
@@ -118,7 +120,7 @@ int redeAtual = -1;
 
 unsigned long ultimaConsultaComando = 0;
 
-const unsigned long INTERVALO_COMANDO = 700;
+const unsigned long INTERVALO_COMANDO = 1200;
 
 long ultimoComandoExecutado = 0;
 
@@ -293,93 +295,76 @@ String uidParaString() {
 
 
 // ============================================================
+// MOSTRAR MOTIVO/ESTADO DO WI-FI
+// ============================================================
+
+void mostrarStatusWiFi() {
+  wl_status_t status = WiFi.status();
+
+  Serial.print("Status Wi-Fi (");
+  Serial.print((int)status);
+  Serial.print("): ");
+
+  switch (status) {
+    case WL_IDLE_STATUS:
+      Serial.println("ocioso");
+      break;
+    case WL_NO_SSID_AVAIL:
+      Serial.println("SSID nao encontrado");
+      break;
+    case WL_SCAN_COMPLETED:
+      Serial.println("varredura concluida");
+      break;
+    case WL_CONNECTED:
+      Serial.println("conectado");
+      break;
+    case WL_CONNECT_FAILED:
+      Serial.println("falha de autenticacao/conexao");
+      break;
+    case WL_CONNECTION_LOST:
+      Serial.println("conexao perdida");
+      break;
+    case WL_DISCONNECTED:
+      Serial.println("desconectado");
+      break;
+    default:
+      Serial.println("estado desconhecido");
+      break;
+  }
+}
+
+
+// ============================================================
 // CONECTAR A UMA REDE
 // ============================================================
 
 bool conectarRede(const Rede& rede, int indice) {
-
   Serial.println();
+  Serial.println("====================================");
+  Serial.print("TENTANDO REDE: [");
+  Serial.print(rede.ssid);
+  Serial.println("]");
+  Serial.println("====================================");
 
-  Serial.println(
-    "===================================="
-  );
-
-  Serial.print(
-    "TENTANDO REDE: "
-  );
-
-  Serial.println(
-    rede.ssid
-  );
-
-  Serial.println(
-    "===================================="
-  );
-
-
-  WiFi.disconnect(true);
-
-  delay(500);
-
+  // Mantem o radio ligado. Nao usar disconnect(true), pois
+  // esse parametro desliga o Wi-Fi e pode atrapalhar a varredura.
   WiFi.mode(WIFI_STA);
-
+  WiFi.disconnect(false, false);
+  delay(300);
   WiFi.setSleep(false);
 
-
-  // ----------------------------------------------------------
-  // WI-FI COMUM
-  // ----------------------------------------------------------
-
   if (!rede.enterprise) {
-
-    Serial.println(
-      "Tipo: Wi-Fi comum"
-    );
-
-    WiFi.begin(
-      rede.ssid,
-      rede.senha
-    );
-
-  }
-
-  // ----------------------------------------------------------
-  // EDUROAM / WPA2 ENTERPRISE
-  // ----------------------------------------------------------
-
-  else {
-
-    Serial.println(
-      "Tipo: WPA2 Enterprise / PEAP"
-    );
-
-    Serial.print(
-      "Identidade: "
-    );
-
-    Serial.println(
-      rede.identidade
-    );
-
-    Serial.print(
-      "Usuario: "
-    );
-
-    Serial.println(
-      rede.usuario
-    );
-
-
-    /*
-      WPA2 Enterprise / PEAP
-
-      Ordem:
-      SSID
-      método
-      identidade
-      usuário
-      senha
-    */
+    Serial.println("Tipo: Wi-Fi comum");
+    Serial.print("Conectando ao SSID: [");
+    Serial.print(rede.ssid);
+    Serial.println("]");
+    WiFi.begin(rede.ssid, rede.senha);
+  } else {
+    Serial.println("Tipo: WPA2 Enterprise / PEAP");
+    Serial.print("Identidade: ");
+    Serial.println(rede.identidade);
+    Serial.print("Usuario: ");
+    Serial.println(rede.usuario);
 
     WiFi.begin(
       rede.ssid,
@@ -390,79 +375,41 @@ bool conectarRede(const Rede& rede, int indice) {
     );
   }
 
+  unsigned long inicio = millis();
+  unsigned long ultimoPonto = 0;
 
-  unsigned long inicio =
-    millis();
+  while (WiFi.status() != WL_CONNECTED &&
+         millis() - inicio < 20000UL) {
+    delay(250);
 
-
-  while (
-    WiFi.status() != WL_CONNECTED
-    &&
-    millis() - inicio < 20000
-  ) {
-
-    delay(500);
-
-    Serial.print(".");
+    if (millis() - ultimoPonto >= 1000UL) {
+      Serial.print(".");
+      ultimoPonto = millis();
+    }
   }
-
 
   Serial.println();
 
-
-  if (
-    WiFi.status() != WL_CONNECTED
-  ) {
-
-    Serial.println(
-      "Falha ao conectar nesta rede."
-    );
-
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.print("Falha ao conectar em ");
+    Serial.println(rede.ssid);
+    mostrarStatusWiFi();
+    WiFi.disconnect(false, false);
     return false;
   }
 
-
   redeAtual = indice;
 
-
   Serial.println();
-
-  Serial.println(
-    "************************************"
-  );
-
-  Serial.println(
-    "WI-FI CONECTADO!"
-  );
-
-  Serial.print(
-    "Rede: "
-  );
-
-  Serial.println(
-    rede.ssid
-  );
-
-  Serial.print(
-    "IP: "
-  );
-
-  Serial.println(
-    WiFi.localIP()
-  );
-
-  Serial.print(
-    "RSSI: "
-  );
-
-  Serial.println(
-    WiFi.RSSI()
-  );
-
-  Serial.println(
-    "************************************"
-  );
-
+  Serial.println("************************************");
+  Serial.println("WI-FI CONECTADO!");
+  Serial.print("Rede: ");
+  Serial.println(WiFi.SSID());
+  Serial.print("IP: ");
+  Serial.println(WiFi.localIP());
+  Serial.print("RSSI: ");
+  Serial.println(WiFi.RSSI());
+  Serial.println("************************************");
 
   return true;
 }
@@ -473,162 +420,49 @@ bool conectarRede(const Rede& rede, int indice) {
 // ============================================================
 
 bool conectarWiFi() {
-
-  if (
-    WiFi.status() == WL_CONNECTED
-  ) {
-
+  if (WiFi.status() == WL_CONNECTED) {
     return true;
   }
 
-
   Serial.println();
+  Serial.println("====================================");
+  Serial.println("INICIANDO CONEXAO WI-FI");
+  Serial.println("====================================");
 
-  Serial.println(
-    "===================================="
-  );
+  // Garante que o radio esteja em modo cliente antes de tentar.
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+  delay(300);
 
-  Serial.println(
-    "PROCURANDO REDES CONFIGURADAS"
-  );
+  // Faz a varredura apenas para diagnostico. Mesmo se falhar,
+  // tentaremos as redes diretamente, sem depender do resultado.
+  int quantidadeRedes = WiFi.scanNetworks(false, true);
 
-  Serial.println(
-    "===================================="
-  );
+  Serial.print("Resultado da varredura: ");
+  Serial.println(quantidadeRedes);
 
-
-  /*
-    Primeiro fazemos uma varredura.
-
-    Isso evita ficar esperando 20 segundos
-    por uma rede que nem está disponível.
-  */
-
-  int quantidadeRedes =
-    WiFi.scanNetworks(
-      false,
-      true
-    );
-
-
-  Serial.print(
-    "Redes encontradas: "
-  );
-
-  Serial.println(
-    quantidadeRedes
-  );
-
-
-  // ----------------------------------------------------------
-  // TENTAR REDES NA ORDEM DO secrets.h
-  // ----------------------------------------------------------
-
-  for (
-    int i = 0;
-    i < NUM_REDES;
-    i++
-  ) {
-
-    bool encontrada = false;
-
-
-    for (
-      int j = 0;
-      j < quantidadeRedes;
-      j++
-    ) {
-
-      if (
-        WiFi.SSID(j) ==
-        String(REDES[i].ssid)
-      ) {
-
-        encontrada = true;
-
-        Serial.print(
-          "Rede encontrada: "
-        );
-
-        Serial.println(
-          REDES[i].ssid
-        );
-
-        break;
-      }
+  if (quantidadeRedes >= 0) {
+    for (int j = 0; j < quantidadeRedes; j++) {
+      Serial.print("Rede visivel: [");
+      Serial.print(WiFi.SSID(j));
+      Serial.print("] RSSI: ");
+      Serial.println(WiFi.RSSI(j));
     }
+    WiFi.scanDelete();
+  } else {
+    Serial.println("A varredura falhou; continuando com tentativas diretas.");
+  }
 
-
-    if (!encontrada) {
-
-      Serial.print(
-        "Rede não encontrada: "
-      );
-
-      Serial.println(
-        REDES[i].ssid
-      );
-
-      continue;
-    }
-
-
-    if (
-      conectarRede(
-        REDES[i],
-        i
-      )
-    ) {
-
-      WiFi.scanDelete();
-
+  // Tenta todas as redes cadastradas na ordem do segredos.h.
+  for (int i = 0; i < NUM_REDES; i++) {
+    if (conectarRede(REDES[i], i)) {
       return true;
     }
   }
 
-
-  WiFi.scanDelete();
-
-
-  // ----------------------------------------------------------
-  // SEGUNDA TENTATIVA
-  // ----------------------------------------------------------
-
   Serial.println();
-
-  Serial.println(
-    "Nenhuma conexão foi estabelecida."
-  );
-
-  Serial.println(
-    "Tentando as redes diretamente..."
-  );
-
-
-  for (
-    int i = 0;
-    i < NUM_REDES;
-    i++
-  ) {
-
-    if (
-      conectarRede(
-        REDES[i],
-        i
-      )
-    ) {
-
-      return true;
-    }
-  }
-
-
-  Serial.println();
-
-  Serial.println(
-    "ERRO: Wi-Fi não conectado."
-  );
-
+  Serial.println("ERRO: nenhuma rede Wi-Fi conectou.");
+  mostrarStatusWiFi();
   return false;
 }
 
@@ -1558,9 +1392,7 @@ void loop() {
   if (
     !rfid.PICC_IsNewCardPresent()
   ) {
-
-    delay(30);
-
+    // Consulta o RC522 novamente no próximo ciclo, sem pausa artificial.
     return;
   }
 
@@ -1568,9 +1400,6 @@ void loop() {
   if (
     !rfid.PICC_ReadCardSerial()
   ) {
-
-    delay(30);
-
     return;
   }
 
@@ -1593,11 +1422,7 @@ void loop() {
   ) {
 
     rfid.PICC_HaltA();
-
     rfid.PCD_StopCrypto1();
-
-    delay(100);
-
     return;
   }
 
@@ -1664,5 +1489,5 @@ void loop() {
   rfid.PCD_StopCrypto1();
 
 
-  delay(150);
+  delay(5);
 }
