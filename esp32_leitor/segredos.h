@@ -8,11 +8,23 @@ struct Rede {
   const char* senha;
 };
 
-// Ordem = prioridade. Usa a primeira rede dessa lista que estiver no ar.
 const Rede REDES[] = {
-  { "Heloisa", false, "", "", "gustavo1952" },
-  { "eduroam", true, "sp3217485", "sp3217485", "@Isabela06052003" },
+  { "Isabela", false, "", "", "123456789" },
+
+  //{ "Isa_Eleutéro", false, "", "", "123456789" },
+
+  //{ "Família Eleuterio-2G", false, "", "", "Carla01091910" },
+
+  //{ "eduroam", true, "sp3217485", "sp3217485", "@Isabela06052003" }
 };
+//Ordem = prioridade. Usa a primeira rede dessa lista que estiver no ar.
+//const Rede REDES[] = {
+  //{ "Isabela", false, "", "", "123456789" },
+  //{ "Isa_Eleutéro", false, "", "", "123456789" },
+  //{ "Heloisa", false, "", "", "gustavo1952" },
+  //{ "Família Eleuterio-2G", false, "", "", "Carlao01091910" },
+  //{ "eduroam", true, "sp3217485", "sp3217485", "@Isabela06052003" },
+//};
 
 const int NUM_REDES = sizeof(REDES) / sizeof(REDES[0]);
 
