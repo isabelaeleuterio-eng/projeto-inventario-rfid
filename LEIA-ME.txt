@@ -1,19 +1,22 @@
-CORREÇÃO DO FLUXO RFID — ARQUIVOS PREPARADOS
+PROJETO INVENTARIO RFID
 
-Arquivos incluídos:
-- server.js: backend atualizado para reconhecer a tag pessoal antes da retirada/devolução.
-- index.html: interface de operação autocontida e responsiva.
-- package.json / package-lock.json: dependências originais.
+Componentes:
+- Servidor Node.js + Express
+- Banco Supabase
+- Site em SITE/
+- ESP32 + leitor RFID RC522
+- Comando de trava consultado pelo ESP32 em /api/esp32/comando
 
-FLUXO PREVISTO
-Retirada: tag pessoal -> selecionar equipamento no site -> tag do equipamento -> grava empréstimo e solicita abertura.
-Devolução: tag pessoal -> sistema mostra equipamento aberto dessa pessoa -> tag do equipamento correto -> solicita abertura -> mesma tag pessoal novamente -> grava devolução.
+FLUXO ATUALIZADO
+RETIRADA: tag pessoal -> selecionar equipamento no site -> trava liberada por 5 segundos -> tag física do equipamento -> validação e gravação do empréstimo.
+Se o prazo de abertura terminar, a retirada fica pendente. A reabertura exige uma nova leitura da tag pessoal do mesmo funcionário. A tag do equipamento só confirma a retirada; ela nunca abre a caixa na etapa inicial.
+DEVOLUÇÃO: tag pessoal -> tag física do equipamento emprestado -> validação e registro da devolução -> trava liberada por 5 segundos.
 
-ATENÇÃO ANTES DE PUBLICAR
-1. Estes arquivos ainda não foram testados contra o ESP32 físico nem contra o ambiente de produção.
-2. O comando de abertura é sinalizado no evento RFID com abrir:true. Confirme no firmware que ele consulta /api/status e executa a abertura apenas uma vez por evento novo. O firmware completo não foi incluído neste pacote.
-3. O fluxo fica em memória do servidor; reiniciar o serviço durante uma operação pode exigir começar de novo.
-4. Faça backup dos arquivos atuais antes de substituir. Não execute SQL: esta alteração não exige migração.
-5. Não inclua .env, chaves Supabase ou senhas no GitHub. Se uma chave secreta já foi exposta, revogue-a e atualize as variáveis do Render.
+CONFIGURAÇÃO
+- Configure SUPABASE_URL e SUPABASE_SECRET_KEY no ambiente do servidor.
+- Crie localmente esp32_leitor/segredos.h a partir de esp32_leitor/segredos.example.h.
+- Não publique credenciais, senhas ou segredos no GitHub.
+- O firmware tem a opção TRAVA_ATIVA_LOW para selecionar a polaridade da entrada do módulo de relé. Confirme com o módulo físico antes de conectar a tranca.
 
-Para publicar, copie os arquivos para os caminhos correspondentes do repositório mantendo a estrutura esperada pelo projeto. Este index.html substitui a página de operação, mas deve ser colocado no diretório servido pelo servidor (SITE/index.html, conforme SITE_DIR no server.js).
+LEIA INSTRUCOES_ATUALIZACAO.txt E VALIDACAO.txt ANTES DE PUBLICAR.
+Esta entrega passou por verificações sintáticas de JavaScript, mas não foi testada com banco, nuvem ou hardware reais. Há limitações de persistência e autenticação que precisam ser resolvidas antes de produção.

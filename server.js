@@ -34,17 +34,19 @@ app.use(express.static(SITE_DIR, { maxAge: 0 }));
 /* ============================================================
  * FLUXO (leitor único, sem box)
  *
- * RETIRADA  : pessoa escolhe o nome e o item na tela -> passa a tag do item.
- * DEVOLUÇÃO : pessoa passa a tag do item -> passa a tag pessoal.
- * Ao concluir, o evento sai com abrir:true e o ESP32 libera a fechadura.
+ * RETIRADA  : tag pessoal -> seleção no site -> abre a caixa -> tag do item confirma.
+ * REABERTURA: após o tempo de abertura/espera, exige novamente a tag do mesmo funcionário.
+ * DEVOLUÇÃO : tag pessoal -> tag do equipamento -> valida e abre a caixa.
+ * O empréstimo só é gravado após a tag correta do item na retirada.
  * ============================================================ */
-const TEMPO_FLUXO_MS = 120000;           // tempo para concluir a segunda etapa
+const TEMPO_FLUXO_MS = 120000;           // prazo para concluir ou reautenticar
+const TEMPO_ABERTURA_MS = 5000;           // tempo físico de liberação da trava
 const EXIGIR_MESMO_FUNCIONARIO = true;   // só quem retirou pode devolver
 
 let esp32 = { conectado: false, ultimoContato: null, ip: null };
 
-// Fila simples em memória: comandos de abertura gerados somente após
-// retirada/devolução confirmada no banco. O ESP32 confirma o recebimento.
+// Fila simples em memória. Comandos são confirmados pelo ESP32 após recebimento.
+ // Observação: a fila é volátil; reinício do servidor descarta comandos pendentes.
 let comandoTravaPendente = null;
 let proximoIdComandoTrava = 1;
 
@@ -114,7 +116,7 @@ function publicar(d) {
         comandoTravaPendente = {
             id: proximoIdComandoTrava++,
             tipo: "liberar_caixa",
-            tempo_liberacao_ms: 5000,
+            tempo_liberacao_ms: TEMPO_ABERTURA_MS,
             criado_em: Date.now(),
             evento_id: rfidEvent.id
         };
@@ -126,10 +128,35 @@ function publicar(d) {
 function limparFluxo() { fluxo = fluxoVazio(); }
 
 function expirar() {
+    if (fluxo.modo === "aguardando_tag_item" && fluxo.reautenticarEm && Date.now() >= fluxo.reautenticarEm) {
+        fluxo.modo = "aguardando_reconfirmacao_retirada";
+        fluxo.expiraEm = 0;
+        fluxo.reautenticarEm = 0;
+        publicar({
+            tipo: "retirada_pendente_reautenticacao",
+            modo: fluxo.modo,
+            funcionario: resumoFunc(fluxo.funcionario),
+            equipamento: resumoEquip(fluxo.equipamento),
+            mensagem: "Os 5 segundos de abertura terminaram. Para abrir novamente, aproxime a tag pessoal do mesmo funcionário."
+        });
+    }
     if (fluxo.expiraEm && Date.now() > fluxo.expiraEm) {
-        const tinha = fluxo.modo !== "idle";
-        limparFluxo();
-        if (tinha) publicar({ tipo: "fluxo_expirado", modo: "idle", mensagem: "A operação expirou por inatividade." });
+        if (fluxo.modo === "aguardando_tag_item") {
+            // Não apaga a retirada: exige nova identificação pessoal para reabrir.
+            fluxo.modo = "aguardando_reconfirmacao_retirada";
+            fluxo.expiraEm = 0;
+            publicar({
+                tipo: "retirada_pendente_reautenticacao",
+                modo: fluxo.modo,
+                funcionario: resumoFunc(fluxo.funcionario),
+                equipamento: resumoEquip(fluxo.equipamento),
+                mensagem: "O tempo de abertura/espera terminou. Aproxime novamente a tag pessoal do mesmo funcionário para reabrir a caixa."
+            });
+        } else if (fluxo.modo !== "aguardando_reconfirmacao_retirada") {
+            const tinha = fluxo.modo !== "idle";
+            limparFluxo();
+            if (tinha) publicar({ tipo: "fluxo_expirado", modo: "idle", mensagem: "A operação expirou por inatividade." });
+        }
     }
     if (cadastroRFID.expiraEm && Date.now() > cadastroRFID.expiraEm) {
         cadastroRFID = { ativo: false, tipo: null, expiraEm: 0 };
@@ -269,9 +296,17 @@ app.post("/api/esp32/comando/confirmar", (req, res) => {
     if (!comandoTravaPendente || comandoTravaPendente.id !== id) {
         return res.status(409).json({ sucesso: false, mensagem: "Comando não encontrado ou já confirmado." });
     }
+    const comandoConfirmado = comandoTravaPendente;
     comandoTravaPendente = null;
     esp32.conectado = true;
     esp32.ultimoContato = agora();
+    if (
+        comandoConfirmado.tipo === "liberar_caixa" &&
+        fluxo.modo === "aguardando_tag_item"
+    ) {
+        // O ESP32 confirma depois de acionar a saída. Conta os 5 s a partir daqui.
+        fluxo.reautenticarEm = Date.now() + TEMPO_ABERTURA_MS;
+    }
     return res.json({ sucesso: true, confirmado: true, id });
 });
 
@@ -309,6 +344,37 @@ app.post("/api/esp32/rfid", async (req, res) => {
             }
 
             const ev = publicar({ uid: u, tipo: "cadastro_tag", modo: "cadastro", mensagem: "Tag lida com sucesso. UID preenchido." });
+            return res.json({ sucesso: true, ...ev });
+        }
+
+        /* ---------- RETIRADA PENDENTE: reautenticar para reabrir ---------- */
+        if (fluxo.modo === "aguardando_reconfirmacao_retirada") {
+            const identificacao = await verificarUID(u);
+            if (!identificacao.encontrado || identificacao.categoria !== "funcionario") {
+                const ev = publicar({
+                    uid: u, tipo: "funcionario_incorreto",
+                    mensagem: "Para reabrir a caixa, aproxime novamente a tag pessoal do funcionário que iniciou esta retirada."
+                });
+                return res.status(403).json({ sucesso: false, ...ev });
+            }
+            if (Number(identificacao.registro.id) !== Number(fluxo.funcionario?.id)) {
+                const ev = publicar({
+                    uid: u, tipo: "funcionario_incorreto",
+                    mensagem: "Esta retirada pertence a outro funcionário. Somente a tag pessoal de quem iniciou a operação pode reabrir a caixa."
+                });
+                return res.status(403).json({ sucesso: false, ...ev });
+            }
+            fluxo.modo = "aguardando_tag_item";
+            fluxo.expiraEm = 0;
+            fluxo.reautenticarEm = 0;
+            const ev = publicar({
+                uid: u, tipo: "retirada_reaberta",
+                modo: fluxo.modo,
+                mensagem: `Identidade confirmada, ${fluxo.funcionario.nome}. A caixa será liberada por 5 segundos. Depois, passe a tag de "${fluxo.equipamento.nome}" para confirmar a retirada.`,
+                funcionario: resumoFunc(fluxo.funcionario),
+                equipamento: resumoEquip(fluxo.equipamento),
+                abrir: true
+            });
             return res.json({ sucesso: true, ...ev });
         }
 
@@ -384,8 +450,7 @@ app.post("/api/esp32/rfid", async (req, res) => {
                 uid: u, tipo: "retirada_concluida", modo: "idle",
                 mensagem: `${equipamento.nome} está EMPRESTADO para ${funcionario.nome}.`,
                 funcionario: resumoFunc(funcionario),
-                equipamento: resumoEquip(equipamento),
-                abrir: true
+                equipamento: resumoEquip(equipamento)
             });
             return res.status(201).json({ sucesso: true, ...ev, emprestimo: ins.data });
         }
@@ -422,11 +487,25 @@ app.post("/api/esp32/rfid", async (req, res) => {
             }
 
             const atualizacao = await supabase.from("equipamentos")
-                .update({ status: "disponivel" }).eq("id", equipamentoEsperado.id);
-            if (atualizacao.error) {
-                console.error("Falha ao atualizar status do equipamento após devolução:", atualizacao.error);
-                limparFluxo();
-                const ev = publicar({ uid: u, tipo: "erro_servidor", modo: "idle", mensagem: "A devolução foi registrada, mas não foi possível atualizar o status do equipamento. Confira o Painel." });
+                .update({ status: "disponivel" })
+                .eq("id", equipamentoEsperado.id)
+                .eq("status", "emprestado")
+                .select("id")
+                .maybeSingle();
+            if (atualizacao.error || !atualizacao.data) {
+                console.error("Falha ao atualizar status do equipamento após devolução:", atualizacao.error || "Nenhum equipamento atualizado");
+                // Compensação: tenta reabrir o empréstimo para não deixar os registros divergentes.
+                const rollback = await supabase.from("emprestimos")
+                    .update({ data_devolucao: null, status: "Emprestado" })
+                    .eq("id", emprestimo.id)
+                    .not("data_devolucao", "is", null);
+                if (rollback.error) console.error("Falha também ao reverter a devolução:", rollback.error);
+                const ev = publicar({
+                    uid: u, tipo: "erro_servidor", modo: fluxo.modo,
+                    mensagem: rollback.error
+                        ? "Falha ao atualizar o equipamento e ao reverter a devolução. É necessária conferência administrativa no banco."
+                        : "Não foi possível concluir a devolução no banco. A operação foi revertida; tente novamente."
+                });
                 return res.status(500).json({ sucesso: false, ...ev });
             }
 
@@ -508,6 +587,12 @@ app.get("/rfid/ultima", (req, res) => {
 app.post("/rfid/limpar", (req, res) => res.json({ sucesso: true }));
 
 app.post("/api/rfid/resetar", (req, res) => {
+    if (["aguardando_tag_item", "aguardando_reconfirmacao_retirada"].includes(fluxo.modo)) {
+        return res.status(409).json({
+            sucesso: false,
+            erro: "Existe uma retirada pendente. Para reabrir, o mesmo funcionário deve aproximar novamente sua tag pessoal. A operação não pode ser apagada pelo botão do site."
+        });
+    }
     limparFluxo();
     cadastroRFID = { ativo: false, tipo: null, expiraEm: 0 };
     rfidEvent = { ...eventoOciosoBase, id: Date.now(), momento: Date.now() };
@@ -523,7 +608,7 @@ app.post("/api/rfid/cadastro/iniciar", (req, res) => {
     res.json({ sucesso: true, mensagem: "Aguardando uma tag.", tipo: cadastroRFID.tipo });
 });
 
-/* RETIRADA, passo da tela: pessoa + item escolhidos. Falta confirmar com a tag do item. */
+/* RETIRADA: selecionar item abre a caixa; tag física confirma o empréstimo. */
 app.post("/api/rfid/selecionar", async (req, res) => {
     try {
         const fid = Number(req.body?.funcionario_id);
@@ -533,16 +618,23 @@ app.post("/api/rfid/selecionar", async (req, res) => {
             return res.status(400).json({ sucesso: false, erro: "Escolha o funcionário e o equipamento." });
         }
 
-        if (fluxo.modo !== "idle" && fluxo.modo !== "aguardando_selecao_retirada") {
-            return res.status(409).json({ sucesso: false, tipo: "operacao_conflito", erro: "Já existe uma operação em andamento. Aguarde ou toque em Cancelar." });
+        // A seleção só é permitida depois de uma leitura real da tag pessoal.
+        if (fluxo.modo !== "aguardando_selecao_retirada") {
+            return res.status(409).json({
+                sucesso: false,
+                tipo: "operacao_conflito",
+                erro: "Aproxime primeiro a tag pessoal do funcionário no leitor. Só depois selecione o equipamento."
+            });
         }
-        if (fluxo.modo === "aguardando_selecao_retirada" && Number(fluxo.funcionario?.id) !== fid) {
-            return res.status(409).json({ sucesso: false, tipo: "funcionario_incorreto", erro: "A tag pessoal lida pertence a outro funcionário. Passe sua própria tag antes de selecionar." });
+        if (Number(fluxo.funcionario?.id) !== fid) {
+            return res.status(403).json({
+                sucesso: false,
+                tipo: "funcionario_incorreto",
+                erro: "A seleção não corresponde ao funcionário identificado pela tag pessoal. Faça a identificação novamente."
+            });
         }
 
-        const f = fluxo.modo === "aguardando_selecao_retirada"
-            ? { data: fluxo.funcionario, error: null }
-            : await supabase.from("funcionarios").select("*").eq("id", fid).eq("ativo", true).maybeSingle();
+        const f = { data: fluxo.funcionario, error: null };
         if (f.error) throw f.error;
         if (!f.data) return res.status(404).json({ sucesso: false, erro: "Funcionário não encontrado." });
 
@@ -561,13 +653,14 @@ app.post("/api/rfid/selecionar", async (req, res) => {
             });
         }
 
-        fluxo = { modo: "aguardando_tag_item", funcionario: f.data, equipamento: e.data, emprestimo: null, expiraEm: Date.now() + TEMPO_FLUXO_MS };
+        fluxo = { modo: "aguardando_tag_item", funcionario: f.data, equipamento: e.data, emprestimo: null, expiraEm: 0, reautenticarEm: 0 };
 
         const ev = publicar({
             tipo: "equipamento_selecionado", modo: "aguardando_tag_item",
-            mensagem: `Passe a tag de "${e.data.nome}" no leitor para confirmar.`,
+            mensagem: `Caixa liberada por 5 segundos. Retire "${e.data.nome}" e passe a tag física do equipamento para confirmar o empréstimo.`,
             funcionario: resumoFunc(f.data),
-            equipamento: resumoEquip(e.data)
+            equipamento: resumoEquip(e.data),
+            abrir: true
         });
 
         res.json({ sucesso: true, ...ev });

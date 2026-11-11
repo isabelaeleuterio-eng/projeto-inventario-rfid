@@ -1,1 +1,16 @@
-OK - node --check server.js
+VALIDACAO AUTOMATICA
+- server.js: node --check OK
+- JavaScript de SITE/index.html: node --check OK
+
+NAO TESTADO NESTE AMBIENTE
+- Supabase real / esquema real do banco
+- Render / reinicializacao do servidor
+- ESP32 / compilacao Arduino
+- RC522 / tags fisicas
+- Rele / polaridade / tranca de 12 V
+
+LIMITACOES CONHECIDAS
+- Estado do fluxo e fila de comando em memoria; reinicio do Render pode perder operacao pendente.
+- Rotas ainda precisam de autenticacao/autorizacao antes de producao.
+- Firmware usa TLS sem validacao do certificado (client.setInsecure()).
+- Cancelamento administrativo autenticado de retirada pendente ainda nao foi implementado.
