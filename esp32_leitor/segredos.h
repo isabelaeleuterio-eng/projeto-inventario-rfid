@@ -9,13 +9,7 @@ struct Rede {
 };
 
 const Rede REDES[] = {
-  { "Isabela", false, "", "", "123456789" },
-
-  { "Família Eleuterio-2G", false, "", "", "Carla01091910" },
-
-  { "Heloisa", false, "", "", "gustavo1952" },
-
-  { "eduroam", true, "sp3217485", "sp3217485", "@Isabela06052003" }
+  { "...", false, "", "", "..." }
 };
 //Ordem = prioridade. Usa a primeira rede dessa lista que estiver no ar.
 //const Rede REDES[] = {
