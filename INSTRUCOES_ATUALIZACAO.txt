@@ -1,0 +1,26 @@
+PROJETO RFID - VERSAO LIMPA
+
+1) No GitHub, substitua os arquivos do repositório pelos arquivos desta pasta.
+2) Remova os arquivos antigos duplicados listados abaixo, depois de guardar uma cópia local:
+   - server copy.js, server.backup.js, server_backup.js
+   - rele.ino
+   - SITE/cadastro copy.html, SITE/cadastro.backup.html
+   - SITE/controle copy.html, SITE/controle.backup.html
+   - SITE/index copy.html, SITE/index_backup.html, SITE/index_corrigido_tag_funcionario.html
+   - rfid_correcao_localizada.zip
+   - VALIDACAO.txt (se não tiver processo externo que dependa dele)
+3) Mantenha package.json e package-lock.json. No Render, o comando de inicialização deve ser `npm start`.
+4) Configure no Render as variáveis SUPABASE_URL e SUPABASE_SECRET_KEY.
+5) No computador, copie esp32_leitor/segredos.example.h para esp32_leitor/segredos.h e preencha Wi-Fi e URL real do Render.
+6) NÃO envie segredos.h ao GitHub. O .gitignore já o ignora, mas se ele já foi rastreado, remova-o do índice com `git rm --cached esp32_leitor/segredos.h`.
+7) Se credenciais reais já foram publicadas no GitHub, troque as senhas Wi-Fi e chaves expostas. Remover o arquivo do commit atual não apaga o histórico.
+
+ACIONAMENTO DA TRAVA:
+No firmware, `TRAVA_ATIVA_LOW = true` significa repouso HIGH e acionamento LOW.
+`TRAVA_ATIVA_LOW = false` significa repouso LOW e acionamento HIGH.
+A escolha correta depende do módulo de relé. Sem o módulo físico, não é possível confirmar a polaridade.
+
+VALIDACAO:
+- server.js passou em `node --check`.
+- A compilação do firmware ESP32, a conexão real ao Supabase e o acionamento elétrico não foram executados neste ambiente.
+- A fila de comandos de trava desta versão é mantida em memória; reiniciar o Render pode perder um comando pendente. Antes de produção, implementar fila persistente e autenticação nas rotas do ESP32.

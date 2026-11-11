@@ -43,6 +43,11 @@ const EXIGIR_MESMO_FUNCIONARIO = true;   // só quem retirou pode devolver
 
 let esp32 = { conectado: false, ultimoContato: null, ip: null };
 
+// Fila simples em memória: comandos de abertura gerados somente após
+// retirada/devolução confirmada no banco. O ESP32 confirma o recebimento.
+let comandoTravaPendente = null;
+let proximoIdComandoTrava = 1;
+
 const eventoOciosoBase = {
     nova: false, id: 0, uid: null, tipo: "idle", modo: "idle",
     mensagem: "Escolha retirar ou devolver.", funcionario: null,
@@ -105,6 +110,16 @@ function publicar(d) {
         abrir: d.abrir === true,
         momento: Date.now()
     };
+    if (rfidEvent.abrir === true) {
+        comandoTravaPendente = {
+            id: proximoIdComandoTrava++,
+            tipo: "liberar_caixa",
+            tempo_liberacao_ms: 5000,
+            criado_em: Date.now(),
+            evento_id: rfidEvent.id
+        };
+        console.log(`COMANDO DE ABERTURA ENFILEIRADO: ${comandoTravaPendente.id}`);
+    }
     return rfidEvent;
 }
 
@@ -233,6 +248,31 @@ app.post("/api/esp32/online", (req, res) => {
     const b = req.body && typeof req.body === "object" ? req.body : {};
     esp32 = { conectado: true, ultimoContato: agora(), ip: texto(b.ip).trim() || null };
     res.json({ sucesso: true, mensagem: "ESP32 conectado ao servidor", horario: esp32.ultimoContato });
+});
+
+// O ESP32 consulta esta rota periodicamente. Não consome o comando
+// até receber confirmação, permitindo nova consulta em caso de falha HTTP.
+app.get("/api/esp32/comando", (req, res) => {
+    esp32.conectado = true;
+    esp32.ultimoContato = agora();
+    if (!comandoTravaPendente) {
+        return res.json({ sucesso: true, id: 0, tipo: "idle", tempo_liberacao_ms: 0 });
+    }
+    return res.json({ sucesso: true, ...comandoTravaPendente });
+});
+
+app.post("/api/esp32/comando/confirmar", (req, res) => {
+    const id = Number(req.body?.id);
+    if (!Number.isSafeInteger(id) || id <= 0) {
+        return res.status(400).json({ sucesso: false, mensagem: "ID de comando inválido." });
+    }
+    if (!comandoTravaPendente || comandoTravaPendente.id !== id) {
+        return res.status(409).json({ sucesso: false, mensagem: "Comando não encontrado ou já confirmado." });
+    }
+    comandoTravaPendente = null;
+    esp32.conectado = true;
+    esp32.ultimoContato = agora();
+    return res.json({ sucesso: true, confirmado: true, id });
 });
 
 /* ÚNICO ponto de entrada das tags. */

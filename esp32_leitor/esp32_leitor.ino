@@ -68,6 +68,9 @@ MFRC522 rfid(SS_PIN, RST_PIN);
     LOW  = estado normal
 */
 
+// ALTERE SOMENTE ESTA OPÇÃO SE A POLARIDADE DO RELÉ FOR DIFERENTE:
+// true  = relé acionado por LOW  (repouso HIGH / abertura LOW)
+// false = relé acionado por HIGH (repouso LOW  / abertura HIGH)
 const bool TRAVA_ATIVA_LOW = true;
 
 const unsigned long TEMPO_TRAVA_PADRAO = 5000;
@@ -1205,11 +1208,17 @@ void setup() {
   // TRAVA
   // ==========================================================
 
+  // Define primeiro o nível de repouso no registrador de saída e
+  // só depois habilita o pino como OUTPUT, reduzindo pulsos na inicialização.
+  digitalWrite(
+    TRAVA_PIN,
+    TRAVA_ATIVA_LOW ? HIGH : LOW
+  );
+
   pinMode(
     TRAVA_PIN,
     OUTPUT
   );
-
 
   travaNormal();
 
