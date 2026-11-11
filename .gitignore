@@ -1,3 +1,9 @@
+
 .env
+.env.*
+!.env.example
+
 node_modules/
 *.log
+
+esp32_leitor/segredos.h
