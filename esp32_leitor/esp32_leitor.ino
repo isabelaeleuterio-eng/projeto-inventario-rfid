@@ -25,7 +25,7 @@
   5. Servidor decide retirada/devolução.
   6. Servidor cria comando para a trava quando necessário.
   7. ESP32 consulta o comando.
-  8. GPIO 4 libera a trava por 5 segundos.
+  8. GPIO 4 libera a trava por 20 segundos.
   9. ESP32 confirma o comando ao servidor.
 
   IMPORTANTE:
@@ -68,12 +68,23 @@ MFRC522 rfid(SS_PIN, RST_PIN);
     LOW  = estado normal
 */
 
+
+
+//..........................................................................................
 // ALTERE SOMENTE ESTA OPÇÃO SE A POLARIDADE DO RELÉ FOR DIFERENTE:
 // true  = relé acionado por LOW  (repouso HIGH / abertura LOW)
 // false = relé acionado por HIGH (repouso LOW  / abertura HIGH)
-const bool TRAVA_ATIVA_LOW = true;
+const bool TRAVA_ATIVA_LOW = false;
+//const bool TRAVA_ATIVA_LOW = true  ; // EM CASO DA LOGICA ESTA ERRADA
+//..................................................................................................
 
-const unsigned long TEMPO_TRAVA_PADRAO = 5000;
+
+
+
+
+
+
+const unsigned long TEMPO_TRAVA_PADRAO = 20000;
 
 bool travaAtiva = false;
 
@@ -1061,8 +1072,12 @@ void consultarComando() {
   }
 
 
+  // O servidor pode enviar dois tipos de comando:
+  // liberar_caixa = libera a trava pelo tempo configurado.
+  // travar_caixa  = interrompe a abertura e retorna ao estado normal.
   if (
-    tipo != "liberar_caixa"
+    tipo != "liberar_caixa" &&
+    tipo != "travar_caixa"
   ) {
 
     return;
@@ -1112,16 +1127,25 @@ void consultarComando() {
     );
 
 
-    if (tempo <= 0) {
+    if (tipo == "travar_caixa") {
 
-      tempo =
-        TEMPO_TRAVA_PADRAO;
+      // Cancelamento recebido do site: fecha imediatamente.
+      travaNormal();
+
+      Serial.println(
+        "CANCELAMENTO RECEBIDO: trava no estado normal."
+      );
+
+    } else {
+
+      if (tempo <= 0) {
+        tempo = TEMPO_TRAVA_PADRAO;
+      }
+
+      liberarTrava(
+        (unsigned long)tempo
+      );
     }
-
-
-    liberarTrava(
-      (unsigned long)tempo
-    );
 
 
     if (
@@ -1196,7 +1220,7 @@ void setup() {
   );
 
   Serial.println(
-    " ABERTURA = 5 SEGUNDOS"
+    " ABERTURA = 20 SEGUNDOS"
   );
 
   Serial.println(

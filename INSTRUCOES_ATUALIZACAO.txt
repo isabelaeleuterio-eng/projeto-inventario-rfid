@@ -13,12 +13,12 @@ RETIRADA
 2. O servidor identifica o funcionário.
 3. A pessoa escolhe o equipamento no site.
 4. O servidor valida novamente se funcionário e equipamento estão ativos/disponíveis.
-5. O servidor cria a operação pendente e solicita a abertura da trava por 5 segundos.
+5. O servidor cria a operação pendente e solicita a abertura da trava por 15 segundos.
 6. A pessoa retira o equipamento e aproxima a tag física dele.
 7. O servidor confere se a tag corresponde ao equipamento selecionado.
 8. Somente depois da validação e da gravação no Supabase o empréstimo é confirmado.
-9. Os 5 segundos são contados a partir da confirmação de acionamento recebida do ESP32. Se terminarem antes da confirmação, a operação continua pendente.
-10. Para reabrir, é obrigatório aproximar novamente a tag pessoal do MESMO funcionário. Só então o servidor solicita outra abertura por 5 segundos.
+9. Os 15 segundos são contados a partir da confirmação de acionamento recebida do ESP32. Se terminarem antes da confirmação, a operação continua pendente.
+10. Para reabrir, é obrigatório aproximar novamente a tag pessoal do MESMO funcionário. Só então o servidor solicita outra abertura por 15 segundos.
 11. Uma tag de outro funcionário ou uma tag de equipamento não reabre a caixa durante a etapa de reautenticação.
 
 DEVOLUÇÃO
@@ -26,7 +26,7 @@ DEVOLUÇÃO
 2. O servidor identifica o funcionário e o equipamento emprestado a ele.
 3. A pessoa aproxima a tag física do equipamento.
 4. O servidor confere se é exatamente o equipamento emprestado.
-5. Após validar, o servidor atualiza o empréstimo e o status do equipamento e solicita a abertura por 5 segundos.
+5. Após validar, o servidor atualiza o empréstimo e o status do equipamento e solicita a abertura por 15 segundos.
 6. Se a atualização do equipamento falhar, o servidor tenta reverter o registro da devolução para evitar divergência.
 
 CONFIGURACAO
@@ -53,10 +53,10 @@ TESTES OBRIGATORIOS ANTES DE USAR COM EQUIPAMENTOS
 - Testar tag pessoal válida e inválida.
 - Testar seleção sem tag pessoal (deve ser recusada).
 - Testar seleção de equipamento indisponível.
-- Confirmar que a seleção solicita abertura por 5 segundos.
+- Confirmar que a seleção solicita abertura por 15 segundos.
 - Confirmar que o empréstimo NÃO é gravado antes da leitura da tag física correta.
 - Testar tag de equipamento errada e não cadastrada.
-- Esperar os 5 segundos e confirmar que a reabertura exige novamente a tag pessoal do mesmo funcionário.
+- Esperar os 15 segundos e confirmar que a reabertura exige novamente a tag pessoal do mesmo funcionário.
 - Testar tag pessoal de outro funcionário (deve ser recusada).
 - Confirmar que a tag correta conclui o empréstimo apenas uma vez.
 - Testar devolução com funcionário correto e tag de equipamento correta.

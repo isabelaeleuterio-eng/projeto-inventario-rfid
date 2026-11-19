@@ -8,9 +8,9 @@ Componentes:
 - Comando de trava consultado pelo ESP32 em /api/esp32/comando
 
 FLUXO ATUALIZADO
-RETIRADA: tag pessoal -> selecionar equipamento no site -> trava liberada por 5 segundos -> tag física do equipamento -> validação e gravação do empréstimo.
+RETIRADA: tag pessoal -> selecionar equipamento no site -> trava liberada por 15 segundos -> tag física do equipamento -> validação e gravação do empréstimo.
 Se o prazo de abertura terminar, a retirada fica pendente. A reabertura exige uma nova leitura da tag pessoal do mesmo funcionário. A tag do equipamento só confirma a retirada; ela nunca abre a caixa na etapa inicial.
-DEVOLUÇÃO: tag pessoal -> tag física do equipamento emprestado -> validação e registro da devolução -> trava liberada por 5 segundos.
+DEVOLUÇÃO: tag pessoal -> tag física do equipamento emprestado -> validação e registro da devolução -> trava liberada por 15 segundos.
 
 CONFIGURAÇÃO
 - Configure SUPABASE_URL e SUPABASE_SECRET_KEY no ambiente do servidor.
