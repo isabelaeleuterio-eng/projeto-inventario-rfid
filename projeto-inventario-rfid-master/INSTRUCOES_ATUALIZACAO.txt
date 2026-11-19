@@ -1,0 +1,70 @@
+PROJETO INVENTARIO RFID — ATUALIZACAO DO FLUXO DE RETIRADA E DEVOLUCAO
+
+ANTES DE COMEÇAR
+1. Faça uma cópia de segurança da pasta atual do projeto.
+2. Extraia este ZIP em uma pasta nova.
+3. Substitua no GitHub os arquivos pelos arquivos correspondentes desta versão.
+4. Não envie .env nem esp32_leitor/segredos.h ao GitHub.
+
+FLUXO IMPLEMENTADO
+
+RETIRADA
+1. A pessoa aproxima a tag pessoal.
+2. O servidor identifica o funcionário.
+3. A pessoa escolhe o equipamento no site.
+4. O servidor valida novamente se funcionário e equipamento estão ativos/disponíveis.
+5. O servidor cria a operação pendente e solicita a abertura da trava por 15 segundos.
+6. A pessoa retira o equipamento e aproxima a tag física dele.
+7. O servidor confere se a tag corresponde ao equipamento selecionado.
+8. Somente depois da validação e da gravação no Supabase o empréstimo é confirmado.
+9. Os 15 segundos são contados a partir da confirmação de acionamento recebida do ESP32. Se terminarem antes da confirmação, a operação continua pendente.
+10. Para reabrir, é obrigatório aproximar novamente a tag pessoal do MESMO funcionário. Só então o servidor solicita outra abertura por 15 segundos.
+11. Uma tag de outro funcionário ou uma tag de equipamento não reabre a caixa durante a etapa de reautenticação.
+
+DEVOLUÇÃO
+1. A pessoa aproxima a tag pessoal.
+2. O servidor identifica o funcionário e o equipamento emprestado a ele.
+3. A pessoa aproxima a tag física do equipamento.
+4. O servidor confere se é exatamente o equipamento emprestado.
+5. Após validar, o servidor atualiza o empréstimo e o status do equipamento e solicita a abertura por 15 segundos.
+6. Se a atualização do equipamento falhar, o servidor tenta reverter o registro da devolução para evitar divergência.
+
+CONFIGURACAO
+1. No Render, mantenha SUPABASE_URL e SUPABASE_SECRET_KEY configuradas.
+2. No computador, copie esp32_leitor/segredos.example.h para esp32_leitor/segredos.h.
+3. Preencha Wi-Fi e URL real do servidor no arquivo local segredos.h.
+4. Não envie segredos.h ao GitHub.
+5. O npm start continua sendo o comando de inicialização.
+
+POLARIDADE DA TRAVA
+No firmware, TRAVA_ATIVA_LOW = true significa repouso HIGH e acionamento LOW.
+TRAVA_ATIVA_LOW = false significa repouso LOW e acionamento HIGH.
+A polaridade correta depende do módulo de relé. Sem o relé e a tranca ligados fisicamente, não é possível confirmar qual opção é a correta.
+O ESP32 não deve alimentar a tranca diretamente: use relé ou driver dimensionado para a carga.
+
+LIMITACOES IMPORTANTES — NAO IGNORAR
+1. O estado da operação e a fila de comandos ainda ficam em memória do servidor. Se o Render reiniciar durante uma retirada pendente, a operação pode ser perdida. Antes de uso real, é necessário implementar persistência da operação e da fila no Supabase.
+2. As rotas ainda não possuem autenticação/autorização completa. Antes de produção, proteger as rotas administrativas e as rotas de comunicação do ESP32 com credenciais próprias e HTTPS validado.
+3. O firmware atual usa client.setInsecure() nas conexões TLS. Isso criptografa a conexão, mas não valida o certificado do servidor. Antes de produção, configurar validação do certificado/CA.
+4. A fila atual contém um único comando pendente em memória. Não reinicie o Render enquanto houver operação em andamento.
+5. O cancelamento administrativo de uma retirada pendente ainda não possui uma tela autenticada. Não apague manualmente registros no banco sem conferir a situação física da caixa e do equipamento.
+
+TESTES OBRIGATORIOS ANTES DE USAR COM EQUIPAMENTOS
+- Testar tag pessoal válida e inválida.
+- Testar seleção sem tag pessoal (deve ser recusada).
+- Testar seleção de equipamento indisponível.
+- Confirmar que a seleção solicita abertura por 15 segundos.
+- Confirmar que o empréstimo NÃO é gravado antes da leitura da tag física correta.
+- Testar tag de equipamento errada e não cadastrada.
+- Esperar os 15 segundos e confirmar que a reabertura exige novamente a tag pessoal do mesmo funcionário.
+- Testar tag pessoal de outro funcionário (deve ser recusada).
+- Confirmar que a tag correta conclui o empréstimo apenas uma vez.
+- Testar devolução com funcionário correto e tag de equipamento correta.
+- Testar falha de rede, indisponibilidade do Supabase e reinício do ESP32.
+- Testar a polaridade do relé sem conectar a tranca inicialmente.
+
+VALIDACAO DESTA ENTREGA
+- server.js: validado com node --check.
+- JavaScript embutido em SITE/index.html: validado com node --check.
+- Não foram executados testes reais com Supabase, Render, ESP32, leitor RFID, módulo de relé ou tranca física.
+- Não considere o projeto pronto para operação física/produção antes de executar os testes acima e resolver as limitações de persistência e autenticação.
