@@ -37,9 +37,10 @@ app.use(express.static(SITE_DIR, { maxAge: 0 }));
  * RETIRADA  : tag pessoal -> seleção no site -> abre a caixa -> tag do item confirma.
  * REABERTURA: após o tempo de abertura/espera, exige novamente a tag do mesmo funcionário.
  * DEVOLUÇÃO : tag pessoal -> tag do equipamento -> valida e abre a caixa.
- * O empréstimo só é gravado após a tag correta do item na retirada.
+ * O empréstimo só é gravado após a tag correta do item na retirada. Cada etapa de leitura de tag tem prazo de 20 segundos.
  * ============================================================ */
-const TEMPO_FLUXO_MS = 120000;           // prazo para concluir ou reautenticar
+const TEMPO_FLUXO_MS = 20000;            // prazo de 20 s para concluir cada etapa que aguarda uma tag
+const TEMPO_TAG_MS = 20000;               // prazo para apresentar a próxima tag
 const TEMPO_ABERTURA_MS = 15000;          // tempo físico de liberação da trava (15 segundos)
 const EXIGIR_MESMO_FUNCIONARIO = true;   // só quem retirou pode devolver
 
@@ -137,7 +138,7 @@ function expirar() {
             modo: fluxo.modo,
             funcionario: resumoFunc(fluxo.funcionario),
             equipamento: resumoEquip(fluxo.equipamento),
-            mensagem: "Os 15 segundos de abertura terminaram. Para abrir novamente, aproxime a tag pessoal do mesmo funcionário."
+            mensagem: "O prazo de 20 segundos para apresentar a tag terminou. Aproxime novamente a tag pessoal do mesmo funcionário para reabrir a caixa."
         });
     }
     if (fluxo.expiraEm && Date.now() > fluxo.expiraEm) {
@@ -150,7 +151,7 @@ function expirar() {
                 modo: fluxo.modo,
                 funcionario: resumoFunc(fluxo.funcionario),
                 equipamento: resumoEquip(fluxo.equipamento),
-                mensagem: "O tempo de abertura/espera terminou. Aproxime novamente a tag pessoal do mesmo funcionário para reabrir a caixa."
+                mensagem: "O prazo de 20 segundos para apresentar a tag terminou. Aproxime novamente a tag pessoal do mesmo funcionário para reabrir a caixa."
             });
         } else if (fluxo.modo !== "aguardando_reconfirmacao_retirada") {
             const tinha = fluxo.modo !== "idle";
@@ -304,8 +305,8 @@ app.post("/api/esp32/comando/confirmar", (req, res) => {
         comandoConfirmado.tipo === "liberar_caixa" &&
         fluxo.modo === "aguardando_tag_item"
     ) {
-        // O ESP32 confirma depois de acionar a saída. Conta os 5 s a partir daqui.
-        fluxo.reautenticarEm = Date.now() + TEMPO_ABERTURA_MS;
+        // O ESP32 confirma depois de acionar a saída. O prazo para apresentar a tag é de 20 s.
+        fluxo.reautenticarEm = Date.now() + TEMPO_TAG_MS;
     }
     return res.json({ sucesso: true, confirmado: true, id });
 });
@@ -370,7 +371,7 @@ app.post("/api/esp32/rfid", async (req, res) => {
             const ev = publicar({
                 uid: u, tipo: "retirada_reaberta",
                 modo: fluxo.modo,
-                mensagem: `Identidade confirmada, ${fluxo.funcionario.nome}. A caixa será liberada por 15 segundos. Depois, passe a tag de "${fluxo.equipamento.nome}" para confirmar a retirada.`,
+                mensagem: `Identidade confirmada, ${fluxo.funcionario.nome}. A trava ficará liberada por 15 segundos e você terá 20 segundos para passar a tag de "${fluxo.equipamento.nome}" e confirmar a retirada.`,
                 funcionario: resumoFunc(fluxo.funcionario),
                 equipamento: resumoEquip(fluxo.equipamento),
                 abrir: true
@@ -673,7 +674,7 @@ app.post("/api/rfid/selecionar", async (req, res) => {
 
         const ev = publicar({
             tipo: "equipamento_selecionado", modo: "aguardando_tag_item",
-            mensagem: `Caixa liberada por 15 segundos. Retire "${e.data.nome}" e passe a tag física do equipamento para confirmar o empréstimo.`,
+            mensagem: `Trava liberada por 15 segundos. Você tem 20 segundos para passar a tag física de "${e.data.nome}" e confirmar o empréstimo.`,
             funcionario: resumoFunc(f.data),
             equipamento: resumoEquip(e.data),
             abrir: true

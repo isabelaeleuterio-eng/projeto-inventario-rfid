@@ -68,10 +68,21 @@ MFRC522 rfid(SS_PIN, RST_PIN);
     LOW  = estado normal
 */
 
+
+
+//..........................................................................................
 // ALTERE SOMENTE ESTA OPÇÃO SE A POLARIDADE DO RELÉ FOR DIFERENTE:
 // true  = relé acionado por LOW  (repouso HIGH / abertura LOW)
 // false = relé acionado por HIGH (repouso LOW  / abertura HIGH)
-const bool TRAVA_ATIVA_LOW = true;
+const bool TRAVA_ATIVA_LOW = false;
+//const bool TRAVA_ATIVA_LOW = true  ; // EM CASO DA LOGICA ESTA ERRADA
+//..................................................................................................
+
+
+
+
+
+
 
 const unsigned long TEMPO_TRAVA_PADRAO = 15000;
 
@@ -1061,6 +1072,9 @@ void consultarComando() {
   }
 
 
+  // O servidor pode enviar dois tipos de comando:
+  // liberar_caixa = libera a trava pelo tempo configurado.
+  // travar_caixa  = interrompe a abertura e retorna ao estado normal.
   if (
     tipo != "liberar_caixa" &&
     tipo != "travar_caixa"
@@ -1114,10 +1128,16 @@ void consultarComando() {
 
 
     if (tipo == "travar_caixa") {
-      // Cancelamento: interrompe a abertura imediatamente.
+
+      // Cancelamento recebido do site: fecha imediatamente.
       travaNormal();
-      Serial.println("COMANDO DE CANCELAMENTO: trava no estado normal.");
+
+      Serial.println(
+        "CANCELAMENTO RECEBIDO: trava no estado normal."
+      );
+
     } else {
+
       if (tempo <= 0) {
         tempo = TEMPO_TRAVA_PADRAO;
       }
