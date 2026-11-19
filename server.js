@@ -50,6 +50,7 @@ let esp32 = { conectado: false, ultimoContato: null, ip: null };
  // Observação: a fila é volátil; reinício do servidor descarta comandos pendentes.
 let comandoTravaPendente = null;
 let proximoIdComandoTrava = 1;
+let travaAbertaAte = 0;
 
 const eventoOciosoBase = {
     nova: false, id: 0, uid: null, tipo: "idle", modo: "idle",
@@ -261,7 +262,10 @@ app.get("/api/status", (req, res) => {
         fluxo: {
             modo: fluxo.modo,
             funcionario: resumoFunc(fluxo.funcionario),
-            equipamento: resumoEquip(fluxo.equipamento)
+            equipamento: resumoEquip(fluxo.equipamento),
+            expiraEm: fluxo.expiraEm || 0,
+            reautenticarEm: fluxo.reautenticarEm || 0,
+            travaAbertaAte: travaAbertaAte > Date.now() ? travaAbertaAte : 0
         }
     });
 });
@@ -301,12 +305,14 @@ app.post("/api/esp32/comando/confirmar", (req, res) => {
     comandoTravaPendente = null;
     esp32.conectado = true;
     esp32.ultimoContato = agora();
-    if (
-        comandoConfirmado.tipo === "liberar_caixa" &&
-        fluxo.modo === "aguardando_tag_item"
-    ) {
-        // O ESP32 confirma depois de acionar a saída. O prazo para apresentar a tag é de 20 s.
-        fluxo.reautenticarEm = Date.now() + TEMPO_TAG_MS;
+    if (comandoConfirmado.tipo === "liberar_caixa") {
+        // O ESP32 confirma depois de acionar a saída física da trava.
+        travaAbertaAte = Date.now() + TEMPO_ABERTURA_MS;
+        if (fluxo.modo === "aguardando_tag_item") {
+            fluxo.reautenticarEm = Date.now() + TEMPO_TAG_MS;
+        }
+    } else if (comandoConfirmado.tipo === "travar_caixa") {
+        travaAbertaAte = 0;
     }
     return res.json({ sucesso: true, confirmado: true, id });
 });
