@@ -25,7 +25,7 @@
   5. Servidor decide retirada/devolução.
   6. Servidor cria comando para a trava quando necessário.
   7. ESP32 consulta o comando.
-  8. GPIO 4 libera a trava por 15 segundos.
+  8. GPIO 4 libera a trava por 20 segundos.
   9. ESP32 confirma o comando ao servidor.
 
   IMPORTANTE:
@@ -84,7 +84,7 @@ const bool TRAVA_ATIVA_LOW = false;
 
 
 
-const unsigned long TEMPO_TRAVA_PADRAO = 15000;
+const unsigned long TEMPO_TRAVA_PADRAO = 20000;
 
 bool travaAtiva = false;
 
@@ -1220,7 +1220,7 @@ void setup() {
   );
 
   Serial.println(
-    " ABERTURA = 15 SEGUNDOS"
+    " ABERTURA = 20 SEGUNDOS"
   );
 
   Serial.println(

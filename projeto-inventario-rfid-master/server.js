@@ -41,7 +41,7 @@ app.use(express.static(SITE_DIR, { maxAge: 0 }));
  * ============================================================ */
 const TEMPO_FLUXO_MS = 20000;            // prazo de 20 s para concluir cada etapa que aguarda uma tag
 const TEMPO_TAG_MS = 20000;               // prazo para apresentar a próxima tag
-const TEMPO_ABERTURA_MS = 15000;          // tempo físico de liberação da trava (15 segundos)
+const TEMPO_ABERTURA_MS = 20000;          // tempo físico de liberação da trava (20 segundos)
 const EXIGIR_MESMO_FUNCIONARIO = true;   // só quem retirou pode devolver
 
 let esp32 = { conectado: false, ultimoContato: null, ip: null };
@@ -371,7 +371,7 @@ app.post("/api/esp32/rfid", async (req, res) => {
             const ev = publicar({
                 uid: u, tipo: "retirada_reaberta",
                 modo: fluxo.modo,
-                mensagem: `Identidade confirmada, ${fluxo.funcionario.nome}. A trava ficará liberada por 15 segundos e você terá 20 segundos para passar a tag de "${fluxo.equipamento.nome}" e confirmar a retirada.`,
+                mensagem: `Identidade confirmada, ${fluxo.funcionario.nome}. A trava ficará liberada por 20 segundos e você terá 20 segundos para passar a tag de "${fluxo.equipamento.nome}" e confirmar a retirada.`,
                 funcionario: resumoFunc(fluxo.funcionario),
                 equipamento: resumoEquip(fluxo.equipamento),
                 abrir: true
@@ -674,7 +674,7 @@ app.post("/api/rfid/selecionar", async (req, res) => {
 
         const ev = publicar({
             tipo: "equipamento_selecionado", modo: "aguardando_tag_item",
-            mensagem: `Trava liberada por 15 segundos. Você tem 20 segundos para passar a tag física de "${e.data.nome}" e confirmar o empréstimo.`,
+            mensagem: `Trava liberada por 20 segundos. Você tem 20 segundos para passar a tag física de "${e.data.nome}" e confirmar o empréstimo.`,
             funcionario: resumoFunc(f.data),
             equipamento: resumoEquip(e.data),
             abrir: true
